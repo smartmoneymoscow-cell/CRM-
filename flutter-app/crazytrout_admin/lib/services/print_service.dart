@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:printing/printing.dart';
 
 import '../models/receipt.dart';
@@ -19,41 +21,48 @@ class PrintService {
   /// системный диалог печати. На iOS это открывает AirPrint, на Android —
   /// системную службу печати.
   static Future<void> printViaSystemDialog(Receipt r) async {
+    // Стандартные PDF-шрифты (Helvetica/Base14) не содержат кириллических
+    // глифов — без явного шрифта вместо букв печатаются «кракозябры» (□□□).
+    final regular = pw.Font.ttf(await rootBundle.load('assets/fonts/PTSans-Regular.ttf'));
+    final bold = pw.Font.ttf(await rootBundle.load('assets/fonts/PTSans-Bold.ttf'));
+    final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+
     final doc = pw.Document();
     doc.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.roll80,
+        theme: theme,
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Center(
               child: pw.Text(
                 'CRAZY TROUT ARENA',
-                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(font: bold, fontSize: 14),
               ),
             ),
             pw.Center(
-              child: pw.Text('Чек № ${r.number} · ${_fmtDate(r.date)}', style: const pw.TextStyle(fontSize: 9)),
+              child: pw.Text('Чек № ${r.number} · ${_fmtDate(r.date)}', style: pw.TextStyle(font: regular, fontSize: 9)),
             ),
             pw.Divider(),
-            pw.Text('Клиент: ${r.clientLine}', style: const pw.TextStyle(fontSize: 10)),
-            pw.Text('Тариф · ${r.tariffLabel}: ${r.tariffPrice} ₽', style: const pw.TextStyle(fontSize: 10)),
+            pw.Text('Клиент: ${r.clientLine}', style: pw.TextStyle(font: regular, fontSize: 10)),
+            pw.Text('Тариф · ${r.tariffLabel}: ${r.tariffPrice} ₽', style: pw.TextStyle(font: regular, fontSize: 10)),
             pw.Divider(),
             ...r.rows.map(
               (it) => pw.Text(
                 '${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()} = ${it.sum.round()} ₽',
-                style: const pw.TextStyle(fontSize: 10),
+                style: pw.TextStyle(font: regular, fontSize: 10),
               ),
             ),
             pw.Divider(),
             pw.Text(
               'ИТОГО: ${r.total.round()} ₽',
-              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+              style: pw.TextStyle(font: bold, fontSize: 13),
             ),
-            pw.Text('Оплата: ${r.payment.label}', style: const pw.TextStyle(fontSize: 10)),
+            pw.Text('Оплата: ${r.payment.label}', style: pw.TextStyle(font: regular, fontSize: 10)),
             pw.Text(
               r.fiscal ? 'Фискальный чек ${r.fiscalDoc ?? ""}' : 'Без ФН',
-              style: const pw.TextStyle(fontSize: 10),
+              style: pw.TextStyle(font: regular, fontSize: 10),
             ),
           ],
         ),
@@ -71,79 +80,103 @@ class PrintService {
   /// (диалог строим сами — Flutter не показывает системный пикер, как это
   /// делает Web Bluetooth в Chrome) и отправляет байты чека через ESC/POS.
   static Future<void> printViaBluetooth(BuildContext context, Receipt r) async {
-    if (await FlutterBluePlus.isSupported == false) {
-      _toast(context, 'Bluetooth не поддерживается на этом устройстве');
-      return;
-    }
-
-    await FlutterBluePlus.adapterState.firstWhere((s) => s == BluetoothAdapterState.on).timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => BluetoothAdapterState.unknown,
-        );
-
-    final found = <ScanResult>[];
-    late StreamSubscription<List<ScanResult>> sub;
-    final completer = Completer<ScanResult?>();
-
-    sub = FlutterBluePlus.scanResults.listen((results) {
-      found
-        ..clear()
-        ..addAll(results.where((r) => r.device.platformName.isNotEmpty));
-    });
-
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
-
-    if (!context.mounted) return;
-
-    final chosen = await showModalBottomSheet<ScanResult>(
-      context: context,
-      builder: (ctx) {
-        return StreamBuilder<List<ScanResult>>(
-          stream: FlutterBluePlus.scanResults,
-          initialData: found,
-          builder: (ctx, snapshot) {
-            final devices = (snapshot.data ?? []).where((d) => d.device.platformName.isNotEmpty).toList();
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Выберите принтер', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                  if (devices.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text('Поиск устройств рядом…'),
-                    ),
-                  ...devices.map(
-                    (d) => ListTile(
-                      title: Text(d.device.platformName),
-                      subtitle: Text(d.device.remoteId.toString()),
-                      onTap: () => Navigator.of(ctx).pop(d),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    await FlutterBluePlus.stopScan();
-    await sub.cancel();
-    if (!completer.isCompleted) completer.complete(chosen);
-
-    if (chosen == null) {
-      if (context.mounted) _toast(context, 'Принтер не выбран');
-      return;
-    }
-
-    if (context.mounted) _toast(context, 'Подключение к «${chosen.device.platformName}»…');
-
+    // ВАЖНО: раньше сканирование не было обёрнуто в try/catch, а разрешения
+    // на Bluetooth вообще не запрашивались — на Android 12+ это приводило к
+    // тому, что startScan() падал с исключением молча, и кнопка выглядела
+    // так, будто "ничего не происходит". Теперь любая ошибка на любом шаге
+    // показывает тост, а не проглатывается.
     try {
+      if (await FlutterBluePlus.isSupported == false) {
+        if (context.mounted) _toast(context, 'Bluetooth не поддерживается на этом устройстве');
+        return;
+      }
+
+      // Разрешения BLUETOOTH_SCAN / BLUETOOTH_CONNECT / геолокация — без них
+      // сканирование на Android 12+ падает без единого сообщения пользователю.
+      final statuses = await [
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.locationWhenInUse,
+      ].request();
+
+      final denied = statuses.entries.where((e) => !e.value.isGranted && !e.value.isLimited).toList();
+      if (denied.isNotEmpty) {
+        if (context.mounted) {
+          _toast(context, 'Нет разрешения на Bluetooth — разрешите доступ в настройках приложения');
+        }
+        return;
+      }
+
+      final adapterOn = await FlutterBluePlus.adapterState.firstWhere((s) => s == BluetoothAdapterState.on).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => BluetoothAdapterState.unknown,
+          );
+      if (adapterOn != BluetoothAdapterState.on) {
+        if (context.mounted) _toast(context, 'Включите Bluetooth на устройстве');
+        return;
+      }
+
+      final found = <ScanResult>[];
+      final sub = FlutterBluePlus.scanResults.listen((results) {
+        found
+          ..clear()
+          ..addAll(results.where((r) => r.device.platformName.isNotEmpty));
+      });
+
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+
+      if (!context.mounted) {
+        await sub.cancel();
+        return;
+      }
+
+      final chosen = await showModalBottomSheet<ScanResult>(
+        context: context,
+        builder: (ctx) {
+          return StreamBuilder<List<ScanResult>>(
+            stream: FlutterBluePlus.scanResults,
+            initialData: found,
+            builder: (ctx, snapshot) {
+              final devices = (snapshot.data ?? []).where((d) => d.device.platformName.isNotEmpty).toList();
+              return SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Выберите принтер', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                    if (devices.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('Поиск устройств рядом…'),
+                      ),
+                    ...devices.map(
+                      (d) => ListTile(
+                        title: Text(d.device.platformName),
+                        subtitle: Text(d.device.remoteId.toString()),
+                        onTap: () => Navigator.of(ctx).pop(d),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+
+      await FlutterBluePlus.stopScan();
+      await sub.cancel();
+
+      if (chosen == null) {
+        if (context.mounted) _toast(context, 'Принтер не выбран');
+        return;
+      }
+
+      if (context.mounted) _toast(context, 'Подключение к «${chosen.device.platformName}»…');
+
       final device = chosen.device;
       await device.connect(timeout: const Duration(seconds: 8));
       final services = await device.discoverServices();

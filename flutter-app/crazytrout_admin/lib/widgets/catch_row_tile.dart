@@ -52,85 +52,106 @@ class _CatchRowTileState extends State<CatchRowTile> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F6EF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFECE5D4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Порода — цена всегда фиксированная и подставляется автоматически.
-          Expanded(
-            flex: 13,
-            child: _Field(
-              label: 'Порода',
-              child: DropdownButtonFormField<String>(
-                value: widget.row.species,
-                isExpanded: true,
-                decoration: _decoration(),
-                items: kSpecies
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis)))
-                    .toList(),
-                onChanged: (v) {
-                  if (v == null) return;
-                  widget.row.species = v;
-                  widget.row.pricePerKg = kSpeciesPrice[v] ?? widget.row.pricePerKg;
-                  widget.onChanged();
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 7,
-            child: _Field(
-              label: 'Кг',
-              child: TextField(
-                controller: _kgCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: false),
-                decoration: _decoration(),
-                onChanged: (v) {
-                  widget.row.kg = double.tryParse(v) ?? 0;
-                  widget.onChanged();
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 7,
-            child: _Field(
-              label: 'Грамм',
-              child: TextField(
-                controller: _gramsCtrl,
-                keyboardType: TextInputType.number,
-                decoration: _decoration(),
-                onChanged: (v) {
-                  var g = int.tryParse(v) ?? 0;
-                  if (g > 999) g = 999;
-                  if (g < 0) g = 0;
-                  widget.row.grams = g;
-                  widget.onChanged();
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 9,
-            child: _Field(
-              label: 'Сумма',
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  _money(widget.row.sum),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                  textAlign: TextAlign.right,
+          // Порода на отдельной строке — иначе название рыбы обрезается до
+          // одной буквы. Цена всегда фиксированная и подставляется автоматически.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: _Field(
+                  label: 'Порода',
+                  child: DropdownButtonFormField<String>(
+                    value: widget.row.species,
+                    isExpanded: true,
+                    decoration: _decoration(),
+                    items: kSpecies
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis)))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v == null) return;
+                      widget.row.species = v;
+                      widget.row.pricePerKg = kSpeciesPrice[v] ?? widget.row.pricePerKg;
+                      widget.onChanged();
+                    },
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.close, color: Color(0xFFB4483A)),
+                onPressed: widget.onRemove,
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Color(0xFFB4483A)),
-            onPressed: widget.onRemove,
+          const SizedBox(height: 8),
+          // Кг / Грамм / Сумма — теперь без соседства с полем породы у них
+          // достаточно места, чтобы полностью показывать 3-значные граммы.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                flex: 3,
+                child: _Field(
+                  label: 'Кг',
+                  child: TextField(
+                    controller: _kgCtrl,
+                    textAlign: TextAlign.center,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                    decoration: _decoration(),
+                    onChanged: (v) {
+                      widget.row.kg = double.tryParse(v) ?? 0;
+                      widget.onChanged();
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: _Field(
+                  label: 'Грамм',
+                  child: TextField(
+                    controller: _gramsCtrl,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    decoration: _decoration(),
+                    onChanged: (v) {
+                      var g = int.tryParse(v) ?? 0;
+                      if (g > 999) g = 999;
+                      if (g < 0) g = 0;
+                      widget.row.grams = g;
+                      widget.onChanged();
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 4,
+                child: _Field(
+                  label: 'Сумма',
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      _money(widget.row.sum),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
