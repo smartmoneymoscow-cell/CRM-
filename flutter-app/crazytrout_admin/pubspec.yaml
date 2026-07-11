@@ -1,0 +1,48 @@
+name: crazytrout_admin
+description: "Crazy Trout Arena — админка для чек-кассы пруда"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Показывает системный диалог печати (AirPrint на iOS, службы печати на Android).
+  # Рендерит чек в PDF и передаёт его в системный print-dialog — прямой аналог
+  # кнопки «Печать через AirPrint» из веб-версии.
+  printing: ^5.12.0
+  pdf: ^3.10.8
+
+  # Прямой поиск и подключение к Bluetooth-принтерам (ESC/POS), аналог кнопки
+  # «Найти принтер и распечатать» из веб-версии, но уже с полноценным доступом
+  # к Bluetooth на iOS (в отличие от Web Bluetooth, недоступного в Safari).
+  flutter_blue_plus: ^1.32.12
+
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/icon.png
+    - assets/icon/icon_foreground.png
+
+# Автогенерация нативных иконок (Android + iOS) из логотипа компании.
+# После `flutter pub get` запустите: flutter pub run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#FBF6EC"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  remove_alpha_ios: true
+
