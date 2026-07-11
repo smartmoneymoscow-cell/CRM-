@@ -30,6 +30,9 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
+      - name: Генерация Android-обёртки проекта (android/ отсутствует в репо)
+        run: flutter create . --platforms=android --project-name=crazytrout_admin --org=com.crazytroutarena
+
       - name: Установка зависимостей
         run: flutter pub get
 
