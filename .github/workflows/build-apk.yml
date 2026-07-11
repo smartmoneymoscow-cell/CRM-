@@ -39,6 +39,9 @@ jobs:
       - name: Генерация иконки приложения из логотипа
         run: flutter pub run flutter_launcher_icons
 
+      - name: Запуск тестов
+        run: flutter test
+
       - name: Сборка релизного APK
         run: flutter build apk --release
 
