@@ -16,6 +16,9 @@ on:
     tags: [ 'v*' ]
   workflow_dispatch: {}   # позволяет запускать вручную кнопкой Run workflow
 
+permissions:
+  contents: write   # нужно, чтобы GITHUB_TOKEN мог создавать GitHub Release
+
 jobs:
   build:
     runs-on: ubuntu-latest
