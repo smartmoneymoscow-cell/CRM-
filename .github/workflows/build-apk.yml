@@ -33,6 +33,9 @@ jobs:
       - name: Генерация Android-обёртки проекта (android/ отсутствует в репо)
         run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
 
+      - name: Красивое название приложения
+        run: sed -i 's/android:label="crazytrout_admin"/android:label="Crazy Trout Arena"/g' android/app/src/main/AndroidManifest.xml
+
       - name: Установка зависимостей
         run: flutter pub get
 
