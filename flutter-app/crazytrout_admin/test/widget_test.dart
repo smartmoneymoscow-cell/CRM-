@@ -6,8 +6,9 @@ void main() {
   group('App — smoke tests', () {
     testWidgets('приложение запускается без крашей', (WidgetTester tester) async {
       await tester.pumpWidget(const CrazyTroutAdminApp());
-      // SplashScreen — не крашится
-      await tester.pump();
+      // SplashScreen — не крашится, pump завершает таймер
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
     });
 
     testWidgets('после SplashScreen показывается HomeShell', (WidgetTester tester) async {
