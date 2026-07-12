@@ -75,8 +75,8 @@ void main() {
     });
 
     group('Демо-клиенты (kDemoClients)', () {
-      test('ровно 7 клиентов', () {
-        expect(kDemoClients.length, 7);
+      test('ровно 8 клиентов (7 реальных + 1 мок)', () {
+        expect(kDemoClients.length, 8);
       });
 
       test('все id уникальны', () {

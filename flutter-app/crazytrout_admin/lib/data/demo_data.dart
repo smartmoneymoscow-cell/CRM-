@@ -37,6 +37,5 @@ const List<Client> kDemoClients = [
   Client(id: 6, name: 'Михаил Орлов', phone: '+7 962 888-99-00', tariffLabel: 'Пенсионер'),
   Client(id: 7, name: 'Олег Сидоров', phone: '+7 905 222-77-66', tariffLabel: 'Стандарт'),
   // Мок-клиент для тестирования QR-сканирования
-  Client(id: 100, name: 'Тест Клиент', phone: '+7 999 000-00-00', tariffLabel: 'Стандарт',
-         avatarAsset: 'assets/avatars/avatar_1.jpeg'),
+  Client(id: 100, name: 'Тест Клиент', phone: '+7 999 000-00-00', tariffLabel: 'Стандарт'),
 ];
