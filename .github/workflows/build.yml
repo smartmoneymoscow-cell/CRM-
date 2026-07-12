@@ -99,44 +99,6 @@ jobs:
               <uses-permission android:name="android.permission.CAMERA" />' \
             android/app/src/main/AndroidManifest.xml
 
-      - name: Гарантировать minifyEnabled/shrinkResources в release
-        run: |
-          python3 << 'PYEOF'
-          import re, pathlib
-          groovy = pathlib.Path('android/app/build.gradle')
-          kts = pathlib.Path('android/app/build.gradle.kts')
-          path = kts if kts.exists() else groovy
-          text = path.read_text()
-          # minify ОТКЛЮЧЕН — R8 вызывает краш при запуске
-              print(f'{path}: minify отключён, не трогаю')
-          elif path == kts:
-              new_release = (
-                  'release {\n'
-                  '            signingConfig = signingConfigs.getByName("debug")\n'
-                  '            isMinifyEnabled = true\n'
-                  '            isShrinkResources = true\n'
-                  '            proguardFiles(\n'
-                  '                getDefaultProguardFile("proguard-android-optimize.txt"),\n'
-                  '                "proguard-rules.pro"\n'
-                  '            )\n'
-                  '        }'
-              )
-              text2 = re.sub(r'release\s*\{[^}]*\}', new_release, text, count=1, flags=re.S)
-              path.write_text(text2)
-              print(f'{path}: добавлены minify/shrink/proguardFiles (Kotlin DSL)')
-          else:
-              new_release = (
-                  'release {\n'
-                  '            signingConfig signingConfigs.debug\n'
-                  '            minifyEnabled true\n'
-                  '            shrinkResources true\n'
-                  '            proguardFiles getDefaultProguardFile(\'proguard-android-optimize.txt\'), \'proguard-rules.pro\'\n'
-                  '        }'
-              )
-              text2 = re.sub(r'release\s*\{[^}]*\}', new_release, text, count=1, flags=re.S)
-              path.write_text(text2)
-              print(f'{path}: добавлены minify/shrink/proguardFiles (Groovy)')
-          PYEOF
 
       - name: Копирование ProGuard-правил из репозитория
         run: |
