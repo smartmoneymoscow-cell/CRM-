@@ -61,12 +61,6 @@ jobs:
           name: app-release-apk
           path: flutter-app/crazytrout_admin/build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Публикация постоянной ссылки (только при пуше тега vX.Y.Z)
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: flutter-app/crazytrout_admin/build/app/outputs/flutter-apk/app-release.apk
-
   # ──────────────────────────────────────────────
   # iOS IPA (требует macOS-раннер)
   # ──────────────────────────────────────────────
@@ -89,8 +83,6 @@ jobs:
       - name: Установка зависимостей
         run: flutter pub get
 
-      # iOS требует описание причин использования камеры/Bluetooth в Info.plist.
-      # Без них приложение крашится при первом обращении к этим ресурсам.
       - name: Разрешения iOS (Info.plist)
         run: |
           PLIST=ios/Runner/Info.plist
@@ -98,8 +90,6 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :NSBluetoothAlwaysUsageDescription string 'Для печати чеков через Bluetooth-принтер'" $PLIST || true
           /usr/libexec/PlistBuddy -c "Add :NSBluetoothPeripheralUsageDescription string 'Для печати чеков через Bluetooth-принтер'" $PLIST || true
 
-      # mobile_scanner требует iOS 12.0+, flutter_blue_plus — iOS 13.0+.
-      # Ставим 13.0 как пересечение обоих.
       - name: Минимальная версия iOS 13.0
         run: sed -i '' 's/platform :ios, .*/platform :ios, '"'"'13.0'"'"'/g' ios/Podfile
 
@@ -109,9 +99,6 @@ jobs:
       - name: Запуск тестов
         run: flutter test
 
-      # Для сборки IPA без подписи (адхок / development) нужен provisioning profile.
-      # Без сертификата собираем только .app — его можно запустить на симуляторе
-      # или залить через Xcode с подписью вручную.
       - name: Сборка iOS без кодирования (no-codesign)
         run: flutter build ios --release --no-codesign
 
@@ -128,8 +115,29 @@ jobs:
           name: app-release-ipa
           path: flutter-app/crazytrout_admin/app-release.ipa
 
-      - name: Публикация постоянной ссылки (только при пуше тега vX.Y.Z)
-        if: startsWith(github.ref, 'refs/tags/v')
+  # ──────────────────────────────────────────────
+  # Релиз — создаётся ОДИН раз после обоих билдов
+  # ──────────────────────────────────────────────
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Скачивание APK
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-apk
+          path: artifacts/apk
+
+      - name: Скачивание IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-ipa
+          path: artifacts/ipa
+
+      - name: Создание GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: flutter-app/crazytrout_admin/app-release.ipa
+          files: |
+            artifacts/apk/app-release.apk
+            artifacts/ipa/app-release.ipa

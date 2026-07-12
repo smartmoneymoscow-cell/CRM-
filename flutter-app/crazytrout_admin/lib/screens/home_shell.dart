@@ -27,18 +27,22 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF6EC),
       body: SafeArea(child: _screens[_index]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFF6E3C4),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Карта'),
-          NavigationDestination(icon: Icon(Icons.receipt_outlined), label: 'Чек'),
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), label: 'Чеки'),
-          NavigationDestination(icon: Icon(Icons.show_chart), label: 'P&L'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Профиль'),
-        ],
+      bottomNavigationBar: SizedBox(
+        height: 64,
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFF6E3C4),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          destinations: const [
+            NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Карта'),
+            NavigationDestination(icon: Icon(Icons.receipt_outlined), label: 'Чек'),
+            NavigationDestination(icon: Icon(Icons.receipt_long_outlined), label: 'Чеки'),
+            NavigationDestination(icon: Icon(Icons.show_chart), label: 'P&L'),
+            NavigationDestination(icon: Icon(Icons.person_outline), label: 'Профиль'),
+          ],
+        ),
       ),
     );
   }
