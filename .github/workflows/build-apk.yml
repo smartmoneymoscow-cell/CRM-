@@ -58,8 +58,15 @@ jobs:
       - name: Запуск тестов
         run: flutter test
 
-      - name: Сборка релизного APK (только arm64 — ~17 МБ)
-        run: flutter build apk --release --target-platform android-arm64
+      # --target-platform android-arm64 режет только движок Flutter и Dart-код,
+      # но НЕ нативные библиотеки плагинов (например, сканер штрихкодов
+      # добавляет .so под arm64+armv7+x86_64 разом, +12 МБ лишнего). Поэтому
+      # используем --split-per-abi и берём только arm64-сборку явно.
+      - name: Сборка релизного APK (split-per-abi, только arm64)
+        run: |
+          flutter build apk --release --split-per-abi
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+             build/app/outputs/flutter-apk/app-release.apk
 
       - name: Публикация APK как артефакта
         uses: actions/upload-artifact@v4
