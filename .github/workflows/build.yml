@@ -107,8 +107,8 @@ jobs:
           kts = pathlib.Path('android/app/build.gradle.kts')
           path = kts if kts.exists() else groovy
           text = path.read_text()
-          if 'minifyEnabled true' in text or 'isMinifyEnabled = true' in text:
-              print(f'{path}: minify уже включён, не трогаю')
+          # minify ОТКЛЮЧЕН — R8 вызывает краш при запуске
+              print(f'{path}: minify отключён, не трогаю')
           elif path == kts:
               new_release = (
                   'release {\n'
