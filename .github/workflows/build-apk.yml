@@ -74,36 +74,6 @@ jobs:
           -dontwarn androidx.camera.**
           EOF
 
-      - name: Явное включение R8 + подключение proguard-rules.pro в release
-        # На случай, если сгенерированный flutter create build.gradle.kts
-        # не подключает минификацию/proguard-rules.pro явно — прописываем
-        # это гарантированно, чтобы правила выше точно применялись.
-        run: |
-          python3 - << 'PYEOF'
-          import re
-          path = "android/app/build.gradle.kts"
-          with open(path, encoding="utf-8") as f:
-              content = f.read()
-
-          if "isMinifyEnabled" not in content:
-              content = re.sub(
-                  r"(release\s*\{)",
-                  r"\1\n            isMinifyEnabled = true\n"
-                  r"            isShrinkResources = true\n"
-                  r"            proguardFiles(\n"
-                  r'                getDefaultProguardFile("proguard-android-optimize.txt"),\n'
-                  r'                "proguard-rules.pro"\n'
-                  r"            )",
-                  content,
-                  count=1,
-              )
-              with open(path, "w", encoding="utf-8") as f:
-                  f.write(content)
-              print("Добавлены isMinifyEnabled/proguardFiles в build.gradle.kts")
-          else:
-              print("isMinifyEnabled уже присутствует, пропускаем")
-          PYEOF
-
       - name: Установка зависимостей
         run: flutter pub get
 
