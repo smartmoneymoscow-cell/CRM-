@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Полноэкранный сканер QR-кода клиента.
@@ -14,23 +14,41 @@ class QrScanScreen extends StatefulWidget {
 }
 
 class _QrScanScreenState extends State<QrScanScreen> {
-  final GlobalKey _qrKey = GlobalKey(debugLabel: 'QR');
-  QRViewController? _controller;
+  MobileScannerController? _controller;
 
   bool _torchOn = false;
   bool _handled = false; // защита от повторного срабатывания на серии кадров
   bool _permissionDenied = false;
+  bool _cameraReady = false;
+  String? _initError;
 
   @override
   void initState() {
     super.initState();
-    _checkCameraPermission();
+    _initCamera();
   }
 
-  Future<void> _checkCameraPermission() async {
+  Future<void> _initCamera() async {
+    // 1. Проверяем разрешение
     final status = await Permission.camera.status;
-    if (!status.isGranted && mounted) {
-      setState(() => _permissionDenied = true);
+    if (!status.isGranted) {
+      if (mounted) setState(() => _permissionDenied = true);
+      return;
+    }
+
+    // 2. Инициализируем контроллер С задержкой — даём камере время
+    //    Null pointer в mobile_scanner возникает при обращении к камере
+    //    до полной инициализации native-слоя.
+    try {
+      _controller = MobileScannerController(
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        formats: const [BarcodeFormat.qrCode],
+      );
+      // Пауза даёт native-стороне завершить инициализацию
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) setState(() => _cameraReady = true);
+    } catch (e) {
+      if (mounted) setState(() => _initError = e.toString());
     }
   }
 
@@ -40,21 +58,21 @@ class _QrScanScreenState extends State<QrScanScreen> {
     super.dispose();
   }
 
-  void _onQRViewCreated(QRViewController controller) {
-    _controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      if (_handled) return;
-      final raw = scanData.code;
-      if (raw == null || raw.isEmpty) return;
+  void _onDetect(BarcodeCapture capture) {
+    if (_handled) return;
 
-      _handled = true;
-      controller.pauseCamera();
-      Navigator.of(context).pop(raw);
-    });
+    final barcodes = capture.barcodes;
+    if (barcodes.isEmpty) return;
+
+    final raw = barcodes.first.rawValue;
+    if (raw == null || raw.isEmpty) return;
+
+    _handled = true;
+    Navigator.of(context).pop(raw);
   }
 
   Future<void> _toggleTorch() async {
-    await _controller?.toggleFlash();
+    await _controller?.toggleTorch();
     setState(() => _torchOn = !_torchOn);
   }
 
@@ -62,6 +80,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
     final status = await Permission.camera.request();
     if (status.isGranted && mounted) {
       setState(() => _permissionDenied = false);
+      _initCamera();
     }
   }
 
@@ -109,6 +128,50 @@ class _QrScanScreenState extends State<QrScanScreen> {
     );
   }
 
+  Widget _buildError(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.videocam_off, color: Colors.white54, size: 64),
+            const SizedBox(height: 24),
+            const Text(
+              'Камера недоступна',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              error,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Назад'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white24,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,40 +182,79 @@ class _QrScanScreenState extends State<QrScanScreen> {
         elevation: 0,
         title: const Text('Скан QR клиента'),
         actions: [
-          IconButton(
-            icon: Icon(_torchOn ? Icons.flash_on : Icons.flash_off),
-            onPressed: _toggleTorch,
-          ),
+          if (_cameraReady)
+            IconButton(
+              icon: Icon(_torchOn ? Icons.flash_on : Icons.flash_off),
+              onPressed: _toggleTorch,
+            ),
         ],
       ),
       body: _permissionDenied
           ? _buildPermissionDenied()
-          : Stack(
-              fit: StackFit.expand,
-              children: [
-                QRView(
-                  key: _qrKey,
-                  onQRViewCreated: _onQRViewCreated,
-                  overlay: QrScannerOverlayShape(
-                    borderColor: const Color(0xFFE89829),
-                    borderRadius: 16,
-                    borderLength: 30,
-                    borderWidth: 3,
-                    cutOutSize: 240,
-                  ),
-                ),
-                Positioned(
-                  bottom: 48,
-                  left: 24,
-                  right: 24,
-                  child: Text(
-                    'Наведите камеру на QR-код в профиле клиента',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
+          : _initError != null
+              ? _buildError(_initError!)
+              : !_cameraReady
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            color: Color(0xFFE8912B),
+                            strokeWidth: 3,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Запуск камеры…',
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        MobileScanner(
+                          controller: _controller!,
+                          onDetect: _onDetect,
+                          errorBuilder: (context, error, child) {
+                            return _buildError('Ошибка камеры: $error');
+                          },
+                        ),
+                        const _ScanFrameOverlay(),
+                        const Positioned(
+                          bottom: 48,
+                          left: 24,
+                          right: 24,
+                          child: Text(
+                            'Наведите камеру на QR-код в профиле клиента',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+    );
+  }
+}
+
+/// Рамка-таргет поверх камеры — помогает быстрее навести QR и не мешает
+/// сканировать посторонний мусор в кадре.
+class _ScanFrameOverlay extends StatelessWidget {
+  const _ScanFrameOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Center(
+        child: Container(
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFE89829), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
     );
   }
 }
