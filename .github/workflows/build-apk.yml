@@ -6,6 +6,11 @@ on:
     tags: [ 'v*' ]
   workflow_dispatch: {}
 
+# Отмена предыдущих запусков при новом пуше
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -25,6 +30,7 @@ jobs:
         with:
           flutter-version: '3.44.0'
           channel: 'stable'
+          cache: true
 
       - name: Генерация обёрток проекта (Android + iOS)
         run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
@@ -46,10 +52,6 @@ jobs:
       - name: Установка зависимостей
         run: flutter pub get
 
-      # ВАЖНО: этот шаг НЕ должен маскировать ошибки через "|| echo ...".
-      # Именно такая маскировка привела к тому, что иконка молча не
-      # сгенерировалась, а собранный APK использовал дефолтную заглушку
-      # Flutter вместо логотипа — сборка при этом ложно считалась успешной.
       - name: Генерация иконки приложения из логотипа
         run: dart run flutter_launcher_icons
 
@@ -80,6 +82,7 @@ jobs:
         with:
           flutter-version: '3.44.0'
           channel: 'stable'
+          cache: true
 
       - name: Генерация обёрток проекта (Android + iOS)
         run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
