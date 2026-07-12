@@ -46,8 +46,9 @@ jobs:
       - name: Установка зависимостей
         run: flutter pub get
 
+      # Генерация иконок — не критично, если упадёт сборка продолжится
       - name: Генерация иконки приложения из логотипа
-        run: flutter pub run flutter_launcher_icons
+        run: flutter pub run flutter_launcher_icons || echo "⚠️ Иконка не сгенерирована, используется стандартная"
 
       - name: Запуск тестов
         run: flutter test
@@ -93,8 +94,9 @@ jobs:
       - name: Минимальная версия iOS 13.0
         run: sed -i '' 's/platform :ios, .*/platform :ios, '"'"'13.0'"'"'/g' ios/Podfile
 
+      # Генерация иконок — не критично, если упадёт сборка продолжится
       - name: Генерация иконки приложения из логотипа
-        run: flutter pub run flutter_launcher_icons
+        run: flutter pub run flutter_launcher_icons || echo "⚠️ Иконка не сгенерирована, используется стандартная"
 
       - name: Запуск тестов
         run: flutter test
