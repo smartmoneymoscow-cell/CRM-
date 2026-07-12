@@ -22,7 +22,6 @@ class _QrScanScreenState extends State<QrScanScreen> {
   bool _torchOn = false;
   bool _handled = false; // защита от повторного срабатывания на серии кадров
   bool _permissionDenied = false;
-  String? _cameraError;
 
   @override
   void initState() {
