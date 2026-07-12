@@ -34,7 +34,7 @@ dependencies:
   # Мониторинг ошибок и крашей в продакшене.
   # Бесплатный тариф: 5000 ошибок/месяц.
   # DSN получить на https://sentry.io → создать проект Flutter.
-  sentry_flutter: ^8.0.0
+  sentry_flutter: ^9.0.0
 
 dev_dependencies:
   flutter_test:
