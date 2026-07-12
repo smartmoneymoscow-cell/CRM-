@@ -23,11 +23,16 @@ const Map<String, double> kSpeciesPrice = {
 };
 
 /// Демо-клиенты для поиска (в реальном приложении — из backend).
+/// У первых 4-х есть фото-аватары, у остальных — инициалы.
 const List<Client> kDemoClients = [
-  Client(id: 1, name: 'Иван Иванов', phone: '+7 925 123-45-67', tariffLabel: 'Стандарт'),
-  Client(id: 2, name: 'Алексей Кошкин', phone: '+7 916 555-22-11', tariffLabel: 'Стандарт'),
-  Client(id: 3, name: 'Сергей Петров', phone: '+7 903 777-44-33', tariffLabel: 'Стандарт'),
-  Client(id: 4, name: 'Анна Морозова', phone: '+7 925 333-00-99', tariffLabel: 'Стандарт'),
+  Client(id: 1, name: 'Иван Иванов', phone: '+7 925 123-45-67', tariffLabel: 'Стандарт',
+         avatarAsset: 'assets/avatars/avatar_1.jpeg'),
+  Client(id: 2, name: 'Алексей Кошкин', phone: '+7 916 555-22-11', tariffLabel: 'Стандарт',
+         avatarAsset: 'assets/avatars/avatar_2.jpeg'),
+  Client(id: 3, name: 'Сергей Петров', phone: '+7 903 777-44-33', tariffLabel: 'Стандарт',
+         avatarAsset: 'assets/avatars/avatar_3.jpeg'),
+  Client(id: 4, name: 'Анна Морозова', phone: '+7 925 333-00-99', tariffLabel: 'Стандарт',
+         avatarAsset: 'assets/avatars/avatar_4.jpeg'),
   Client(id: 5, name: 'Дмитрий Лагута', phone: '+7 985 111-22-33', tariffLabel: 'Стандарт'),
   Client(id: 6, name: 'Михаил Орлов', phone: '+7 962 888-99-00', tariffLabel: 'Пенсионер'),
   Client(id: 7, name: 'Олег Сидоров', phone: '+7 905 222-77-66', tariffLabel: 'Стандарт'),

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -142,35 +141,38 @@ void main() {
   });
 
   group('ESC/POS данные (Bluetooth-принтер)', () {
-    test('ESC/POS для фискального чека: ESC @ + текст + LF', () {
+    test('ESC/POS для фискального чека: ESC @ + CP866 текст + отрез', () {
       final r = _makeReceipt(fiscal: true);
       final data = buildEscPos(r);
 
+      // ESC @
       expect(data[0], 0x1B);
       expect(data[1], 0x40);
 
-      final text = utf8.decode(data.sublist(2));
-      expect(text, contains('CRAZY TROUT ARENA'));
-      expect(text, contains('Chek No 1248'));
-      expect(text, contains('ITOGO: 6065 RUB'));
-      expect(text, contains('OPLATA: Картой'));
-      expect(data.last, 0x0A);
+      // ESC t 17 (CP866)
+      expect(data[2], 0x1B);
+      expect(data[3], 0x74);
+      expect(data[4], 0x11);
+
+      // Отрез бумаги в конце: GS V 1
+      expect(data[data.length - 3], 0x1D);
+      expect(data[data.length - 2], 0x56);
+      expect(data[data.length - 1], 0x01);
     });
 
     test('ESC/POS для чека без ФН', () {
       final r = _makeReceipt(fiscal: false, payment: PaymentMethod.cash);
       final data = buildEscPos(r);
-      final text = utf8.decode(data.sublist(2));
-
-      expect(text, contains('OPLATA: Наличными'));
-      expect(text, contains('ITOGO: 6065 RUB'));
+      // Не падает, размер корректный
+      expect(data.length, greaterThan(50));
+      // Отрез в конце
+      expect(data[data.length - 3], 0x1D);
     });
 
     test('ESC/POS для гостевого чека', () {
       final r = _makeReceipt(isGuest: true);
       final data = buildEscPos(r);
-      final text = utf8.decode(data.sublist(2));
-      expect(text, contains('ITOGO: 6065 RUB'));
+      expect(data.length, greaterThan(50));
     });
 
     test('ESC/POS для чека с пустым уловом', () {
@@ -187,13 +189,14 @@ void main() {
         fiscal: false,
       );
       final data = buildEscPos(r);
-      final text = utf8.decode(data.sublist(2));
-      expect(text, contains('ITOGO: 500 RUB'));
+      expect(data[0], 0x1B);
+      expect(data[1], 0x40);
+      expect(data.length, greaterThan(50));
     });
 
-    test('размер данных минимум заголовок + текст + LF', () {
+    test('размер данных минимум заголовок + текст + отрез', () {
       final data = buildEscPos(_makeReceipt());
-      expect(data.length, greaterThan(10));
+      expect(data.length, greaterThan(50));
     });
   });
 

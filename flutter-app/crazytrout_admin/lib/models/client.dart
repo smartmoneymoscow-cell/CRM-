@@ -4,11 +4,15 @@ class Client {
   final String phone;
   final String tariffLabel;
 
+  /// Путь к аватару в assets (null = показывать инициалы).
+  final String? avatarAsset;
+
   const Client({
     required this.id,
     required this.name,
     required this.phone,
     required this.tariffLabel,
+    this.avatarAsset,
   });
 
   String get initials {

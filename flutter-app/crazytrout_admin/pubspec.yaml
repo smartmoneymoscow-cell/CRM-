@@ -41,6 +41,10 @@ flutter:
     - assets/icon/icon_foreground.png
     - assets/fonts/PTSans-Regular.ttf
     - assets/fonts/PTSans-Bold.ttf
+    - assets/avatars/avatar_1.jpeg
+    - assets/avatars/avatar_2.jpeg
+    - assets/avatars/avatar_3.jpeg
+    - assets/avatars/avatar_4.jpeg
 
 # Автогенерация нативных иконок (Android + iOS) из логотипа компании.
 # После `flutter pub get` запустите: flutter pub run flutter_launcher_icons

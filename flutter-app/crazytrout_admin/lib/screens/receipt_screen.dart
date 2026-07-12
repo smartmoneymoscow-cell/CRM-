@@ -161,6 +161,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 ..._searchResults.map(
                   (c) => ListTile(
                     contentPadding: EdgeInsets.zero,
+                    leading: _ClientAvatar(client: c),
                     title: Text(c.name),
                     subtitle: Text('${c.phone} · ${c.tariffLabel}'),
                     onTap: () => _selectClient(c),
@@ -355,6 +356,31 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           child,
         ],
       ),
+    );
+  }
+}
+
+/// Круглый аватар клиента: фото, если есть, иначе инициалы.
+class _ClientAvatar extends StatelessWidget {
+  final Client client;
+  const _ClientAvatar({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: const Color(0xFFF3EEE4),
+      backgroundImage: client.avatarAsset != null ? AssetImage(client.avatarAsset!) : null,
+      child: client.avatarAsset == null
+          ? Text(
+              client.initials,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8A6D1E),
+              ),
+            )
+          : null,
     );
   }
 }

@@ -7,8 +7,9 @@
 | Раздел | Статус |
 |---|---|
 | Чек (выставление) | ✅ Полностью функционален |
-| Печать Bluetooth (ESC/POS) | ✅ Функциональна |
+| Печать Bluetooth (ESC/POS) | ✅ Функциональна (кириллица CP866 + отрез) |
 | Печать AirPrint (PDF) | ✅ Функциональна |
+| Аватары клиентов | ✅ Фото + инициалы для фолбэка |
 | Карта | 🔲 Заглушка |
 | Чеки (история) | 🔲 Заглушка |
 | P&L (финансы) | 🔲 Заглушка |
@@ -17,10 +18,11 @@
 ## Что умеет
 
 - **Выставление чеков** — выбор клиента (поиск) или гость
+- **Аватары клиентов** — фото в результатах поиска, инициалы для клиентов без фото
 - **Три тарифа** — Стандарт 750₽, Гостевой 500₽, Пенсионер 0₽
 - **Улов** — 5 пород (Осётр, Карп, Амур, Линь, Форель), раздельные кг/граммы, авторасчёт
 - **Два типа чека** — фискальный (с ФН) и без ФН
-- **Два способа печати** — Bluetooth-принтер (ESC/POS) и системный диалог (AirPrint/PDF)
+- **Два способа печати** — Bluetooth-принтер (ESC/POS, кириллица CP866, отрез бумаги) и системный диалог (AirPrint/PDF)
 - **Оплата** — наличные или карта
 
 ## Структура
@@ -43,9 +45,14 @@ lib/
 │   ├── receipt_screen.dart      — экран выставления чека
 │   └── stub_screen.dart         — заглушка для нереализованных разделов
 └── widgets/
-    ├── catch_row_tile.dart      — виджет строки улова
+    ├── catch_row_tile.dart      — виджет строки улова (пустые поля по умолчанию)
     ├── segmented_control.dart   — переключатель (оплата, тип чека)
     └── receipt_result_sheet.dart — шторка с готовым чеком и печатью
+
+assets/
+├── icon/              — логотип (icon.png, icon_foreground.png)
+├── fonts/             — PT Sans (Regular, Bold)
+└── avatars/           — фото-аватары демо-клиентов (avatar_1..4.jpeg)
 
 test/
 ├── models/
@@ -58,25 +65,27 @@ test/
 
 ## Установка
 
-### Скачать APK
+### Скачать APK / IPA
 
-Скачайте готовый APK по ссылке из GitHub Releases.
+Скачайте готовый APK (Android) или IPA (iOS) по ссылке из GitHub Releases.
 
 ### Собрать локально
 
 ```bash
-flutter create crazytrout_admin --platforms=android
+flutter create crazytrout_admin --platforms=android,ios
 # скопировать lib/, test/, pubspec.yaml, assets/
 flutter pub get
 flutter pub run flutter_launcher_icons
 flutter test
-flutter build apk --release
+flutter build apk --release   # Android
+flutter build ios --release --no-codesign  # iOS
 ```
 
 ### Через GitHub Actions
 
-1. Push в `main` → workflow «Build Android APK» собирает автоматически
-2. Actions → последний запуск → Artifacts → скачать `app-release-apk`
+1. Push в `main` → workflow «Build APK & IPA» собирает Android + iOS автоматически
+2. Actions → последний запуск → Artifacts → скачать `app-release-apk` и/или `app-release-ipa`
+3. IPA собирается без кодирования (no-codesign) — для публикации в App Store нужна подпись вручную
 
 ## Иконка
 

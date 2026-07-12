@@ -26,12 +26,17 @@ class _CatchRowTileState extends State<CatchRowTile> {
   @override
   void initState() {
     super.initState();
+    // Поля пустые по умолчанию — не нужно стирать «0» перед вводом.
+    // Значение 0 в модели (row.kg / row.grams) подставляется автоматически
+    // при onChanged, если поле осталось пустым.
     _kgCtrl = TextEditingController(
-      text: widget.row.kg == widget.row.kg.roundToDouble()
+      text: widget.row.kg == 0 ? '' : (widget.row.kg == widget.row.kg.roundToDouble()
           ? widget.row.kg.toInt().toString()
-          : widget.row.kg.toString(),
+          : widget.row.kg.toString()),
     );
-    _gramsCtrl = TextEditingController(text: widget.row.grams.toString());
+    _gramsCtrl = TextEditingController(
+      text: widget.row.grams == 0 ? '' : widget.row.grams.toString(),
+    );
   }
 
   @override

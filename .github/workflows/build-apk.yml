@@ -1,26 +1,19 @@
-name: Build Android APK
-
-# Собирает настоящий APK на серверах GitHub — не нужно ставить Android Studio
-# или Flutter SDK локально.
-#
-# Два способа получить файл:
-# 1) Push в main / ручной запуск → APK лежит во вкладке "Actions" → выбранный
-#    запуск → "Artifacts" (нужен вход в GitHub, хранится 90 дней).
-# 2) Push тега вида v1.0.0 → создаётся GitHub Release с APK — постоянная
-#    публичная ссылка вида:
-#    https://github.com/<пользователь>/<репозиторий>/releases/download/v1.0.0/app-release.apk
+name: Build APK & IPA
 
 on:
   push:
     branches: [ main ]
     tags: [ 'v*' ]
-  workflow_dispatch: {}   # позволяет запускать вручную кнопкой Run workflow
+  workflow_dispatch: {}
 
 permissions:
-  contents: write   # нужно, чтобы GITHUB_TOKEN мог создавать GitHub Release
+  contents: write
 
 jobs:
-  build:
+  # ──────────────────────────────────────────────
+  # Android APK
+  # ──────────────────────────────────────────────
+  build-android:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -33,8 +26,8 @@ jobs:
           flutter-version: '3.44.0'
           channel: 'stable'
 
-      - name: Генерация Android-обёртки проекта (android/ отсутствует в репо)
-        run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
+      - name: Генерация Android-обёртки проекта
+        run: flutter create . --platforms=android --project-name=crazytrout_admin --org=com.crazytroutarena
 
       - name: Красивое название приложения
         run: sed -i 's/android:label="crazytrout_admin"/android:label="Crazy Trout"/g' android/app/src/main/AndroidManifest.xml
@@ -72,3 +65,56 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: flutter-app/crazytrout_admin/build/app/outputs/flutter-apk/app-release.apk
+
+  # ──────────────────────────────────────────────
+  # iOS IPA (требует macOS-раннер)
+  # ──────────────────────────────────────────────
+  build-ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: flutter-app/crazytrout_admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: 'stable'
+
+      - name: Генерация iOS-обёртки проекта
+        run: flutter create . --platforms=ios --project-name=crazytrout_admin --org=com.crazytroutarena
+
+      - name: Установка зависимостей
+        run: flutter pub get
+
+      - name: Генерация иконки приложения из логотипа
+        run: flutter pub run flutter_launcher_icons
+
+      - name: Запуск тестов
+        run: flutter test
+
+      # Для сборки IPA без подписи (адхок / development) нужен provisioning profile.
+      # Без сертификата собираем только .app — его можно запустить на симуляторе
+      # или залить через Xcode с подписью вручную.
+      - name: Сборка iOS без кодирования (no-codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Создание IPA из .app
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r app-release.ipa Payload
+          rm -rf Payload
+
+      - name: Публикация IPA как артефакта
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-ipa
+          path: flutter-app/crazytrout_admin/app-release.ipa
+
+      - name: Публикация постоянной ссылки (только при пуше тега vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: flutter-app/crazytrout_admin/app-release.ipa

@@ -11,10 +11,15 @@ import 'package:printing/printing.dart';
 import '../models/receipt.dart';
 import 'escpos_builder.dart';
 
-/// Стандартный сервис Bluetooth Serial Port Profile для термопринтеров чеков
-/// (используется большинством ESC/POS-принтеров).
-final Guid _printServiceUuid = Guid('000018f0-0000-1000-8000-00805f9b34fb');
-final Guid _printCharUuid = Guid('00002af1-0000-1000-8000-00805f9b34fb');
+/// Известные UUID сервисов печати для ESC/POS Bluetooth-принтеров.
+/// Разные производители используют разные UUID, поэтому проверяем все.
+final List<Guid> _printServiceUuids = [
+  Guid('00001101-0000-1000-8000-00805f9b34fb'), // Стандартный SPP
+  Guid('000018f0-0000-1000-8000-00805f9b34fb'), // Device Information (некоторые принтеры)
+  Guid('e7810a71-73ae-499d-8c15-faa9aef0c3f2'), // BLE-принтеры (Xiaomi и др.)
+  Guid('49535343-fe7d-4ae5-8fa9-9fafd205e455'), // HM-10 / CC2541 модули
+  Guid('0000ffe0-0000-1000-8000-00805f9b34fb'), // HC-05/HC-06 модули
+];
 
 class PrintService {
   /// Аналог кнопки «Печать через AirPrint»: рендерит чек в PDF и показывает
@@ -179,27 +184,81 @@ class PrintService {
 
       final device = chosen.device;
       await device.connect(timeout: const Duration(seconds: 8));
-      final services = await device.discoverServices();
 
-      final service = services.firstWhere(
-        (s) => s.uuid == _printServiceUuid,
-        orElse: () => services.first,
-      );
-      final char = service.characteristics.firstWhere(
-        (c) => c.uuid == _printCharUuid,
-        orElse: () => service.characteristics.first,
-      );
+      BluetoothCharacteristic? printChar;
+      try {
+        final services = await device.discoverServices();
 
-      final data = buildEscPos(r);
-      const chunkSize = 20;
-      for (var i = 0; i < data.length; i += chunkSize) {
-        final chunk = data.sublist(i, i + chunkSize > data.length ? data.length : i + chunkSize);
-        await char.write(chunk, withoutResponse: char.properties.writeWithoutResponse);
-        await Future.delayed(const Duration(milliseconds: 20));
+        // Ищем характеристику для записи: сначала по известным UUID сервисов,
+        // затем — по любой характеристике с поддержкой записи (write).
+        for (final serviceUuid in _printServiceUuids) {
+          for (final service in services) {
+            if (service.uuid == serviceUuid) {
+              for (final char in service.characteristics) {
+                if (char.properties.write || char.properties.writeWithoutResponse) {
+                  printChar = char;
+                  break;
+                }
+              }
+            }
+            if (printChar != null) break;
+          }
+          if (printChar != null) break;
+        }
+
+        // Фолбэк: ищем любую характеристику с write-доступом
+        if (printChar == null) {
+          for (final service in services) {
+            for (final char in service.characteristics) {
+              if (char.properties.write || char.properties.writeWithoutResponse) {
+                printChar = char;
+                break;
+              }
+            }
+            if (printChar != null) break;
+          }
+        }
+
+        if (printChar == null) {
+          if (context.mounted) _toast(context, 'Принтер не поддерживает запись данных. Попробуйте другой принтер.');
+          await device.disconnect();
+          return;
+        }
+
+        if (context.mounted) _toast(context, 'Печать на «${chosen.device.platformName}»…');
+
+        final data = buildEscPos(r);
+        // BLE-устройства: chunk ≤ MTU-3 (обычно ~20 байт).
+        // Classic SPP: можно отправлять булками по 512 байт.
+        // Определяем MTU, если доступен, иначе используем 20.
+        int chunkSize = 20;
+        try {
+          final mtu = await device.mtu.first;
+          if (mtu > 23) chunkSize = mtu - 3; // BLE MTU минус ATT overhead
+        } catch (_) {
+          // MTU не доступен (Classic BT или старая версия) — используем 512
+          chunkSize = 512;
+        }
+
+        for (var i = 0; i < data.length; i += chunkSize) {
+          final end = i + chunkSize > data.length ? data.length : i + chunkSize;
+          final chunk = data.sublist(i, end);
+          await printChar.write(chunk, withoutResponse: printChar.properties.writeWithoutResponse);
+          // Небольшая задержка для надёжности — принтер должен успеть обработать
+          if (chunkSize <= 20) {
+            await Future.delayed(const Duration(milliseconds: 20));
+          } else {
+            await Future.delayed(const Duration(milliseconds: 10));
+          }
+        }
+
+        if (context.mounted) _toast(context, 'Чек отправлен на принтер ✓');
+      } finally {
+        // Всегда отключаемся, даже при ошибке записи
+        try {
+          await device.disconnect();
+        } catch (_) {} // disconnect может упасть, если уже отключились
       }
-
-      if (context.mounted) _toast(context, 'Чек отправлен на принтер');
-      await device.disconnect();
     } catch (e) {
       if (context.mounted) _toast(context, 'Ошибка печати: $e');
     }
