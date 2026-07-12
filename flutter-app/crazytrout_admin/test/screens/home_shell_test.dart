@@ -61,16 +61,15 @@ void main() {
       expect(find.text('Выставление чека'), findsOneWidget);
     });
 
-    testWidgets('NavigationBar высотой 64px', (WidgetTester tester) async {
+    testWidgets('NavigationBar содержит текст под иконками', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomeShell()));
       await tester.pump();
-      final navBar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-      // NavigationBar обёрнут в SizedBox(height: 64)
-      final sizedBox = tester.widget<SizedBox>(find.ancestor(
-        of: find.byType(NavigationBar),
-        matching: find.byType(SizedBox),
-      ).first);
-      expect(sizedBox.height, 64);
+      // Текст вкладок виден (не скрыт)
+      expect(find.text('Карта'), findsOneWidget);
+      expect(find.text('Чек'), findsWidgets); // и в NavigationBar, и в заголовке
+      expect(find.text('Чеки'), findsOneWidget);
+      expect(find.text('P&L'), findsOneWidget);
+      expect(find.text('Профиль'), findsOneWidget);
     });
   });
 }

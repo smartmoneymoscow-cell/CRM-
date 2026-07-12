@@ -27,14 +27,20 @@ class _HomeShellState extends State<HomeShell> {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF6EC),
       body: SafeArea(child: _screens[_index]),
-      bottomNavigationBar: SizedBox(
-        height: 64,
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          height: 72,
+          // Убираем лишние отступы над иконкой и под текстом
+          iconTheme: WidgetStateProperty.all(const IconThemeData(size: 22)),
+          labelTextStyle: WidgetStateProperty.all(const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+          // Уменьшаем отступ между иконкой и текстом
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        ),
         child: NavigationBar(
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           backgroundColor: Colors.white,
           indicatorColor: const Color(0xFFF6E3C4),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
           destinations: const [
             NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Карта'),
             NavigationDestination(icon: Icon(Icons.receipt_outlined), label: 'Чек'),
