@@ -7,13 +7,16 @@ void main() {
     testWidgets('отображает 5 вкладок', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomeShell()));
       await tester.pump();
-      expect(find.byType(NavigationDestination), findsNWidgets(5));
+      expect(find.text('Карта'), findsOneWidget);
+      expect(find.text('Чек'), findsWidgets); // и в меню, и в заголовке
+      expect(find.text('Чеки'), findsOneWidget);
+      expect(find.text('P&L'), findsOneWidget);
+      expect(find.text('Профиль'), findsOneWidget);
     });
 
     testWidgets('по умолчанию выбрана вкладка "Чек" (индекс 1)', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomeShell()));
       await tester.pump();
-      // Чек — активная вкладка, ReceiptScreen показывается
       expect(find.text('Выставление чека'), findsOneWidget);
     });
 
@@ -52,24 +55,28 @@ void main() {
     testWidgets('возврат на "Чек" показывает форму', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomeShell()));
       await tester.pump();
-      // Уходим на другую вкладку
       await tester.tap(find.text('Карта'));
       await tester.pumpAndSettle();
-      // Возвращаемся
       await tester.tap(find.text('Чек'));
       await tester.pumpAndSettle();
       expect(find.text('Выставление чека'), findsOneWidget);
     });
 
-    testWidgets('NavigationBar содержит текст под иконками', (WidgetTester tester) async {
+    testWidgets('иконки отображаются', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomeShell()));
       await tester.pump();
-      // Текст вкладок виден (не скрыт)
-      expect(find.text('Карта'), findsOneWidget);
-      expect(find.text('Чек'), findsWidgets); // и в NavigationBar, и в заголовке
-      expect(find.text('Чеки'), findsOneWidget);
-      expect(find.text('P&L'), findsOneWidget);
-      expect(find.text('Профиль'), findsOneWidget);
+      expect(find.byIcon(Icons.map_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.receipt_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.receipt_long_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.show_chart), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+    });
+
+    testWidgets('высота нижнего меню 52px + safe area', (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: HomeShell()));
+      await tester.pump();
+      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox).last);
+      expect(sizedBox.height, 52);
     });
   });
 }

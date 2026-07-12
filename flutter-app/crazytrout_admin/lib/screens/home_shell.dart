@@ -11,7 +11,6 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  // "Чек" — активная вкладка по умолчанию, как в веб-версии.
   int _index = 1;
 
   static const _screens = [
@@ -22,34 +21,68 @@ class _HomeShellState extends State<HomeShell> {
     StubScreen(title: 'Профиль', icon: Icons.person_outline, note: 'Профиль администратора — раздел в разработке.'),
   ];
 
+  static const _items = [
+    _BottomItem(Icons.map_outlined, 'Карта'),
+    _BottomItem(Icons.receipt_outlined, 'Чек'),
+    _BottomItem(Icons.receipt_long_outlined, 'Чеки'),
+    _BottomItem(Icons.show_chart, 'P&L'),
+    _BottomItem(Icons.person_outline, 'Профиль'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF6EC),
       body: SafeArea(child: _screens[_index]),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          height: 72,
-          // Убираем лишние отступы над иконкой и под текстом
-          iconTheme: WidgetStateProperty.all(const IconThemeData(size: 22)),
-          labelTextStyle: WidgetStateProperty.all(const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
-          // Уменьшаем отступ между иконкой и текстом
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.shade200, width: 0.5)),
         ),
-        child: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFF6E3C4),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.map_outlined), label: 'Карта'),
-            NavigationDestination(icon: Icon(Icons.receipt_outlined), label: 'Чек'),
-            NavigationDestination(icon: Icon(Icons.receipt_long_outlined), label: 'Чеки'),
-            NavigationDestination(icon: Icon(Icons.show_chart), label: 'P&L'),
-            NavigationDestination(icon: Icon(Icons.person_outline), label: 'Профиль'),
-          ],
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 52,
+            child: Row(
+              children: List.generate(_items.length, (i) {
+                final item = _items[i];
+                final selected = _index == i;
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _index = i),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          item.icon,
+                          size: 22,
+                          color: selected ? const Color(0xFFE8912B) : Colors.grey.shade500,
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                            color: selected ? const Color(0xFFE8912B) : Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+class _BottomItem {
+  final IconData icon;
+  final String label;
+  const _BottomItem(this.icon, this.label);
 }

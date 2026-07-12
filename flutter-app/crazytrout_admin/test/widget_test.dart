@@ -66,15 +66,15 @@ void main() {
       expect(find.text('Создать и распечатать чек'), findsOneWidget);
     });
 
-    testWidgets('нижнее меню высотой 64px', (WidgetTester tester) async {
+    testWidgets('нижнее меню содержит 5 иконок', (WidgetTester tester) async {
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
-      final sizedBox = tester.widget<SizedBox>(find.ancestor(
-        of: find.byType(NavigationBar),
-        matching: find.byType(SizedBox),
-      ).first);
-      expect(sizedBox.height, 64);
+      expect(find.byIcon(Icons.map_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.receipt_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.receipt_long_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.show_chart), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
     });
 
     testWidgets('поле кг пустое при добавлении рыбы', (WidgetTester tester) async {
