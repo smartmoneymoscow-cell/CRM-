@@ -41,6 +41,3 @@
 -keep class com.baseflow.permissionhandler.** { *; }
 -dontwarn com.baseflow.permissionhandler.**
 
-# --- sentry ---
--keep class io.sentry.** { *; }
--dontwarn io.sentry.**

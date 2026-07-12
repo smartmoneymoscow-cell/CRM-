@@ -1,35 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'screens/home_shell.dart';
 import 'screens/splash_screen.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
   // Фиксируем вертикальную ориентацию (портрет) — чек-касса не нужна в альбомной.
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = 'https://497130229ebbe402ac2995fa888709cd@o4511723482382336.ingest.us.sentry.io/4511723747278848';
-      // Среда (development / production)
-      options.environment = const String.fromEnvironment(
-        'SENTRY_ENV',
-        defaultValue: 'production',
-      );
-      // Процент транзакций для performance monitoring (1.0 = 100%)
-      options.tracesSampleRate = 1.0;
-      // Не отправлять в debug-режиме
-      options.beforeSend = (event, hint) {
-        // Если DSN пустой — не отправляем
-        if (event.sdk?.name == null) return null;
-        return event;
-      };
-    },
-    appRunner: () => runApp(const CrazyTroutAdminApp()),
-  );
+  runApp(const CrazyTroutAdminApp());
 }
 
 class CrazyTroutAdminApp extends StatelessWidget {

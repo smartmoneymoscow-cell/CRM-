@@ -107,8 +107,8 @@ jobs:
           kts = pathlib.Path('android/app/build.gradle.kts')
           path = kts if kts.exists() else groovy
           text = path.read_text()
-          if 'minifyEnabled' in text or 'isMinifyEnabled' in text:
-              print(f'{path}: minify уже настроен явно, не трогаю')
+          if 'minifyEnabled true' in text or 'isMinifyEnabled = true' in text:
+              print(f'{path}: minify уже включён, не трогаю')
           elif path == kts:
               new_release = (
                   'release {\n'
