@@ -32,14 +32,15 @@ jobs:
       - name: Красивое название приложения
         run: sed -i 's/android:label="crazytrout_admin"/android:label="Crazy Trout"/g' android/app/src/main/AndroidManifest.xml
 
-      - name: Разрешения Bluetooth (нужны flutter_blue_plus на Android 12+)
+      - name: Разрешения Bluetooth + Камера
         run: |
           sed -i '/<manifest /a \
               <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />\
               <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />\
               <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />\
               <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\
-              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />' \
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />\
+              <uses-permission android:name="android.permission.CAMERA" />' \
             android/app/src/main/AndroidManifest.xml
 
       - name: Установка зависимостей

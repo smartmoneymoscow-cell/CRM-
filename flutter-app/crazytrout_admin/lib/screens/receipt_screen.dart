@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../data/demo_data.dart';
 import '../models/catch_row.dart';
@@ -8,6 +9,7 @@ import '../models/tariff.dart';
 import '../widgets/catch_row_tile.dart';
 import '../widgets/receipt_result_sheet.dart';
 import '../widgets/segmented_control.dart';
+import 'qr_scan_screen.dart';
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -44,6 +46,61 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           .where((c) => c.name.toLowerCase().contains(query) || c.phone.contains(query))
           .toList();
     });
+  }
+
+  Future<void> _scanQr() async {
+    try {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Нет разрешения на камеру — разрешите доступ в настройках')),
+          );
+        }
+        return;
+      }
+
+      if (!mounted) return;
+
+      final code = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => const QrScanScreen()),
+      );
+
+      if (code == null || code.isEmpty || !mounted) return;
+
+      // Ищем клиента по id из QR (формат: "client:<id>" или просто id)
+      final idStr = code.contains(':') ? code.split(':').last : code;
+      final clientId = int.tryParse(idStr);
+
+      if (clientId != null) {
+        final match = kDemoClients.where((c) => c.id == clientId);
+        if (match.isNotEmpty) {
+          _selectClient(match.first);
+          return;
+        }
+      }
+
+      // Фолбэк: ищем как строку в имени/телефоне
+      final lower = code.toLowerCase();
+      final match = kDemoClients.where(
+        (c) => c.name.toLowerCase().contains(lower) || c.phone.contains(code),
+      );
+      if (match.isNotEmpty) {
+        _selectClient(match.first);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Клиент с QR «$code» не найден')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка сканирования: $e')),
+        );
+      }
+    }
   }
 
   void _selectClient(Client c) {
@@ -151,6 +208,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 decoration: InputDecoration(
                   hintText: 'Поиск по имени или телефону…',
                   prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF2A6A7E)),
+                    tooltip: 'Сканировать QR клиента',
+                    onPressed: _scanQr,
+                  ),
                   filled: true,
                   fillColor: const Color(0xFFF3EEE4),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
