@@ -51,7 +51,11 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
 
   @override
   void dispose() {
-    _close();
+    // Не вызываем _close() и не удаляем _entry здесь.
+    // При dispose() элемент уже помечается как defunct, и попытка
+    // удалить OverlayEntry приводит к assertion.
+    // OverlayEntry будет удалён автоматически при деактивации элемента.
+    _entry = null;
     super.dispose();
   }
 
@@ -98,7 +102,8 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                     padding: EdgeInsets.zero,
                     children: widget.items.map((item) {
                       final selected = item.value == widget.value;
-                      return InkWell(
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
                         onTap: () {
                           widget.onChanged(item.value);
                           _close();
@@ -130,9 +135,12 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
   }
 
   void _close() {
-    _entry?.remove();
+    final entry = _entry;
     _entry = null;
     if (mounted) setState(() => _open = false);
+    // Удаляем запись только если элемент ещё жив — иначе remove()
+    // деактивирует дочерние элементы, которые уже в defunct-дереве.
+    if (mounted) entry?.remove();
   }
 
   @override
