@@ -87,6 +87,15 @@ flutter build ios --release --no-codesign  # iOS
 2. Actions → последний запуск → Artifacts → скачать `app-release-apk` и/или `app-release-ipa`
 3. IPA собирается без кодирования (no-codesign) — для публикации в App Store нужна подпись вручную
 
+### iOS-специфика
+
+- Минимальная версия: iOS 13.0 (пересечение `mobile_scanner` ≥12.0 и `flutter_blue_plus` ≥13.0)
+- `Info.plist` автоматически получает описания прав:
+  - `NSCameraUsageDescription` — камера для QR-сканера
+  - `NSBluetoothAlwaysUsageDescription` — Bluetooth для печати чеков
+  - `NSBluetoothPeripheralUsageDescription` — Bluetooth-периферия
+- Для установки на реальное устройство нужен provisioning profile (Xcode / Apple Developer)
+
 ## Иконка
 
 Логотип Crazy Trout Arena на кремовом фоне `#FBF6EC`.

@@ -89,6 +89,20 @@ jobs:
       - name: Установка зависимостей
         run: flutter pub get
 
+      # iOS требует описание причин использования камеры/Bluetooth в Info.plist.
+      # Без них приложение крашится при первом обращении к этим ресурсам.
+      - name: Разрешения iOS (Info.plist)
+        run: |
+          PLIST=ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Для сканирования QR-кодов клиентов'" $PLIST || true
+          /usr/libexec/PlistBuddy -c "Add :NSBluetoothAlwaysUsageDescription string 'Для печати чеков через Bluetooth-принтер'" $PLIST || true
+          /usr/libexec/PlistBuddy -c "Add :NSBluetoothPeripheralUsageDescription string 'Для печати чеков через Bluetooth-принтер'" $PLIST || true
+
+      # mobile_scanner требует iOS 12.0+, flutter_blue_plus — iOS 13.0+.
+      # Ставим 13.0 как пересечение обоих.
+      - name: Минимальная версия iOS 13.0
+        run: sed -i '' 's/platform :ios, .*/platform :ios, '"'"'13.0'"'"'/g' ios/Podfile
+
       - name: Генерация иконки приложения из логотипа
         run: flutter pub run flutter_launcher_icons
 
