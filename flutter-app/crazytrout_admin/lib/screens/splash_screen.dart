@@ -9,23 +9,23 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF6EC),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 48),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Крупный логотип — 60% ширины экрана, но не более 320px
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 320, maxHeight: 320),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Крупный логотип на весь экран (с прозрачным фоном — без белой
+            // подложки вокруг), а не маленький бокс 320×320.
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Image.asset(
                   'assets/icon/splash_logo.png',
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 32),
-              // Индикатор загрузки
-              const SizedBox(
+            ),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 40),
+              child: SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
@@ -33,8 +33,8 @@ class SplashScreen extends StatelessWidget {
                   color: Color(0xFFE8912B),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
