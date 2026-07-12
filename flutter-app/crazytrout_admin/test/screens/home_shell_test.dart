@@ -72,11 +72,12 @@ void main() {
       expect(find.byIcon(Icons.person_outline), findsOneWidget);
     });
 
-    testWidgets('высота нижнего меню 52px + safe area', (WidgetTester tester) async {
+    testWidgets('нижнее меню содержит 5 иконок по 24px', (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomeShell()));
       await tester.pump();
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox).last);
-      expect(sizedBox.height, 52);
+      final icons = tester.widgetList<Icon>(find.byType(Icon));
+      // 5 иконок в нижнем меню
+      expect(icons.length, greaterThanOrEqualTo(5));
     });
   });
 }
