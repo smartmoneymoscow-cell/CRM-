@@ -176,7 +176,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
       children: [
-        const Text('Выставление чека', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const Text('Выставление чека', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         const SizedBox(height: 16),
         _card(
           title: 'Клиент',
@@ -247,8 +247,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         .map((t) => AppDropdownItem(value: t, child: Text(t.label)))
                         .toList(),
                     onChanged: (t) => setState(() => _tariff = t),
-                    fillColor: const Color(0xFFEDE8DC),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                    fillColor: const Color(0xFFF3EEE4),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                   ),
                 ),
               ),
@@ -261,7 +261,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     initialValue: _tariff.price.toString(),
                     readOnly: true,
                     decoration: _fieldDecoration().copyWith(
-                      fillColor: const Color(0xFFEDE8DC),
+                      fillColor: const Color(0xFFF3EEE4),
                     ),
                   ),
                 ),
