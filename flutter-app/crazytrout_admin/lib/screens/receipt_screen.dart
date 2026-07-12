@@ -9,7 +9,7 @@ import '../models/tariff.dart';
 import '../widgets/catch_row_tile.dart';
 import '../widgets/receipt_result_sheet.dart';
 import '../widgets/segmented_control.dart';
-import 'qr_scan_screen.dart';
+import 'qr_scan_route.dart' deferred as qr_route;
 import '../utils/qr_lookup.dart';
 
 class ReceiptScreen extends StatefulWidget {
@@ -63,8 +63,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
       if (!mounted) return;
 
+      await qr_route.loadLibrary();
       final code = await Navigator.of(context).push<String>(
-        MaterialPageRoute(builder: (_) => const QrScanScreen()),
+        qr_route.createQrScanRoute(),
       );
 
       if (code == null || code.isEmpty || !mounted) return;
