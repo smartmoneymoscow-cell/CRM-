@@ -26,8 +26,8 @@ jobs:
           flutter-version: '3.44.0'
           channel: 'stable'
 
-      - name: Генерация Android-обёртки проекта
-        run: flutter create . --platforms=android --project-name=crazytrout_admin --org=com.crazytroutarena
+      - name: Генерация обёрток проекта (Android + iOS)
+        run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
 
       - name: Красивое название приложения
         run: sed -i 's/android:label="crazytrout_admin"/android:label="Crazy Trout"/g' android/app/src/main/AndroidManifest.xml
@@ -81,8 +81,8 @@ jobs:
           flutter-version: '3.44.0'
           channel: 'stable'
 
-      - name: Генерация iOS-обёртки проекта
-        run: flutter create . --platforms=ios --project-name=crazytrout_admin --org=com.crazytroutarena
+      - name: Генерация обёрток проекта (Android + iOS)
+        run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
 
       - name: Установка зависимостей
         run: flutter pub get
