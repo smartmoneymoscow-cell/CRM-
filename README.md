@@ -1,3 +1,290 @@
-# Crazy Trout Arena — Admin (Flutter)
+# 🐟 Crazy Trout Arena — CRM
 
-Нативная админка на Flutter. См. `flutter-app/crazytrout_admin/`
+> Нативная кроссплатформенная CRM-система для чек-кассы пруда платной рыбалки.
+
+[![Build APK & IPA](https://github.com/smartmoneymoscow-cell/CRM-/actions/workflows/build-apk.yml/badge.svg)](https://github.com/smartmoneymoscow-cell/CRM-/actions/workflows/build-apk.yml)
+[![Latest Release](https://img.shields.io/github/v/release/smartmoneymoscow-cell/CRM-)](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest)
+[![License](https://img.shields.io/badge/license-proprietary-red)](#)
+
+---
+
+## 📱 Скачать
+
+| Платформа | Файл | Размер |
+|-----------|------|--------|
+| **Android** | [app-release.apk](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest/download/app-release.apk) | ~25 MB |
+| **iOS** | [app-release.ipa](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest/download/app-release.ipa) | ~16 MB |
+
+> ⚠️ iOS-сборка без кодирования (no-codesign). Для установки на устройство нужен provisioning profile через Xcode / Apple Developer.
+
+---
+
+## ✅ Что умеет
+
+### Выставление чеков
+- 🔍 **Поиск клиента** — по имени или телефону, с аватарами и мгновенной фильтрацией
+- 📷 **QR-сканер** — идентификация клиента через камеру (mobile_scanner + ML Kit)
+- 👤 **Гостевой режим** — быстрое оформление без анкеты, иконка инкогнито
+- 🏷️ **Три тарифа** — Стандарт 750₽, Гостевой 500₽, Пенсионер 0₽
+- 🐠 **Улов** — 5 пород (Осётр, Карп, Амур, Линь, Форель) с фиксированными ценами за кг, раздельные поля кг/граммы, авторасчёт суммы
+- 💰 **Два типа чека** — фискальный (с ФН) и без ФН
+- 💳 **Оплата** — наличные или карта
+
+### Печать
+- 🖨️ **Bluetooth-принтер** — ESC/POS протокол, кириллица CP866, команда отреза бумаги
+- 📄 **Системная печать** — AirPrint (iOS) / PDF через системный диалог
+
+### Дизайн
+- 🎨 Единый визуальный стиль: бежевая палитра (#FBF6EC, #F3EEE4), оранжевые акценты (#E8912B)
+- 📐 Единая высота и цвет всех input-полей (vertical: 12, fillColor: #F3EEE4)
+- 🔤 Шрифт PT Sans (Regular, Bold)
+- 🖼️ Аватары клиентов — фото или инициалы для фолбэка
+
+---
+
+## 🏗️ Архитектура
+
+```
+flutter-app/crazytrout_admin/
+├── lib/
+│   ├── main.dart                        — точка входа
+│   ├── models/
+│   │   ├── client.dart                  — модель клиента (id, имя, телефон, тариф, аватар)
+│   │   ├── tariff.dart                  — модель тарифа (id, label, цена)
+│   │   ├── catch_row.dart               — строка улова (порода, кг, г, цена/кг, сумма)
+│   │   └── receipt.dart                 — чек (клиент, тариф, улов, оплата, фискальность)
+│   ├── data/
+│   │   └── demo_data.dart               — тарифы, породы с ценами, демо-клиенты
+│   ├── services/
+│   │   ├── escpos_builder.dart          — сборка ESC/POS байт для Bluetooth-принтера
+│   │   ├── print_service.dart           — печать: Bluetooth и AirPrint/PDF
+│   │   └── print_route.dart             — навигация к печати
+│   ├── screens/
+│   │   ├── home_shell.dart              — нижняя навигация (5 вкладок)
+│   │   ├── receipt_screen.dart          — экран выставления чека
+│   │   ├── qr_scan_screen.dart          — полноэкранный QR-сканер
+│   │   ├── qr_scan_route.dart           — навигация к сканеру
+│   │   ├── splash_screen.dart           — экран загрузки
+│   │   └── stub_screen.dart             — заглушка для нереализованных разделов
+│   ├── widgets/
+│   │   ├── app_dropdown_field.dart       — кастомный дропдаун (ширина меню = ширина поля)
+│   │   ├── catch_row_tile.dart           — виджет строки улова
+│   │   ├── segmented_control.dart        — переключатель (оплата, тип чека)
+│   │   └── receipt_result_sheet.dart     — шторка с готовым чеком и печатью
+│   └── utils/
+│       ├── format.dart                  — форматирование валюты
+│       ├── qr_lookup.dart               — поиск клиента по QR-коду
+│       └── permission_helper.dart       — запрос разрешений
+├── assets/
+│   ├── icon/                            — логотип (icon.png, icon_foreground.png, splash_logo.png)
+│   ├── fonts/                           — PT Sans (Regular, Bold)
+│   ├── avatars/                         — фото-аватары клиентов + иконка инкогнито
+│   └── fish/                            — изображения пород рыб (для дропдауна)
+├── test/                                — unit и widget тесты
+├── integration_test/                    — интеграционные тесты
+└── pubspec.yaml                         — зависимости и конфигурация
+```
+
+---
+
+## 📦 Зависимости
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| `flutter_blue_plus` | ^1.32.12 | Bluetooth-принтер (ESC/POS) |
+| `printing` | ^5.12.0 | Системный диалог печати (AirPrint/PDF) |
+| `pdf` | ^3.10.8 | Генерация PDF для печати |
+| `mobile_scanner` | ^5.2.3 | QR-сканер через камеру |
+| `permission_handler` | ^11.3.0 | Запрос разрешений (камера, Bluetooth) |
+| `intl` | ^0.19.0 | Локализация и форматирование |
+| `cupertino_icons` | ^1.0.6 | Иконки в стиле iOS |
+
+**Dev-зависимости:**
+| Пакет | Назначение |
+|-------|------------|
+| `flutter_test` | Unit и widget тесты |
+| `flutter_lints` | Линтер |
+| `flutter_launcher_icons` | Генерация иконок приложения |
+
+---
+
+## 🧪 Тесты
+
+```bash
+flutter test
+```
+
+**Покрытие тестов:**
+- ✅ Генерация чеков (фискальный, без ФН, гость, пустой улов, пенсионер)
+- ✅ Расчёт веса и суммы (кг + граммы → weight → sum)
+- ✅ ESC/POS байты (Bluetooth) — структура, заголовок, содержимое, кириллица CP866
+- ✅ PDF генерация (AirPrint) — все типы чекей
+- ✅ Корректность данных перед отправкой на принтер
+- ✅ Консистентность данных (тарифы, породы, клиенты)
+- ✅ Smoke-тесты приложения (запуск, навигация, элементы UI)
+- ✅ QR-сканер (поиск клиента по коду)
+- ✅ Логика экрана чека
+- ✅ Виджеты (SegmentedControl, CatchRowTile)
+
+---
+
+## 🚀 Сборка
+
+### Android APK
+
+```bash
+cd flutter-app/crazytrout_admin
+flutter pub get
+flutter test
+flutter build apk --release --split-per-abi
+# APK: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+```
+
+### iOS IPA
+
+```bash
+cd flutter-app/crazytrout_admin
+flutter pub get
+flutter test
+flutter build ios --release --no-codesign
+# Создание IPA:
+mkdir -p Payload
+cp -r build/ios/iphoneos/Runner.app Payload/
+zip -r app-release.ipa Payload
+```
+
+### Иконка приложения
+
+```bash
+flutter pub run flutter_launcher_icons
+```
+
+Логотип Crazy Trout Arena на кремовом фоне `#FBF6EC`. Генерируется автоматически из `assets/icon/icon.png`.
+
+---
+
+## ⚙️ CI/CD
+
+GitHub Actions автоматически собирает приложение при каждом пуше в `main`.
+
+### Build APK & IPA
+
+| Триггер | Действие |
+|---------|----------|
+| `push` в `main` | Сборка Android APK + iOS IPA, тесты |
+| `push` тега `v*` | Сборка + создание GitHub Release |
+
+### Что делает workflow:
+
+1. **Android:**
+   - Генерация обёрток проекта
+   - Установка Bluetooth/Camera разрешений в AndroidManifest.xml
+   - ProGuard keep-правила для mobile_scanner (CameraX, ML Kit)
+   - Явное включение R8 в release
+   - Установка зависимостей, генерация иконки
+   - Запуск тестов
+   - Сборка APK (split-per-abi, arm64)
+
+2. **iOS:**
+   - Генерация обёрток проекта
+   - Установка зависимостей
+   - Разрешения в Info.plist (камера, Bluetooth)
+   - Минимальная версия iOS 13.0
+   - Генерация иконки
+   - Запуск тестов
+   - Сборка iOS (no-codesign)
+   - Создание IPA
+
+3. **Release** (при теге `v*`):
+   - Скачивание APK и IPA
+   - Создание GitHub Release с артефактами
+
+---
+
+## 🎯 Статус разделов
+
+| Раздел | Статус |
+|--------|--------|
+| Чек (выставление) | ✅ Полностью функционален |
+| QR-сканер | ✅ Функционален |
+| Печать Bluetooth (ESC/POS) | ✅ Функциональна (кириллица CP866 + отрез) |
+| Печать AirPrint (PDF) | ✅ Функциональна |
+| Аватары клиентов | ✅ Фото + инициалы для фолбэка |
+| Гостевой режим | ✅ С иконкой инкогнито |
+| Карта | 🔲 Заглушка |
+| Чеки (история) | 🔲 Заглушка |
+| P&L (финансы) | 🔲 Заглушка |
+| Профиль | 🔲 Заглушка |
+
+---
+
+## 📊 Релизы
+
+| Версия | Дата | Изменения |
+|--------|------|-----------|
+| **v1.3.4** | 12.07.2026 | Гостевой режим с инкогнито, аватарки всех клиентов, QR-сканер ProGuard-фикс, единый стиль полей |
+| v1.3.3 | 12.07.2026 | Мок-клиент для QR-тестирования |
+| v1.3.2 | 12.07.2026 | Кастомный дропдаун, карточка выбранного клиента |
+| v1.3.1 | 12.07.2026 | Возврат на mobile_scanner, фикс null pointer |
+| v1.3.0 | 12.07.2026 | split-per-abi (33.5MB → ~13MB) |
+| v1.2.0 | 12.07.2026 | QR-сканер клиента |
+| v1.1.0 | 12.07.2026 | SplashScreen, фикс widget-тестов |
+| v1.0.3 | 12.07.2026 | Исправления сборки |
+| v1.0.2 | 12.07.2026 | Исправления сборки |
+| v1.0.1 | 12.07.2026 | Исправления сборки |
+| v1.0.0 | 12.07.2026 | Первая версия — чек-касса |
+
+---
+
+## 🛠️ Технические детали
+
+### Минимальные требования
+- **Android:** minSdkVersion 21 (Android 5.0+)
+- **iOS:** 13.0+ (пересечение mobile_scanner ≥12.0 и flutter_blue_plus ≥13.0)
+- **Flutter:** 3.44.0+
+- **Dart SDK:** ≥3.3.0 <4.0.0
+
+### iOS Info.plist разрешения
+- `NSCameraUsageDescription` — камера для QR-сканера
+- `NSBluetoothAlwaysUsageDescription` — Bluetooth для печати чеков
+- `NSBluetoothPeripheralUsageDescription` — Bluetooth-периферия
+
+### Android разрешения
+- `CAMERA` — QR-сканер
+- `BLUETOOTH_SCAN` / `BLUETOOTH_CONNECT` — Bluetooth-принтер (Android 12+)
+- `BLUETOOTH` / `BLUETOOTH_ADMIN` — Bluetooth (Android ≤11)
+- `ACCESS_FINE_LOCATION` — Bluetooth-сканирование (Android ≤11)
+
+### ProGuard/R8
+Для корректной работы QR-сканера в релизной сборке добавлены keep-правила:
+```proguard
+-keep class dev.steenbakker.mobile_scanner.** { *; }
+-keep class com.google.mlkit.vision.barcode.** { *; }
+-keep class com.google.mlkit.vision.codescanner.** { *; }
+-keep class com.google.mlkit.vision.common.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_barcode.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
+-keep class androidx.camera.** { *; }
+```
+
+---
+
+## 📁 Веб-прототип
+
+В корне репозитория также находится HTML/CSS/JS прототип CRM (`index.html`) — витрина для демонстрации UI перед нативной разработкой. Переключение «Десктоп / Мобайл», навигация по экранам.
+
+---
+
+## 🤝 Контрибьюция
+
+1. Fork репозитория
+2. Создайте ветку (`git checkout -b feature/my-feature`)
+3. Закоммитьте изменения (`git commit -m 'feat: мой фича'`)
+4. Запушьте (`git push origin feature/my-feature`)
+5. Создайте Pull Request
+
+---
+
+## 📄 Лицензия
+
+Проприетарная. Все права защищены.
