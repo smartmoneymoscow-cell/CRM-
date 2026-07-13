@@ -108,8 +108,8 @@ body {
   align-items: center;
 }
 .profile-avatar {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -307,6 +307,16 @@ body {
         <svg width="18" height="20" viewBox="0 0 16 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 0h2.4L4.6 4.2 2.2 3.6 4 0zM11.4 0H9L10.8 4.2l2.4-.6L11.4 0z" fill="#C9302C"/><path d="M4.6 4.2 2.2 3.6 5 6.8l1.6-2.6H4.6zM10.8 4.2 13.2 3.6 10.4 6.8 8.8 4.2h2z" fill="#8A1E1B"/><circle cx="8" cy="11.5" r="5.2" fill="url(#silverG)" stroke="#8C8576" stroke-width="0.6"/><circle cx="8" cy="11.5" r="3.4" fill="none" stroke="#8C8576" stroke-width="0.4" opacity=".6"/><path d="M8 8.6l.7 1.9h1.9l-1.55 1.15.6 1.9L8 12.4l-1.65 1.15.6-1.9L5.4 10.5h1.9L8 8.6z" fill="#F3EEDF"/><defs><radialGradient id="silverG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#F7F4EA"/><stop offset="0.55" stop-color="#CFC6B0"/><stop offset="1" stop-color="#8C8576"/></radialGradient></defs></svg>
         Серебряный рыболов
       </div>
+      <!-- Bonus rating scale -->
+      <div style="margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:11px;color:#B7B2A2;">До Золотого рыболова</span>
+          <span style="font-size:11px;font-weight:700;color:var(--gold);">1840 / 2500</span>
+        </div>
+        <div style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
+          <div style="width:73.6%;height:100%;background:linear-gradient(90deg, var(--gold), var(--orange));border-radius:4px;"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -330,7 +340,6 @@ body {
 
     <!-- Statistics -->
     <div class="stat-list-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3.5v11L16 14"/></svg>
       Статистика
     </div>
     <div class="stat-list-row">
@@ -345,26 +354,8 @@ body {
     </div>
   </div>
 
-  <!-- Bottom nav -->
-  <div class="nav-bar">
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
-      Карта
-    </div>
-    <div class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
-      Бронирование
-    </div>
-    <div class="nav-item active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4.5-5.5 7-5.5s5.5 1.5 7 5.5"/></svg>
-      Профиль
-    </div>
-  </div>
-</div>
-
-
-<!-- QR Code Overlay -->
-<div id="qr-overlay" onclick="this.style.display='none'" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;z-index:100;flex-direction:column;align-items:center;justify-content:center;padding:40px 30px;">
+  <!-- QR Code Overlay -->
+<div id="qr-overlay" onclick="this.style.display='none'" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;z-index:100;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;border-radius:55px;overflow:hidden;">
   <div style="position:absolute;top:16px;left:16px;cursor:pointer;" onclick="event.stopPropagation();document.getElementById('qr-overlay').style.display='none'">
     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#14130F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
   </div>
@@ -386,6 +377,25 @@ body {
     <div style="font-size:12px;color:#8C8576;line-height:1.5;">Покажите этот код другому рыбаку,<br>чтобы он нашёл ваш профиль</div>
   </div>
 </div>
+
+
+    <!-- Bottom nav -->
+  <div class="nav-bar">
+    <div class="nav-item" style="justify-content:center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+      <span>Карта</span>
+    </div>
+    <div class="nav-item" style="justify-content:center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+      <span>Бронирование</span>
+    </div>
+    <div class="nav-item active" style="justify-content:center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4.5-5.5 7-5.5s5.5 1.5 7 5.5"/></svg>
+      <span>Профиль</span>
+    </div>
+  </div>
+</div>
+
 
 </body>
 </html>
