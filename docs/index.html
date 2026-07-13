@@ -24,15 +24,7 @@
 
   *{box-sizing:border-box; margin:0; padding:0;}
 
-  body{
-    background:#DDD8CC;
-    font-family:'Inter', sans-serif;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:48px;
-    padding:44px 0;
-  }
+  body { background: #DDD8CC !important; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
 
   .slide{
     width:794px;
@@ -904,6 +896,11 @@ h1{ font-family:'Inter Tight',sans-serif; font-weight:800; font-size:30px; line-
 .app-user{padding-right:10px;}
 .app-brand-dot{background-color:transparent !important;width:22px !important;height:22px !important;border-radius:4px !important;}
 .app-brand{gap:8px;}
+
+/* === FIX: light page background === */
+body {
+  background: #DDD8CC !important;
+}
 </style>
 <style>
 /* v3.6.4 fix — prevent pond JPEG natural size from overflowing slide */
@@ -1043,7 +1040,7 @@ h1{ font-family:'Inter Tight',sans-serif; font-weight:800; font-size:30px; line-
 
 
 body {
-  background: #1a1814;
+  background: #DDD8CC;
   display: flex;
   justify-content: center;
   align-items: center;
