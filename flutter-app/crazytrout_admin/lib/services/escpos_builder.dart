@@ -111,6 +111,8 @@ int? _unicodeToCp866(String ch) {
   if (code == 0x0451) return 0xF1;
   // Ё: U+0401 → 0xF0
   if (code == 0x0401) return 0xF0;
+  // № (U+2116) — не существует в CP866, заменяем на #
+  if (code == 0x2116) return 0x23; // '#'
   // Знак рубля ₽: U+20BD → используем «р» (0xE0) как замену
   if (code == 0x20BD) return 0xE0; // «р» в CP866
   // Дефис/минус: U+2013, U+2014, U+2212 → обычный дефис
