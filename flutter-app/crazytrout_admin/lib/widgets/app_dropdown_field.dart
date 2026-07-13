@@ -36,7 +36,7 @@ class AppDropdownField<T> extends StatefulWidget {
     this.fillColor = const Color(0xFFF3EEE4),
     this.borderRadius = 10,
     this.contentPadding = const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-    this.maxMenuHeight = 260,
+    this.maxMenuHeight = 320,
   });
 
   @override
