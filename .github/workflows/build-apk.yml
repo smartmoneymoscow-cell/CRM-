@@ -49,40 +49,12 @@ jobs:
               <uses-permission android:name="android.permission.CAMERA" />' \
             android/app/src/main/AndroidManifest.xml
 
-      - name: Подключить ProGuard-правила в build.gradle.kts
-        # flutter create генерирует build.gradle.kts с isMinifyEnabled=true,
-        # но НЕ подключает proguard-rules.pro (нет proguardFiles).
-        # Без этого R8 работает без keep-правил → вырезает ML Kit DI → краш.
+      - name: Отключить R8 (minify) в release сборке
+        # R8 без корректных ProGuard-правил вырезает ML Kit DI → краш при старте.
         run: |
-          python3 << 'PYEOF2'
-          import re, pathlib
-          kts = pathlib.Path('android/app/build.gradle.kts')
-          if not kts.exists():
-              print('build.gradle.kts не найден, пропускаю')
-              exit(0)
-          text = kts.read_text()
-          if 'proguardFiles' in text:
-              print('proguardFiles уже настроен')
-              exit(0)
-          # Добавить proguardFiles в release buildType
-          text2 = re.sub(
-              r'(isMinifyEnabled\s*=\s*true)',
-              r'\1\n            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")',
-              text,
-              count=1
-          )
-          if text2 == text:
-              # Если isMinifyEnabled не найден, добавить весь блок
-              text2 = re.sub(
-                  r'(release\s*\{[^}]*)(signingConfig[^}]*\})',
-                  r'\1\2\n            isMinifyEnabled = true\n            isShrinkResources = true\n            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")',
-                  text,
-                  count=1,
-                  flags=re.S
-              )
-          kts.write_text(text2)
-          print('proguardFiles добавлен в build.gradle.kts')
-          PYEOF2
+          sed -i 's/isMinifyEnabled = true/isMinifyEnabled = false/g' android/app/build.gradle.kts
+          echo "--- release block после патча ---"
+          grep -A10 "release" android/app/build.gradle.kts | head -15
 
       - name: Установка зависимостей
         run: flutter pub get
