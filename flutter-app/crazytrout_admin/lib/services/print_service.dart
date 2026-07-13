@@ -112,26 +112,10 @@ class PrintService {
         return;
       }
 
-      // Проверяем текущее состояние адаптера — напрямую, а не через стрим.
-      // firstWhere() на стриме ненадёжен: после выдачи разрешений стрим может
-      // не успеть эмитить `on` за 5 секунд → timeout → тихий выход.
-      var adapterState = FlutterBluePlus.adapterStateNow;
-
-      // Если состояние unknown (ещё не инициализировано) — подписываемся на стрим
-      // и ждём до 5 секунд.
-      if (adapterState != BluetoothAdapterState.on) {
-        adapterState = await FlutterBluePlus.adapterState
-            .firstWhere((s) => s == BluetoothAdapterState.on)
-            .timeout(
-              const Duration(seconds: 5),
-              onTimeout: () => BluetoothAdapterState.unknown,
-            );
-      }
-
-      if (adapterState != BluetoothAdapterState.on) {
-        if (context.mounted) _toast(context, 'Включите Bluetooth на устройстве');
-        return;
-      }
+      // Не проверяем состояние адаптера отдельно — startScan() сам вернёт
+      // ошибку если Bluetooth выключен. Проверка adapterState/adapterStateNow
+      // ненадёжна: после выдачи разрешений адаптер может быть ещё не инициализирован
+      // (adapterStateNow → unknown) и timeout 5 сек приводит к тихому выходу.
 
       final found = <ScanResult>[];
       final sub = FlutterBluePlus.scanResults.listen((results) {
@@ -140,7 +124,13 @@ class PrintService {
           ..addAll(results.where((r) => r.device.platformName.isNotEmpty));
       });
 
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      try {
+        await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      } catch (e) {
+        await sub.cancel();
+        if (context.mounted) _toast(context, 'Включите Bluetooth на устройстве');
+        return;
+      }
 
       if (!context.mounted) {
         await sub.cancel();
