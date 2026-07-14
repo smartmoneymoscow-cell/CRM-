@@ -987,37 +987,146 @@ const _filterButtonLabels = <FilterValue, String>{
   FilterValue.basic: 'Базовый',
 };
 
-class FiltersDropdown extends StatelessWidget {
+class FiltersDropdown extends StatefulWidget {
   final FilterValue value;
   final ValueChanged<FilterValue> onChange;
   const FiltersDropdown({super.key, required this.value, required this.onChange});
 
   @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<FilterValue>(
-      onSelected: onChange,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      itemBuilder: (_) => _filterOptions.entries.map((e) =>
-        PopupMenuItem(value: e.key, child: Text(e.value,
-          style: TextStyle(fontSize: 13, color: _ink,
-            fontWeight: value == e.key ? FontWeight.w700 : FontWeight.w400)))).toList(),
-      child: Container(
-        width: 118,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: _hairline)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.filter_list, size: 13, color: _ember),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(_filterButtonLabels[value]!,
-              overflow: TextOverflow.ellipsis, maxLines: 1,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+  State<FiltersDropdown> createState() => _FiltersDropdownState();
+}
+
+class _FiltersDropdownState extends State<FiltersDropdown> {
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
+
+  void _toggleDropdown() {
+    if (_isOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
+  }
+
+  void _openDropdown() {
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+    _isOpen = true;
+  }
+
+  void _closeDropdown() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    _isOpen = false;
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomNavHeight = 80; // примерная высота нижнего меню
+    final dropdownHeight = _filterOptions.length * 44.0 + 16; // пункты + padding
+
+    // Проверяем, поместится ли dropdown снизу без перекрытия меню
+    final spaceBelow = screenHeight - offset.dy - size.height - bottomNavHeight;
+    final showAbove = spaceBelow < dropdownHeight && offset.dy > dropdownHeight;
+
+    return OverlayEntry(
+      builder: (context) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _closeDropdown,
+        child: Stack(children: [
+          // Полупрозрачный барьер для закрытия
+          Positioned.fill(
+            child: Container(color: Colors.transparent),
           ),
-          const SizedBox(width: 4),
-          const Text('▾', style: TextStyle(fontSize: 10, color: Colors.black38)),
+          Positioned(
+            width: size.width,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: showAbove
+                  ? Offset(0, -dropdownHeight - 4)
+                  : Offset(0, size.height + 4),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(14),
+                color: Colors.white,
+                shadowColor: Colors.black.withOpacity(0.15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFEFE8D8)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      ..._filterOptions.entries.map((e) {
+                        final isSelected = widget.value == e.key;
+                        return InkWell(
+                          onTap: () {
+                            widget.onChange(e.key);
+                            _closeDropdown();
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            color: isSelected ? const Color(0xFFF3EEE4) : Colors.transparent,
+                            child: Text(e.value,
+                              style: TextStyle(fontSize: 13, color: _ink,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400)),
+                          ),
+                        );
+                      }),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ]),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _closeDropdown();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        onTap: _toggleDropdown,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: _hairline),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.filter_list, size: 13, color: _ember),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(_filterButtonLabels[widget.value]!,
+                overflow: TextOverflow.ellipsis, maxLines: 1,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+            ),
+            const SizedBox(width: 4),
+            AnimatedRotation(
+              turns: _isOpen ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: const Text('▾', style: TextStyle(fontSize: 10, color: Colors.black38)),
+            ),
+          ]),
+        ),
       ),
     );
   }
