@@ -31,6 +31,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../data/demo_data.dart' as app_data show kDemoClients;
+import 'pond_map_filter_config.dart';
 
 // ─────────────────────────── Растровые ассеты (встроены base64, без pubspec) ───────────────────────────
 // Реальные фото-текстуры деревьев (вид сверху, прозрачный фон, без белой каймы —
@@ -979,25 +980,7 @@ class _ClientCard extends StatelessWidget {
 }
 
 // ─────────────────────────── Фильтр (Правка 1.2) ───────────────────────────
-enum FilterValue { none, all, premium, standard, basic }
 
-const _filterOptions = <FilterValue, String>{
-  FilterValue.none: 'Нет',
-  FilterValue.all: 'Все клиенты',
-  FilterValue.premium: 'Премиум',
-  FilterValue.standard: 'Стандарт',
-  FilterValue.basic: 'Базовый',
-};
-
-// Правка — текст на самой кнопке: «Фильтры» только когда ничего не выбрано;
-// иначе название варианта целиком заменяет слово «Фильтры» («Все» для «Все клиенты»).
-const _filterButtonLabels = <FilterValue, String>{
-  FilterValue.none: 'Фильтры',
-  FilterValue.all: 'Все',
-  FilterValue.premium: 'Премиум',
-  FilterValue.standard: 'Стандарт',
-  FilterValue.basic: 'Базовый',
-};
 
 class FiltersDropdown extends StatefulWidget {
   final FilterValue value;
@@ -1013,10 +996,10 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
 
-  // Ширина dropdown = ширина кнопки фильтров
-  static const double _itemHeight = 44.0;
-  static const double _dropdownVPadding = 8.0;
-  static const double _gap = 4.0;
+  // Ширина dropdown = ширина кнопки фильтров; зазор = 0 (без отрыва)
+  static const double _itemHeight = kDropdownItemHeight;
+  static const double _dropdownVPadding = kDropdownVPadding;
+  static const double _gap = kDropdownGap;
 
   void _toggleDropdown() {
     if (_isOpen) {
@@ -1041,10 +1024,20 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   OverlayEntry _createOverlayEntry() {
     final rb = context.findRenderObject() as RenderBox;
     final btnSize = rb.size;
+    final btnPos = rb.localToGlobal(Offset.zero);
 
     final dropdownW = btnSize.width;
 
     final dy = btnSize.height + _gap;
+
+    // Ограничиваем высоту dropdown, чтобы не перекрывать нижнее меню.
+    final screenH = MediaQuery.of(context).size.height;
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
+    final maxDropdownH = calcMaxDropdownHeight(
+      btnBottomY: btnPos.dy + btnSize.height,
+      screenH: screenH,
+      bottomPadding: bottomSafe,
+    );
 
     return OverlayEntry(
       builder: (context) => GestureDetector(
@@ -1060,23 +1053,25 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
               link: _layerLink,
               showWhenUnlinked: false,
               offset: Offset(0, dy),
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(14),
-                color: Colors.white,
-                shadowColor: Colors.black.withOpacity(0.15),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFEFE8D8)),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: _dropdownVPadding),
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        ..._filterOptions.entries.map((e) {
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxDropdownH > 100 ? maxDropdownH : 100),
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white,
+                  shadowColor: Colors.black.withOpacity(0.15),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFEFE8D8)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: _dropdownVPadding),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        ...filterOptions.entries.map((e) {
                           final isSelected = widget.value == e.key;
                           return InkWell(
                             onTap: () {
@@ -1086,7 +1081,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              color: isSelected ? const Color(0xFFF3EEE4) : Colors.transparent,
+                              color: isSelected ? const Color(0xFFF5EEDC) : Colors.transparent,
                               child: Text(e.value,
                                 style: TextStyle(fontSize: 13, color: _ink,
                                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400)),
@@ -1122,14 +1117,16 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: _isOpen
+                ? const BorderRadius.only(topLeft: Radius.circular(999), topRight: Radius.circular(999))
+                : BorderRadius.circular(999),
             border: Border.all(color: _hairline),
           ),
           child: Row(children: [
             const Icon(Icons.filter_list, size: 13, color: _ember),
             const SizedBox(width: 6),
             Flexible(
-              child: Text(_filterButtonLabels[widget.value]!,
+              child: Text(filterButtonLabels[widget.value]!,
                 overflow: TextOverflow.ellipsis, maxLines: 1,
                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
             ),
@@ -1141,7 +1138,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   }
 }
 
-bool _passesFilter(Slot s, FilterValue f) {
+bool passesFilter(Slot s, FilterValue f) {
   if (f == FilterValue.none) return true;
   if (f == FilterValue.all) return s.client != null;
   final level = f == FilterValue.premium ? LevelKey.premium
@@ -1240,12 +1237,12 @@ class _PondMapScreenState extends State<PondMapScreen> {
       final idx = _blocks.indexOf(block);
       if (selected != null) {
         final s = scheds[selected! - 1][idx];
-        if (_passesFilter(s, filter)) rows.add(_feedRow(block, selected!, s));
+        if (passesFilter(s, filter)) rows.add(_feedRow(block, selected!, s));
       } else {
         final items = <MapEntry<int, Slot>>[];
         for (var i = 0; i < 16; i++) {
           final s = scheds[i][idx];
-          if (_passesFilter(s, filter)) items.add(MapEntry(i + 1, s));
+          if (passesFilter(s, filter)) items.add(MapEntry(i + 1, s));
         }
         if (items.isEmpty) continue;
         final occ = items.where((e) => e.value.client != null).length;
