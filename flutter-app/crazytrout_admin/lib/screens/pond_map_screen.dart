@@ -1095,6 +1095,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
               ),
             ),
           ),
+          ),
         ]),
       ),
     );
