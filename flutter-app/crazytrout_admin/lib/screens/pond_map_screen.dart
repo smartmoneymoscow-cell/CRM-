@@ -1146,12 +1146,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
                 overflow: TextOverflow.ellipsis, maxLines: 1,
                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
             ),
-            const SizedBox(width: 4),
-            AnimatedRotation(
-              turns: _isOpen ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
-              child: const Text('▾', style: TextStyle(fontSize: 10, color: Colors.black38)),
-            ),
+
           ]),
         ),
       ),
