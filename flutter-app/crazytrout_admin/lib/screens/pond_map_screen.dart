@@ -1017,8 +1017,6 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   static const double _itemHeight = 44.0;
   static const double _dropdownVPadding = 8.0;
   static const double _gap = 4.0;
-  // Высота нижнего меню (nav-bar + safe area нижний отступ)
-  static const double _bottomNavHeight = 60.0;
 
   void _toggleDropdown() {
     if (_isOpen) {
@@ -1043,21 +1041,10 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   OverlayEntry _createOverlayEntry() {
     final rb = context.findRenderObject() as RenderBox;
     final btnSize = rb.size;
-    final btnPos = rb.localToGlobal(Offset.zero);
-    final screenH = MediaQuery.of(context).size.height;
 
     final dropdownW = btnSize.width;
 
-    final dropdownH = _filterOptions.length * _itemHeight + _dropdownVPadding * 2;
-
-    // Сколько места под кнопкой до навбара
-    final navTop = screenH - _bottomNavHeight;
-    final spaceBelow = navTop - (btnPos.dy + btnSize.height);
-    final showAbove = spaceBelow < dropdownH + _gap;
-
-    final dy = showAbove
-        ? -(dropdownH + _gap)
-        : btnSize.height + _gap;
+    final dy = btnSize.height + _gap;
 
     return OverlayEntry(
       builder: (context) => GestureDetector(
