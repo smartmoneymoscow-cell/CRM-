@@ -29,9 +29,21 @@ class PrintService {
   static Future<void> printViaSystemDialog(Receipt r) async {
     // Стандартные PDF-шрифты (Helvetica/Base14) не содержат кириллических
     // глифов — без явного шрифта вместо букв печатаются «кракозябры» (□□□).
-    final regular = pw.Font.ttf(await rootBundle.load('assets/fonts/PTSans-Regular.ttf'));
-    final bold = pw.Font.ttf(await rootBundle.load('assets/fonts/PTSans-Bold.ttf'));
+    pw.Font regular;
+    pw.Font bold;
+    try {
+      regular = pw.Font.ttf(await rootBundle.load('assets/fonts/PTSans-Regular.ttf'));
+      bold = pw.Font.ttf(await rootBundle.load('assets/fonts/PTSans-Bold.ttf'));
+    } catch (_) {
+      // Фолбэк: если шрифт не загрузился — используем стандартный (без кириллицы)
+      regular = pw.Font.helvetica();
+      bold = pw.Font.helveticaBold();
+    }
     final theme = pw.ThemeData.withFont(base: regular, bold: bold);
+
+    // Заменяем символ ₽ на «руб.» — не все PDF-viewer'ы и принтеры
+    // корректно отображают символ рубля, даже с кастомным шрифтом.
+    String safeMoney(num n) => '${n.round()} руб.';
 
     final doc = pw.Document();
     doc.addPage(
@@ -52,17 +64,17 @@ class PrintService {
             ),
             pw.Divider(),
             pw.Text('Клиент: ${r.clientLine}', style: pw.TextStyle(font: regular, fontSize: 10)),
-            pw.Text('Тариф · ${r.tariffLabel}: ${r.tariffPrice} ₽', style: pw.TextStyle(font: regular, fontSize: 10)),
+            pw.Text('Тариф · ${r.tariffLabel}: ${safeMoney(r.tariffPrice)}', style: pw.TextStyle(font: regular, fontSize: 10)),
             pw.Divider(),
             ...r.rows.map(
               (it) => pw.Text(
-                '${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()} = ${it.sum.round()} ₽',
+                '${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()} = ${safeMoney(it.sum)}',
                 style: pw.TextStyle(font: regular, fontSize: 10),
               ),
             ),
             pw.Divider(),
             pw.Text(
-              'ИТОГО: ${r.total.round()} ₽',
+              'ИТОГО: ${safeMoney(r.total)}',
               style: pw.TextStyle(font: bold, fontSize: 13),
             ),
             pw.Text('Оплата: ${r.payment.label}', style: pw.TextStyle(font: regular, fontSize: 10)),
@@ -204,6 +216,18 @@ class PrintService {
           _toast(context, 'Нет разрешения на Bluetooth — разрешите доступ в настройках приложения');
         }
         return;
+      }
+
+      // Проверяем что Bluetooth реально включён после выдачи прав
+      final isOn = await FlutterBluePlus.adapterState.first;
+      if (isOn != BluetoothAdapterState.on) {
+        // Даём системе время включить адаптер после выдачи прав
+        await Future.delayed(const Duration(seconds: 1));
+        final isOnRetry = await FlutterBluePlus.adapterState.first;
+        if (isOnRetry != BluetoothAdapterState.on) {
+          if (context.mounted) _toast(context, 'Bluetooth выключен — включите его в настройках');
+          return;
+        }
       }
 
       // Показываем прелоадер с поплавком
