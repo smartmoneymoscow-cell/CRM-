@@ -1013,8 +1013,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
 
-  // Минимальная ширина dropdown — шире кнопки, чтобы текст влезал
-  static const double _minDropdownWidth = 160;
+  // Ширина dropdown = ширина кнопки фильтров
   static const double _itemHeight = 44.0;
   static const double _dropdownVPadding = 8.0;
   static const double _gap = 2.0;
@@ -1047,10 +1046,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     final btnPos = rb.localToGlobal(Offset.zero);
     final screenH = MediaQuery.of(context).size.height;
 
-    // Желаемая ширина = максимум из ширины кнопки и минимальной
-    final dropdownW = btnSize.width < _minDropdownWidth
-        ? _minDropdownWidth
-        : btnSize.width;
+    final dropdownW = btnSize.width;
 
     final dropdownH = _filterOptions.length * _itemHeight + _dropdownVPadding * 2;
 
