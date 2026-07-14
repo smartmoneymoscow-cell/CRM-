@@ -1016,9 +1016,9 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   // Ширина dropdown = ширина кнопки фильтров
   static const double _itemHeight = 44.0;
   static const double _dropdownVPadding = 8.0;
-  static const double _gap = 0.0;
+  static const double _gap = 4.0;
   // Высота нижнего меню (nav-bar + safe area нижний отступ)
-  static const double _bottomNavHeight = 72.0;
+  static const double _bottomNavHeight = 60.0;
 
   void _toggleDropdown() {
     if (_isOpen) {
