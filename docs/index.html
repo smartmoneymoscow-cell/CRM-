@@ -249,9 +249,9 @@ body {
   padding: 9px 0;
   font-size: 13px;
 }
-.stat-list-row .slr-name { font-weight: 700; color: var(--ink); }
-.stat-list-row .slr-count { font-weight: 800; width: 26px; color: var(--ink); }
-.stat-list-row .slr-avg { color: var(--muted); font-size: 11px; }
+.stat-list-row .slr-name { font-weight: 700; color: var(--ink); flex: 1; }
+.stat-list-row .slr-count { font-weight: 800; width: 26px; color: var(--ink); text-align: center; }
+.stat-list-row .slr-avg { color: var(--muted); font-size: 11px; text-align: right; min-width: 70px; }
 .stat-spacer { flex: 1; }
 
 /* Bottom nav */
@@ -442,66 +442,76 @@ body {
       Статистика
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">4</span>
       <span class="slr-name">Осётр</span>
+      <span class="slr-count">4</span>
       <span class="slr-avg">ср. 3,2 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">12</span>
       <span class="slr-name">Карп</span>
+      <span class="slr-count">12</span>
       <span class="slr-avg">ср. 1,8 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">7</span>
       <span class="slr-name">Амур</span>
+      <span class="slr-count">7</span>
       <span class="slr-avg">ср. 2,1 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">3</span>
       <span class="slr-name">Линь</span>
+      <span class="slr-count">3</span>
       <span class="slr-avg">ср. 1,4 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">9</span>
       <span class="slr-name">Форель</span>
+      <span class="slr-count">9</span>
       <span class="slr-avg">ср. 0,9 кг</span>
     </div>
-    <div class="stat-list-row">
-      <span class="slr-count">2</span>
-      <span class="slr-name">Сом</span>
-      <span class="slr-avg">ср. 4,5 кг</span>
+
+    <!-- Visit history -->
+    <div class="stat-list-title" style="margin-top:16px;">
+      История посещений
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">5</span>
-      <span class="slr-name">Щука</span>
-      <span class="slr-avg">ср. 2,8 кг</span>
+      <span class="slr-name">12.07 · Сектор №07</span>
+      <span class="slr-avg">Карп ×2 · 3,4 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">1</span>
-      <span class="slr-name">Судак</span>
-      <span class="slr-avg">ср. 1,6 кг</span>
+      <span class="slr-name">06.07 · Сектор №11</span>
+      <span class="slr-avg">Осётр · 5,8 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">11</span>
-      <span class="slr-name">Карась</span>
-      <span class="slr-avg">ср. 0,5 кг</span>
+      <span class="slr-name">03.07 · Сектор №04</span>
+      <span class="slr-avg">Амур · 2,1 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">6</span>
-      <span class="slr-name">Толстолобик</span>
-      <span class="slr-avg">ср. 3,7 кг</span>
+      <span class="slr-name">27.06 · Сектор №09</span>
+      <span class="slr-avg">Карп ×3 · 4,6 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">2</span>
-      <span class="slr-name">Распёр</span>
-      <span class="slr-avg">ср. 1,2 кг</span>
+      <span class="slr-name">21.06 · Сектор №12</span>
+      <span class="slr-avg">Линь · 0,9 кг</span>
     </div>
     <div class="stat-list-row">
-      <span class="slr-count">4</span>
-      <span class="slr-name">Белый амур</span>
-      <span class="slr-avg">ср. 5,0 кг</span>
+      <span class="slr-name">14.06 · Сектор №05</span>
+      <span class="slr-avg">Карп · 2,2 кг</span>
     </div>
-    <!-- Spacer pushes content to fill space above nav -->
+    <div class="stat-list-row">
+      <span class="slr-name">07.06 · Сектор №02</span>
+      <span class="slr-avg">Форель ×2 · 1,8 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">31.05 · Сектор №08</span>
+      <span class="slr-avg">Амур · 3,4 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">24.05 · Сектор №01</span>
+      <span class="slr-avg">Осётр · 4,1 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">17.05 · Сектор №06</span>
+      <span class="slr-avg">Карп ×2 · 3,0 кг</span>
+    </div>
+    <!-- Spacer -->
     <div class="stat-spacer"></div>
   </div>
 
