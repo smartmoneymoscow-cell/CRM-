@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Float Preloader — Preview</title>
+<title>Float Preloader — Preview v2</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -15,6 +15,7 @@ body {
   justify-content: center;
   min-height: 100vh;
   gap: 40px;
+  padding: 20px;
 }
 h1 { color: #fff; font-size: 18px; font-weight: 600; }
 h2 { color: #8C8576; font-size: 13px; font-weight: 500; margin-bottom: 12px; }
@@ -26,64 +27,41 @@ h2 { color: #8C8576; font-size: 13px; font-weight: 500; margin-bottom: 12px; }
   flex-direction: column;
   align-items: center;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  width: 320px;
 }
-
-/* === Float Preloader === */
-.float-container {
-  width: 200px;
-  height: 160px;
-  position: relative;
-}
-.float-canvas {
-  width: 200px;
-  height: 100px;
-}
+canvas { display: block; }
 
 /* Progress bar */
 .progress-track {
-  width: 160px;
+  width: 200px;
   height: 6px;
   background: #F3EEE4;
   border-radius: 3px;
-  margin: 10px auto 8px;
+  margin: 14px auto 10px;
   overflow: hidden;
-  position: relative;
 }
-.progress-fill-indet {
-  position: absolute;
-  top: 0;
+.progress-fill {
   height: 100%;
-  width: 40%;
-  background: linear-gradient(90deg, #D4A85A, #E89829);
-  border-radius: 3px;
-  animation: slideBar 4s ease-in-out infinite;
-}
-@keyframes slideBar {
-  0% { left: -40%; }
-  50% { left: 100%; }
-  100% { left: -40%; }
-}
-.progress-fill-det {
-  height: 100%;
+  width: 0%;
   background: linear-gradient(90deg, #D4A85A, #E89829);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
-.float-label {
+.label {
   text-align: center;
   font-size: 13px;
   font-weight: 600;
   color: #8C8576;
 }
-
-/* Demo controls */
 .controls {
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .controls button {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border: 1px solid #E7E0D1;
   border-radius: 8px;
   background: #FAF6EE;
@@ -102,157 +80,221 @@ h2 { color: #8C8576; font-size: 13px; font-weight: 500; margin-bottom: 12px; }
 </head>
 <body>
 
-<h1>🐟 Float Preloader — Preview</h1>
+<h1>🐟 Float Preloader — v2</h1>
 
 <div class="card">
   <h2>Indeterminate (поиск принтеров)</h2>
-  <canvas id="floatCanvas" class="float-canvas" width="400" height="200"></canvas>
-  <div class="progress-track">
-    <div class="progress-fill-indet"></div>
-  </div>
-  <div class="float-label">Ищем принтеры…</div>
+  <canvas id="c1" width="600" height="240"></canvas>
+  <div class="progress-track"><div id="fill1" class="progress-fill"></div></div>
+  <div class="label" id="label1">Ищем принтеры…</div>
 </div>
 
 <div class="card">
-  <h2>Determinate (с прогрессом)</h2>
-  <canvas id="floatCanvasDet" class="float-canvas" width="400" height="200"></canvas>
-  <div class="progress-track">
-    <div id="detFill" class="progress-fill-det" style="width: 0%"></div>
-  </div>
-  <div class="float-label" id="detLabel">Подключение…</div>
+  <h2>Determinate (печать)</h2>
+  <canvas id="c2" width="600" height="240"></canvas>
+  <div class="progress-track"><div id="fill2" class="progress-fill"></div></div>
+  <div class="label" id="label2">Подключение…</div>
   <div class="controls">
-    <button onclick="setProgress(0)">0%</button>
-    <button onclick="setProgress(0.25)">25%</button>
-    <button onclick="setProgress(0.5)">50%</button>
-    <button onclick="setProgress(0.75)">75%</button>
-    <button onclick="setProgress(1)">100%</button>
-    <button onclick="animateProgress()">Анимация</button>
+    <button onclick="setDet(0)">0%</button>
+    <button onclick="setDet(0.25)">25%</button>
+    <button onclick="setDet(0.5)">50%</button>
+    <button onclick="setDet(0.75)">75%</button>
+    <button onclick="setDet(1)">100%</button>
+    <button onclick="animateDet()">▶ Анимация</button>
   </div>
 </div>
 
 <script>
-// === Float Animation (Canvas) ===
-class FloatAnimator {
+// === Float Renderer ===
+class FloatRenderer {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.w = canvas.width;
     this.h = canvas.height;
-    this.bobPhase = 0;
-    this.wavePhase = 0;
-    this.bobSpeed = opts.bobSpeed || 0.025;
-    this.waveSpeed = opts.waveSpeed || 0.012;
+    this.bobTime = 0;
+    this.waveTime = 0;
+    this.bobSpeed = opts.bobSpeed || 0.018;
+    this.waveSpeed = opts.waveSpeed || 0.008;
     this.running = true;
-    this.animate();
+    this.loop();
   }
 
-  animate() {
+  loop() {
     if (!this.running) return;
-    this.bobPhase += this.bobSpeed;
-    this.wavePhase += this.waveSpeed;
+    this.bobTime += this.bobSpeed;
+    this.waveTime += this.waveSpeed;
     this.draw();
-    requestAnimationFrame(() => this.animate());
+    requestAnimationFrame(() => this.loop());
   }
 
   draw() {
     const ctx = this.ctx;
-    const cx = this.w / 2;
-    const waterY = this.h * 0.58;
-    ctx.clearRect(0, 0, this.w, this.h);
+    const w = this.w;
+    const h = this.h;
+    const cx = w / 2;
+    ctx.clearRect(0, 0, w, h);
 
-    // Waves
-    for (let row = 0; row < 3; row++) {
-      const y = waterY + row * 24;
-      ctx.beginPath();
-      ctx.strokeStyle = `rgba(184, 212, 227, ${0.5 - row * 0.12})`;
-      ctx.lineWidth = 3 - row * 0.5;
-      for (let x = 0; x <= this.w; x += 2) {
-        const wave = Math.sin((x / this.w * 2 * Math.PI) + this.wavePhase * 2 * Math.PI + row * 0.8) * 8;
-        if (x === 0) ctx.moveTo(x, y + wave);
-        else ctx.lineTo(x, y + wave);
-      }
-      ctx.stroke();
-    }
+    // Water surface — single elegant line
+    const waterY = h * 0.62;
+    const bob = Math.sin(this.bobTime * Math.PI) * 14;
+    const waveOffset = this.waveTime * 2 * Math.PI;
 
-    // Float bob
-    const bob = Math.sin(this.bobPhase * Math.PI) * 12;
-    const floatTop = waterY - 64 + bob;
-    const floatBottom = waterY + 8 + bob;
-
-    // Stem
+    // Water fill (semi-transparent below surface)
     ctx.beginPath();
-    ctx.strokeStyle = '#E89829';
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.moveTo(cx, floatTop - 36);
-    ctx.lineTo(cx, floatTop + 8);
+    ctx.moveTo(0, waterY);
+    for (let x = 0; x <= w; x += 2) {
+      const y = waterY + Math.sin((x / w) * 3 * Math.PI + waveOffset) * 4
+                    + Math.sin((x / w) * 5 * Math.PI - waveOffset * 0.7) * 2;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(42, 106, 126, 0.12)';
+    ctx.fill();
+
+    // Water surface line
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 2) {
+      const y = waterY + Math.sin((x / w) * 3 * Math.PI + waveOffset) * 4
+                    + Math.sin((x / w) * 5 * Math.PI - waveOffset * 0.7) * 2;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(42, 106, 126, 0.35)';
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Flag
+    // === Float body ===
+    const floatX = cx;
+    const floatBaseY = waterY - 10 + bob;
+
+    // --- Stem (thin rod above water) ---
+    const stemTop = floatBaseY - 70;
+    const stemBottom = floatBaseY - 15;
     ctx.beginPath();
-    ctx.fillStyle = '#C9302C';
-    ctx.moveTo(cx, floatTop - 36);
-    ctx.lineTo(cx + 24, floatTop - 24);
-    ctx.lineTo(cx, floatTop - 12);
+    ctx.moveTo(floatX, stemTop);
+    ctx.lineTo(floatX, stemBottom);
+    ctx.strokeStyle = '#6B5B3A';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // --- Flag (pennant) ---
+    ctx.beginPath();
+    ctx.moveTo(floatX + 2, stemTop);
+    ctx.lineTo(floatX + 22, stemTop + 10);
+    ctx.lineTo(floatX + 2, stemTop + 20);
     ctx.closePath();
+    ctx.fillStyle = '#C9302C';
     ctx.fill();
-
-    // Top (red)
-    this.roundRect(ctx, cx - 14, floatTop, cx + 14, floatTop + 32, 14, '#C9302C');
-
-    // Bottom (orange)
-    this.roundRect(ctx, cx - 10, floatTop + 28, cx + 10, floatBottom, 10, '#E89829');
-
-    // Keel
+    // Flag highlight
     ctx.beginPath();
-    ctx.fillStyle = '#D4A85A';
-    ctx.arc(cx, floatBottom + 6, 6, 0, Math.PI * 2);
+    ctx.moveTo(floatX + 2, stemTop + 2);
+    ctx.lineTo(floatX + 16, stemTop + 10);
+    ctx.lineTo(floatX + 2, stemTop + 14);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
     ctx.fill();
 
+    // --- Upper body (red/orange) — tapered oval ---
+    const bodyTop = floatBaseY - 18;
+    const bodyMid = floatBaseY + 5;
+    ctx.beginPath();
+    ctx.ellipse(floatX, (bodyTop + bodyMid) / 2, 10, (bodyMid - bodyTop) / 2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#C9302C';
+    ctx.fill();
+    // Glossy highlight
+    ctx.beginPath();
+    ctx.ellipse(floatX - 3, (bodyTop + bodyMid) / 2 - 3, 4, 8, -0.2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fill();
+
+    // --- Lower body (orange/amber) — tapered ---
+    const lowerTop = bodyMid - 2;
+    const lowerBottom = floatBaseY + 25;
+    ctx.beginPath();
+    ctx.moveTo(floatX - 8, lowerTop);
+    ctx.quadraticCurveTo(floatX - 6, (lowerTop + lowerBottom) / 2, floatX - 3, lowerBottom);
+    ctx.quadraticCurveTo(floatX, lowerBottom + 2, floatX + 3, lowerBottom);
+    ctx.quadraticCurveTo(floatX + 6, (lowerTop + lowerBottom) / 2, floatX + 8, lowerTop);
+    ctx.closePath();
+    ctx.fillStyle = '#E89829';
+    ctx.fill();
     // Highlight
     ctx.beginPath();
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.ellipse(cx - 4, floatTop + 14, 4, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(floatX - 2, lowerTop + 6, 3, 6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.fill();
-  }
 
-  roundRect(ctx, x1, y1, x2, y2, r, color) {
+    // --- Keel (small weighted bottom) ---
+    const keelY = lowerBottom + 2;
     ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.moveTo(x1 + r, y1);
-    ctx.arcTo(x2, y1, x2, y2, r);
-    ctx.arcTo(x2, y2, x1, y2, r);
-    ctx.arcTo(x1, y2, x1, y1, r);
-    ctx.arcTo(x1, y1, x2, y1, r);
-    ctx.closePath();
+    ctx.ellipse(floatX, keelY, 5, 4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#8C8576';
     ctx.fill();
+    // Keel ring
+    ctx.beginPath();
+    ctx.arc(floatX, keelY, 3, 0, Math.PI * 2);
+    ctx.strokeStyle = '#6B5B3A';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // --- Line (fishing line going down into water) ---
+    ctx.beginPath();
+    ctx.moveTo(floatX, keelY + 4);
+    ctx.lineTo(floatX, waterY + 30);
+    ctx.strokeStyle = 'rgba(100,100,100,0.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   destroy() { this.running = false; }
 }
 
-// Init
-const float1 = new FloatAnimator(document.getElementById('floatCanvas'));
-const float2 = new FloatAnimator(document.getElementById('floatCanvasDet'), { bobSpeed: 0.018, waveSpeed: 0.009 });
+// === Indeterminate progress (smooth left-to-right) ===
+const f1 = new FloatRenderer(document.getElementById('c1'), { bobSpeed: 0.022, waveSpeed: 0.007 });
+const fill1 = document.getElementById('fill1');
+const label1 = document.getElementById('label1');
+let p1 = 0;
+let dir1 = 1;
+function tick1() {
+  p1 += 0.008 * dir1;
+  if (p1 >= 1) { p1 = 1; dir1 = -1; }
+  if (p1 <= 0) { p1 = 0; dir1 = 1; }
+  fill1.style.width = (p1 * 100) + '%';
+  requestAnimationFrame(tick1);
+}
+tick1();
 
-// Determinate progress demo
-function setProgress(p) {
-  const fill = document.getElementById('detFill');
-  const label = document.getElementById('detLabel');
-  fill.style.width = (p * 100) + '%';
-  if (p < 0.3) label.textContent = 'Подключение…';
-  else if (p < 0.8) label.textContent = 'Печать…';
-  else if (p < 1) label.textContent = 'Отправка данных…';
-  else label.textContent = 'Чек отправлен ✓';
+// === Determinate ===
+const f2 = new FloatRenderer(document.getElementById('c2'), { bobSpeed: 0.015, waveSpeed: 0.005 });
+const fill2 = document.getElementById('fill2');
+const label2 = document.getElementById('label2');
+let detP = 0;
+
+function setDet(v) {
+  detP = v;
+  fill2.style.width = (v * 100) + '%';
+  if (v === 0) label2.textContent = 'Подключение…';
+  else if (v < 0.3) label2.textContent = 'Подключение…';
+  else if (v < 0.7) label2.textContent = 'Печать…';
+  else if (v < 1) label2.textContent = 'Отправка данных…';
+  else label2.textContent = 'Чек отправлен ✓';
 }
 
-function animateProgress() {
-  let p = 0;
-  const interval = setInterval(() => {
-    p += 0.02;
-    if (p > 1) { p = 1; clearInterval(interval); }
-    setProgress(p);
-  }, 80);
+function animateDet() {
+  detP = 0;
+  fill2.style.width = '0%';
+  label2.textContent = 'Подключение…';
+  const iv = setInterval(() => {
+    detP += 0.015;
+    if (detP >= 1) { detP = 1; clearInterval(iv); }
+    setDet(detP);
+  }, 60);
 }
 </script>
 
