@@ -519,7 +519,7 @@ class _PondPainter extends CustomPainter {
       final occupied = statusByNumber[n] == 'occupied';
       final color = occupied ? _orange : _green;
       final isSelected = selected == n;
-      final r = isSelected ? _markerR * 1.15 : _markerR;
+      final r = isSelected ? _markerR * 1.22 : _markerR;
 
       // Тень
       canvas.drawCircle(p.translate(1, 2), r, Paint()..color = Colors.black.withOpacity(0.12));
@@ -540,7 +540,7 @@ class _PondPainter extends CustomPainter {
       // Номер сектора
       tp.text = TextSpan(text: '$n',
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800,
-          fontSize: isSelected ? 20 : 19));
+          fontSize: isSelected ? 21 : 19));
       tp.layout();
       tp.paint(canvas, Offset(p.dx - tp.width / 2, p.dy - tp.height / 2));
     }
