@@ -1208,11 +1208,9 @@ class _PondMapScreenState extends State<PondMapScreen> {
             const SizedBox(width: 8),
             Expanded(child: _chip(Icons.access_time, 'ВРЕМЯ', _fmt(hour),
               onTap: () async {
-                final picked = await showModalBottomSheet<int>(
+                final picked = await showDialog<int>(
                   context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  barrierColor: const Color(0x7314130F), // rgba(20,19,15,0.45) — как в оверлее веб-версии
+                  barrierColor: const Color(0x7314130F),
                   builder: (_) => _TimePicker(hour: hour));
                 if (picked != null) setState(() { hour = picked; selected = null; });
               })),
@@ -1529,53 +1527,46 @@ class _TimePickerState extends State<_TimePicker> {
   @override
   Widget build(BuildContext context) {
     final hours = List.generate(17, (i) => 5 + i);
-    // Как в референсе: alignItems:flex-end, justifyContent:center, maxWidth:375,
-    // maxHeight:65vh, overflowY:auto.
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 375,
-          maxHeight: MediaQuery.of(context).size.height * 0.65,
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _paper,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [BoxShadow(color: Color(0x4D000000), blurRadius: 50, offset: Offset(0, 20))],
         ),
-        child: Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(color: _paper,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-          child: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 36, height: 4, margin: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(color: _hairline, borderRadius: BorderRadius.circular(999))),
-              const Text('Время · рабочие часы 05:00–22:00',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
-              const SizedBox(height: 10),
-              GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 3.0,
-                children: hours.map((h) {
-                  final sel = h == pending;
-                  return InkWell(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Время · рабочие часы 05:00–22:00',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: _ink)),
+          const SizedBox(height: 12),
+          GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 3.0,
+            children: hours.map((h) {
+              final sel = h == pending;
+              return InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => setState(() => pending = h),
+                child: Container(alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: sel ? _orange : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => setState(() => pending = h),
-                    child: Container(alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: sel ? _orange : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: sel ? _orange : _hairline)),
-                      child: Text(_fmt(h),
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13,
-                          color: sel ? Colors.white : _ink))));
-                }).toList()),
-              const SizedBox(height: 14),
-              SizedBox(width: double.infinity, child: FilledButton(
-                onPressed: () => Navigator.pop(context, pending),
-                style: FilledButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 12)),
-                child: const Text('Применить', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)))),
-            ]),
-          ),
-        ),
+                    border: Border.all(color: sel ? _orange : _hairline)),
+                  child: Text(_fmt(h),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13,
+                      color: sel ? Colors.white : _ink))));
+            }).toList()),
+          const SizedBox(height: 14),
+          SizedBox(width: double.infinity, child: FilledButton(
+            onPressed: () => Navigator.pop(context, pending),
+            style: FilledButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 12)),
+            child: const Text('Применить', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)))),
+        ]),
       ),
     );
   }
