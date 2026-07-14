@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crazytrout_admin/models/receipt.dart';
@@ -29,29 +30,9 @@ Receipt _makeReceipt({
   );
 }
 
-/// Декодирует CP866 байты в строку (обратная функция к _encodeCp866).
-String _decodeCp866(List<int> bytes) {
-  final result = StringBuffer();
-  for (final b in bytes) {
-    if (b >= 0x80 && b <= 0x9F) {
-      // А-Я: 0x80..0x9F → U+0410..U+042F
-      result.writeCharCode(0x0410 + (b - 0x80));
-    } else if (b >= 0xA0 && b <= 0xAF) {
-      // а-п: 0xA0..0xAF → U+0430..U+043F
-      result.writeCharCode(0x0430 + (b - 0xA0));
-    } else if (b >= 0xE0 && b <= 0xEF) {
-      // р-я: 0xE0..0xEF → U+0440..U+044F
-      result.writeCharCode(0x0440 + (b - 0xE0));
-    } else if (b == 0xF0) {
-      result.write('Ё');
-    } else if (b == 0xF1) {
-      result.write('ё');
-    } else {
-      // Латиница и ASCII-символы
-      result.writeCharCode(b);
-    }
-  }
-  return result.toString();
+/// Декодирует байты в строку (UTF-8).
+String _decodeBytes(List<int> bytes) {
+  return utf8.decode(bytes, allowMalformed: true);
 }
 
 /// Извлекает текстовую часть из ESC/POS данных (пропускает ESC-команды).
@@ -77,7 +58,7 @@ String _extractText(Uint8List data) {
     textBytes.add(data[i]);
     i++;
   }
-  return _decodeCp866(textBytes);
+  return _decodeBytes(textBytes);
 }
 
 void main() {
@@ -96,11 +77,11 @@ void main() {
         expect(data[1], 0x40);
       });
 
-      test('содержит команду выбора CP866 (ESC t 0x11)', () {
-        // ESC t 17 — выбор таблицы кодов CP866
+      test('содержит команду выбора UTF-8 (ESC t 0x52)', () {
+        // ESC t 82 — выбор таблицы кодов UTF-8
         expect(data[2], 0x1B);
         expect(data[3], 0x74); // 't'
-        expect(data[4], 0x11); // 17 = CP866
+        expect(data[4], 0x52); // 82 = UTF-8
       });
 
       test('заканчивается командой отреза бумаги (GS V 1)', () {
@@ -243,8 +224,8 @@ void main() {
       });
     });
 
-    group('Кодировка CP866', () {
-      test('кириллица закодирована корректно (не UTF-8)', () {
+    group('Кодировка UTF-8', () {
+      test('кириллица закодирована корректно (UTF-8)', () {
         final data = buildEscPos(_makeReceipt());
         // Проверяем что данные НЕ валидны как UTF-8 для кириллицы
         // (байты 0x80-0xFF используются для русских букв в CP866)

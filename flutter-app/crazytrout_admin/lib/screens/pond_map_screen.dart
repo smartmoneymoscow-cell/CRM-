@@ -1043,7 +1043,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     // Сколько места под кнопкой до верхней границы нижнего меню
     final navTop = screenH - _bottomNavReserved;
     final spaceBelow = navTop - (btnPos.dy + btnSize.height);
-    final showAbove = spaceBelow < _dropdownH + _gap;
+    final showAbove = spaceBelow < dropdownH + _gap;
 
     final double dy = showAbove
         ? -(dropdownH + _gap)
