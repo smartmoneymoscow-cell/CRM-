@@ -540,7 +540,7 @@ class _PondPainter extends CustomPainter {
       // Номер сектора
       tp.text = TextSpan(text: '$n',
         style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800,
-          fontSize: isSelected ? 21 : 19));
+          fontSize: isSelected ? 22 : 20));
       tp.layout();
       tp.paint(canvas, Offset(p.dx - tp.width / 2, p.dy - tp.height / 2));
     }
@@ -1195,13 +1195,13 @@ class _PondMapScreenState extends State<PondMapScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
       body: SafeArea(child: Column(children: [
-        // Правка 1.3 — заголовок «Карта пруда» по центру, без «· админ»
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: Center(child: Text('Карта пруда',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink))),
-        ),
         Expanded(child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+          // Заголовок
+          const Padding(
+            padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
+            child: Center(child: Text('Карта пруда',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink))),
+          ),
           // Chips
           Row(children: [
             Expanded(child: _chip(Icons.calendar_today_outlined, 'ДАТА',
