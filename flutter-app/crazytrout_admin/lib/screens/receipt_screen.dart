@@ -14,6 +14,8 @@ import 'qr_scan_route.dart' deferred as qr_route;
 import '../utils/qr_lookup.dart';
 import '../utils/format.dart';
 
+const _ink = Color(0xFF14130F);
+
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
 
@@ -185,7 +187,11 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        const Text('Выставление чека', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          child: Center(child: Text('Выставление чека',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink))),
+        ),
         const SizedBox(height: 16),
         _card(
           title: 'Клиент',
