@@ -11,6 +11,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.6
 
+  # QR-код генерация для карточки клиента
+  qr_flutter: ^4.1.0
+
   # Показывает системный диалог печати (AirPrint на iOS, службы печати на Android).
   # Рендерит чек в PDF и передаёт его в системный print-dialog — прямой аналог
   # кнопки «Печать через AirPrint» из веб-версии.

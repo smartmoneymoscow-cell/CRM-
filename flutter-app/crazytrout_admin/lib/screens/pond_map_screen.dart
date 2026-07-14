@@ -63,6 +63,12 @@ const _monthsShort = [
   'янв', 'фев', 'мар', 'апр', 'май', 'июн',
   'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
 ];
+// Полные названия месяцев (именительный падеж) — для заголовка календаря,
+// как MONTHS_NOM в веб-референсе (pond-map-preview-3).
+const _monthsFull = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+];
 const _weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const _blocks = [[5, 8], [8, 11], [11, 14], [14, 17], [17, 20], [20, 22]];
 
@@ -1049,40 +1055,17 @@ class _PondMapScreenState extends State<PondMapScreen> {
             Expanded(child: _chip(Icons.calendar_today_outlined, 'ДАТА',
               '${date.day} ${_monthsShort[date.month - 1]}',
               onTap: () async {
-                final picked = await showDatePicker(
-                  context: context, initialDate: date,
-                  firstDate: DateTime(2020), lastDate: DateTime(2030),
-                  builder: (ctx, child) {
-                    final base = Theme.of(ctx);
-                    return Theme(
-                      data: base.copyWith(
-                        colorScheme: base.colorScheme.copyWith(
-                          primary: _orange,       // выбранный день, акценты
-                          onPrimary: Colors.white,
-                          surface: _paper,        // фон диалога — кремовый, как в остальном приложении
-                          onSurface: _ink,
-                        ),
-                        datePickerTheme: base.datePickerTheme.copyWith(
-                          backgroundColor: _paper,
-                          headerBackgroundColor: _orange,
-                          headerForegroundColor: Colors.white,
-                          todayForegroundColor: MaterialStateProperty.all(_orange),
-                          todayBorder: const BorderSide(color: _orange),
-                        ),
-                        textButtonTheme: TextButtonThemeData(
-                          style: TextButton.styleFrom(foregroundColor: _orange),
-                        ),
-                      ),
-                      child: child!,
-                    );
-                  },
-                );
+                final picked = await _showCalendarPicker(context, date);
                 if (picked != null) setState(() { date = picked; selected = null; });
               })),
             const SizedBox(width: 8),
             Expanded(child: _chip(Icons.access_time, 'ВРЕМЯ', _fmt(hour),
               onTap: () async {
-                final picked = await showModalBottomSheet<int>(context: context,
+                final picked = await showModalBottomSheet<int>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  barrierColor: const Color(0x7314130F), // rgba(20,19,15,0.45) — как в оверлее веб-версии
                   builder: (_) => _TimePicker(hour: hour));
                 if (picked != null) setState(() { hour = picked; selected = null; });
               })),
@@ -1271,6 +1254,122 @@ class _PondMapScreenState extends State<PondMapScreen> {
   ]);
 }
 
+// ─────────────────────────── Календарь (с кнопкой «Применить») ───────────────────────────
+// Полный аналог CalendarModal из веб-референса (pond-map-preview-3.tsx):
+// центрированная карточка 300×auto на затемнённом фоне, пагинация по месяцам
+// круглыми стрелками, сетка дней с оранжевым кружком на выбранном дне,
+// применение — только по кнопке «Применить» (выбор дня лишь меняет pending-превью).
+Future<DateTime?> _showCalendarPicker(BuildContext context, DateTime date) {
+  return showDialog<DateTime>(
+    context: context,
+    barrierColor: const Color(0x7314130F), // rgba(20,19,15,0.45)
+    builder: (_) => _CalendarPicker(date: date),
+  );
+}
+
+class _CalendarPicker extends StatefulWidget {
+  final DateTime date;
+  const _CalendarPicker({required this.date});
+  @override
+  State<_CalendarPicker> createState() => _CalendarPickerState();
+}
+
+class _CalendarPickerState extends State<_CalendarPicker> {
+  late DateTime cursor = DateTime(widget.date.year, widget.date.month, 1);
+  late DateTime pending = widget.date;
+
+  @override
+  Widget build(BuildContext context) {
+    // Пн=0 … Вс=6 — как (date.getDay() + 6) % 7 в веб-версии
+    // (DateTime.weekday: Пн=1 … Вс=7).
+    final firstWeekday = (DateTime(cursor.year, cursor.month, 1).weekday - 1) % 7;
+    final daysInMonth = DateTime(cursor.year, cursor.month + 1, 0).day;
+    final cells = <int?>[
+      ...List<int?>.filled(firstWeekday, null),
+      ...List.generate(daysInMonth, (i) => i + 1),
+    ];
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _paper,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [BoxShadow(color: Color(0x4D000000), blurRadius: 50, offset: Offset(0, 20))],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            _navButton(Icons.chevron_left, () => setState(() {
+              cursor = DateTime(cursor.year, cursor.month - 1, 1);
+            })),
+            Text('${_monthsFull[cursor.month - 1]} ${cursor.year}',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: _ink)),
+            _navButton(Icons.chevron_right, () => setState(() {
+              cursor = DateTime(cursor.year, cursor.month + 1, 1);
+            })),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: _weekdays.map((w) => Expanded(
+            child: Center(child: Text(w,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.black38))),
+          )).toList()),
+          const SizedBox(height: 6),
+          GridView.count(
+            crossAxisCount: 7, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 4, crossAxisSpacing: 4, childAspectRatio: 1,
+            children: cells.map((d) {
+              if (d == null) return const SizedBox.shrink();
+              final isSelected = pending.year == cursor.year &&
+                  pending.month == cursor.month && pending.day == d;
+              return InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => setState(() => pending = DateTime(cursor.year, cursor.month, d)),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected ? _orange : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text('$d', style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                    color: isSelected ? Colors.white : _ink,
+                  )),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(width: double.infinity, child: FilledButton(
+            onPressed: () => Navigator.pop(context, pending),
+            style: FilledButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 12)),
+            child: const Text('Применить', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)))),
+        ]),
+      ),
+    );
+  }
+
+  Widget _navButton(IconData icon, VoidCallback onTap) => InkWell(
+    customBorder: const CircleBorder(),
+    onTap: onTap,
+    child: Container(
+      width: 30, height: 30, alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: _hairline),
+      ),
+      child: Icon(icon, size: 15, color: _ink),
+    ),
+  );
+}
+
 class _TimePicker extends StatefulWidget {
   final int hour;
   const _TimePicker({required this.hour});
@@ -1283,38 +1382,54 @@ class _TimePickerState extends State<_TimePicker> {
   @override
   Widget build(BuildContext context) {
     final hours = List.generate(17, (i) => 5 + i);
-    return Container(
-      decoration: const BoxDecoration(color: _paper,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 36, height: 4, margin: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(color: _hairline, borderRadius: BorderRadius.circular(999))),
-        const Text('Время · рабочие часы 05:00–22:00',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
-        const SizedBox(height: 10),
-        GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 2.6,
-          children: hours.map((h) {
-            final sel = h == pending;
-            return InkWell(onTap: () => setState(() => pending = h),
-              child: Container(alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: sel ? _orange : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: sel ? _orange : _hairline)),
-                child: Text(_fmt(h),
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13,
-                    color: sel ? Colors.white : _ink))));
-          }).toList()),
-        const SizedBox(height: 14),
-        SizedBox(width: double.infinity, child: FilledButton(
-          onPressed: () => Navigator.pop(context, pending),
-          style: FilledButton.styleFrom(backgroundColor: _orange,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            padding: const EdgeInsets.symmetric(vertical: 12)),
-          child: const Text('Применить', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)))),
-      ]),
+    // Как в референсе: alignItems:flex-end, justifyContent:center, maxWidth:375,
+    // maxHeight:65vh, overflowY:auto.
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 375,
+          maxHeight: MediaQuery.of(context).size.height * 0.65,
+        ),
+        child: Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(color: _paper,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 36, height: 4, margin: const EdgeInsets.symmetric(vertical: 6),
+                decoration: BoxDecoration(color: _hairline, borderRadius: BorderRadius.circular(999))),
+              const Text('Время · рабочие часы 05:00–22:00',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
+              const SizedBox(height: 10),
+              GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 8, mainAxisSpacing: 8, childAspectRatio: 3.0,
+                children: hours.map((h) {
+                  final sel = h == pending;
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => setState(() => pending = h),
+                    child: Container(alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: sel ? _orange : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: sel ? _orange : _hairline)),
+                      child: Text(_fmt(h),
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13,
+                          color: sel ? Colors.white : _ink))));
+                }).toList()),
+              const SizedBox(height: 14),
+              SizedBox(width: double.infinity, child: FilledButton(
+                onPressed: () => Navigator.pop(context, pending),
+                style: FilledButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12)),
+                child: const Text('Применить', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)))),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }
