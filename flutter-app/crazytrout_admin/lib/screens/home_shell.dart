@@ -12,7 +12,7 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 1;
+  int _index = 0;
 
   static const _screens = [
     PondMapScreen(),
