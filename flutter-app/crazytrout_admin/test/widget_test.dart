@@ -57,11 +57,13 @@ void main() {
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
-      // Кнопка «Создать и распечатать чек» внизу ListView — скроллим к ней
+      // Ищем ListView (экран чека), а не первый Scrollable в дереве —
+      // PondMapScreen тоже содержит SingleChildScrollView, который раньше
+      // перехватывал find.byType(Scrollable).first.
       await tester.scrollUntilVisible(
         find.text('Создать и распечатать чек'),
         500,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find.byType(ListView).first,
       );
       expect(find.text('Создать и распечатать чек'), findsOneWidget);
     });
