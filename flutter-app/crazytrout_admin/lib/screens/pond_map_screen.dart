@@ -1131,13 +1131,14 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
       child: GestureDetector(
         onTap: _toggleDropdown,
         child: Container(
+          width: 120,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: _hairline),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
+          child: Row(children: [
             const Icon(Icons.filter_list, size: 13, color: _ember),
             const SizedBox(width: 6),
             Flexible(
