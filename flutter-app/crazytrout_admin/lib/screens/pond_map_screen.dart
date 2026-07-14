@@ -960,8 +960,13 @@ class _ClientCard extends StatelessWidget {
       Text(label, textAlign: TextAlign.left,
         style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Colors.black45, letterSpacing: 0.3)),
       const SizedBox(height: 3),
-      Text(value, textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Text(value, textAlign: TextAlign.center,
+          maxLines: 1,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
+      ),
     ]),
   );
 }
