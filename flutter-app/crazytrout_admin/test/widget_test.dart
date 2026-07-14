@@ -57,14 +57,24 @@ void main() {
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
-      // Ищем ListView (экран чека), а не первый Scrollable в дереве —
-      // PondMapScreen тоже содержит SingleChildScrollView, который раньше
-      // перехватывал find.byType(Scrollable).first.
-      await tester.scrollUntilVisible(
-        find.text('Создать и распечатать чек'),
-        500,
-        scrollable: find.byType(ListView).first,
+
+      // Кнопка «Создать и распечатать чек» находится внизу ListView
+      // экрана чека. ListView-lazy не создаёт off-screen виджеты,
+      // поэтому scrollUntilVisible не находит ListView в дереве.
+      // Решение: ищем корневой Scrollable (ReceiptScreen → ListView)
+      // через find.ancestor и скроллим вниз большими свайпами.
+      final scrollable = find.ancestor(
+        of: find.text('Выставление чека'),
+        matching: find.byType(Scrollable),
       );
+      expect(scrollable, findsOneWidget);
+
+      // Скроллим вниз по 500px, пока кнопка не появится
+      for (int i = 0; i < 6; i++) {
+        if (find.text('Создать и распечатать чек').evaluate().isNotEmpty) break;
+        await tester.drag(scrollable, const Offset(0, -500));
+        await tester.pumpAndSettle();
+      }
       expect(find.text('Создать и распечатать чек'), findsOneWidget);
     });
   });
