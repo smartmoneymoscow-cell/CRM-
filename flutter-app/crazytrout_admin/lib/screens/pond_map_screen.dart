@@ -1010,9 +1010,9 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
   }
 
   void _openDropdown() {
+    setState(() => _isOpen = true);
     _overlayEntry = _createOverlayEntry();
     Overlay.of(context).insert(_overlayEntry!);
-    _isOpen = true;
   }
 
   void _closeDropdown() {
