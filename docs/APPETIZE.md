@@ -4,7 +4,7 @@
 
 ## Ссылка
 
-🔗 **https://appetize.io/app/3pyz3i55q35iixrkebtthhiqiq**
+🔗 **https://appetize.io/app/yi7k2wtilanayxdmcsfnmb7zni**
 
 ## API-ключ
 
@@ -36,5 +36,5 @@ curl -X POST "https://api.appetize.io/v1/apps" \
 
 ## Управление
 
-- Панель: https://appetize.io/manage/3pyz3i55q35iixrkebtthhiqiq
+- Панель: https://appetize.io/manage/yi7k2wtilanayxdmcsfnmb7zni
 - Настройки API-ключей: https://appetize.io/account/api-keys
