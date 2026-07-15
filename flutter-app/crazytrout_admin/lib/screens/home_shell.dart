@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'checks_screen.dart';
 import 'pond_map_screen.dart';
 import 'receipt_screen.dart';
 import 'stub_screen.dart';
@@ -17,7 +18,7 @@ class _HomeShellState extends State<HomeShell> {
   static const _screens = [
     PondMapScreen(),
     ReceiptScreen(),
-    StubScreen(title: 'Чеки', icon: Icons.receipt_long_outlined, note: 'История выставленных чеков — раздел в разработке.'),
+    ChecksScreen(),
     StubScreen(title: 'P&L', icon: Icons.show_chart, note: 'Отчёт по прибыли и убыткам — раздел в разработке.'),
     StubScreen(title: 'Профиль', icon: Icons.person_outline, note: 'Профиль администратора — раздел в разработке.'),
   ];
@@ -43,8 +44,6 @@ class _HomeShellState extends State<HomeShell> {
         child: SafeArea(
           top: false,
           child: Padding(
-            // +1px добавлен сверху (над иконками), как попросили —
-            // остальные отступы не тронуты.
             padding: const EdgeInsets.only(top: 5, bottom: 4),
             child: Row(
               children: List.generate(_items.length, (i) {
@@ -59,14 +58,14 @@ class _HomeShellState extends State<HomeShell> {
                       children: [
                         Icon(
                           item.icon,
-                          size: 24, // ← без изменений
+                          size: 24,
                           color: selected ? const Color(0xFFE8912B) : Colors.grey.shade600,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           item.label,
                           style: TextStyle(
-                            fontSize: 12, // ← без изменений
+                            fontSize: 12,
                             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                             color: selected ? const Color(0xFFE8912B) : Colors.grey.shade600,
                           ),
