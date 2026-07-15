@@ -1125,25 +1125,22 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
       link: _layerLink,
       child: GestureDetector(
         onTap: _toggleDropdown,
-        child: ClipRRect(
-          borderRadius: pill,
-          child: Container(
-            width: 120,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: pill,
-            ),
-            child: Row(children: [
-              const Icon(Icons.filter_list, size: 13, color: _ember),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(filterButtonLabels[widget.value]!,
-                  overflow: TextOverflow.ellipsis, maxLines: 1,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
-              ),
-            ]),
+        child: Container(
+          width: 120,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.all(Radius.circular(999)),
           ),
+          child: Row(children: [
+            const Icon(Icons.filter_list, size: 13, color: _ember),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(filterButtonLabels[widget.value]!,
+                overflow: TextOverflow.ellipsis, maxLines: 1,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+            ),
+          ]),
         ),
       ),
     );
