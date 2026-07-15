@@ -1,9 +1,18 @@
 import 'client.dart';
 
-enum PaymentMethod { cash, card }
+enum PaymentMethod { cash, card, houseAccount }
 
 extension PaymentMethodLabel on PaymentMethod {
-  String get label => this == PaymentMethod.cash ? 'Наличными' : 'Картой';
+  String get label {
+    switch (this) {
+      case PaymentMethod.cash:
+        return 'Наличными';
+      case PaymentMethod.card:
+        return 'Картой';
+      case PaymentMethod.houseAccount:
+        return 'Счет заведения';
+    }
+  }
 }
 
 /// Система налогообложения (54-ФЗ, ст. 4.7).

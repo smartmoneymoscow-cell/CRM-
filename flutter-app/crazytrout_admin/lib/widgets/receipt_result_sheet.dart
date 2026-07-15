@@ -82,11 +82,11 @@ class _ReceiptResultSheet extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.search),
-                label: const Text('Найти принтер и распечатать', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.print_outlined),
+                label: const Text('Печать через AirPrint', style: TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () async {
                   await print_route.loadLibrary();
-                  await print_route.printViaBluetooth(context, r);
+                  await print_route.printViaSystemDialog(r);
                 },
               ),
               const SizedBox(height: 10),
@@ -97,11 +97,11 @@ class _ReceiptResultSheet extends StatelessWidget {
                   side: const BorderSide(color: Color(0xFFE0D8C5)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.print_outlined),
-                label: const Text('Печать через AirPrint', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.search),
+                label: const Text('Найти принтер и распечатать', style: TextStyle(fontWeight: FontWeight.bold)),
                 onPressed: () async {
                   await print_route.loadLibrary();
-                  await print_route.printViaSystemDialog(r);
+                  await print_route.printViaBluetooth(context, r);
                 },
               ),
               const SizedBox(height: 12),
