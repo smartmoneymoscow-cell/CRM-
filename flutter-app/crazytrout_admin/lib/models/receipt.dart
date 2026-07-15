@@ -99,6 +99,8 @@ class Receipt {
     this.ndsRate = 0,
     this.ndsSum = 0,
     this.buyerEmail,
+    @Deprecated('Используйте fdNumber — fiscalDoc вычисляется автоматически')
+    String? fiscalDoc,
   });
 
   String get clientLine => isGuest
