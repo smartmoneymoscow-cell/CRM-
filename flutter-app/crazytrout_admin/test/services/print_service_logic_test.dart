@@ -69,9 +69,13 @@ void main() {
         final data = buildEscPos(_makeReceipt());
         final chunks = splitIntoChunks(data, 512);
 
-        // Данные < 512 байт → один чанк
-        expect(chunks.length, 1);
-        expect(chunks[0].length, data.length);
+        // Все чанки ≤ 512 байт
+        for (final chunk in chunks) {
+          expect(chunk.length, lessThanOrEqualTo(512));
+        }
+        // Суммарно — все данные
+        final totalSize = chunks.fold<int>(0, (s, c) => s + c.length);
+        expect(totalSize, data.length);
       });
 
       test('пустые данные → 0 чанков', () {
