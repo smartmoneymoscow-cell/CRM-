@@ -43,7 +43,8 @@ void main() {
     testWidgets('тап по кнопке открывает dropdown с вариантами', (tester) async {
       await tester.pumpWidget(buildApp());
       await tester.tap(find.text('Фильтры'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       // Должны появиться все варианты в overlay
       expect(find.text('Нет'), findsOneWidget);
@@ -57,10 +58,11 @@ void main() {
       FilterValue? selected;
       await tester.pumpWidget(buildApp(onChange: (v) => selected = v));
       await tester.tap(find.text('Фильтры'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       await tester.tap(find.text('Премиум'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(selected, FilterValue.premium);
     });
