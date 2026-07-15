@@ -44,7 +44,6 @@ void main() {
       await tester.pumpWidget(buildApp());
       await tester.tap(find.text('Фильтры'));
       await tester.pump();
-      await tester.pump();
 
       // Должны появиться все варианты в overlay
       expect(find.text('Нет'), findsOneWidget);
@@ -58,7 +57,6 @@ void main() {
       FilterValue? selected;
       await tester.pumpWidget(buildApp(onChange: (v) => selected = v));
       await tester.tap(find.text('Фильтры'));
-      await tester.pump();
       await tester.pump();
 
       await tester.tap(find.text('Премиум'));

@@ -993,132 +993,141 @@ class FiltersDropdown extends StatefulWidget {
 
 class _FiltersDropdownState extends State<FiltersDropdown> {
   final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _entry;
-  bool _open = false;
+  OverlayEntry? _overlayEntry;
+  bool _isOpen = false;
 
-  static const double _borderRadius = 10.0;
+  // Ширина dropdown = ширина кнопки фильтров; зазор = 0 (без отрыва)
+  static const double _itemHeight = kDropdownItemHeight;
+  static const double _dropdownVPadding = kDropdownVPadding;
+  static const double _gap = kDropdownGap;
 
-  @override
-  void dispose() {
-    _entry = null;
-    super.dispose();
+  void _toggleDropdown() {
+    if (_isOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
   }
 
-  void _toggle() => _open ? _close() : _show();
+  void _openDropdown() {
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isOpen = true);
+  }
 
-  void _show() {
-    final box = context.findRenderObject() as RenderBox;
-    final size = box.size;
+  void _closeDropdown() {
+    final entry = _overlayEntry;
+    _overlayEntry = null;
+    if (mounted) setState(() => _isOpen = false);
+    if (mounted) entry?.remove();
+  }
 
+  OverlayEntry _createOverlayEntry() {
+    final rb = context.findRenderObject() as RenderBox;
+    final btnSize = rb.size;
+    final btnPos = rb.localToGlobal(Offset.zero);
+
+    final dropdownW = btnSize.width;
+
+    final dy = btnSize.height + _gap;
+
+    // MediaQuery берём ЗДЕСЬ (в контексте виджета, не overlay) —
+    // иначе значения могут быть неверными.
     final screenH = MediaQuery.of(context).size.height;
     final bottomSafe = MediaQuery.of(context).padding.bottom;
-    final btnPos = box.localToGlobal(Offset.zero);
-    final maxMenuH = calcMaxDropdownHeight(
-      btnBottomY: btnPos.dy + size.height,
+    final maxDropdownH = calcMaxDropdownHeight(
+      btnBottomY: btnPos.dy + btnSize.height,
       screenH: screenH,
       bottomPadding: bottomSafe,
     );
 
-    _entry = OverlayEntry(
-      builder: (ctx) => Stack(children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _close,
+    return OverlayEntry(
+      builder: (overlayContext) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _closeDropdown,
+        child: Stack(children: [
+          Positioned.fill(
+            child: Container(color: Colors.transparent),
           ),
-        ),
-        CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height),
-          child: Material(
-            color: Colors.transparent,
-            child: SizedBox(
-              width: size.width,
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: maxMenuH > 100 ? maxMenuH : 100,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(_borderRadius),
-                    bottomRight: Radius.circular(_borderRadius),
+          Positioned(
+            width: dropdownW,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: Offset(0, dy),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxDropdownH > 100 ? maxDropdownH : 100),
+                child: Material(
+                  elevation: 0,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
                   ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 10,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  children: filterOptions.entries.map((e) {
-                    final selected = widget.value == e.key;
-                    return GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        widget.onChange(e.key);
-                        _close();
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        color: selected
-                            ? const Color(0xFFF5EEDC)
-                            : Colors.transparent,
-                        child: Text(
-                          e.value,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: _ink,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                          ),
-                        ),
+                  color: Colors.white,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(14),
+                        bottomRight: Radius.circular(14),
                       ),
-                    );
-                  }).toList(),
+                      border: Border.all(color: const Color(0xFFEFE8D8)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(14),
+                        bottomRight: Radius.circular(14),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: _dropdownVPadding),
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        ...filterOptions.entries.map((e) {
+                          final isSelected = widget.value == e.key;
+                          return InkWell(
+                            onTap: () {
+                              widget.onChange(e.key);
+                              _closeDropdown();
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              color: isSelected ? const Color(0xFFF5EEDC) : Colors.transparent,
+                              child: Text(e.value,
+                                style: TextStyle(fontSize: 13, color: _ink,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400)),
+                            ),
+                          );
+                        }),
+                      ]),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ]),
+          ),
+        ]),
+      ),
     );
-
-    Overlay.of(context).insert(_entry!);
-    setState(() => _open = true);
   }
 
-  void _close() {
-    final entry = _entry;
-    _entry = null;
-    if (mounted) setState(() => _open = false);
-    if (mounted) entry?.remove();
+  @override
+  void dispose() {
+    _closeDropdown();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Когда меню открыто — «срезаем» нижние углы поля, чтобы оно
-    // визуально соединялось со списком без шва.
-    final radius = BorderRadius.only(
-      topLeft: Radius.circular(999),
-      topRight: Radius.circular(999),
-      bottomLeft: Radius.circular(_open ? 0 : 999),
-      bottomRight: Radius.circular(_open ? 0 : 999),
-    );
+    // ClipRRect реально обрезает углы (BoxDecoration — только декоративно)
+    final radius = _isOpen
+        ? const BorderRadius.only(topLeft: Radius.circular(999), topRight: Radius.circular(999))
+        : BorderRadius.circular(999);
 
     return CompositedTransformTarget(
       link: _layerLink,
       child: GestureDetector(
-        onTap: _toggle,
+        onTap: _toggleDropdown,
         child: ClipRRect(
           borderRadius: radius,
           child: Container(
@@ -1132,16 +1141,9 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
               const Icon(Icons.filter_list, size: 13, color: _ember),
               const SizedBox(width: 6),
               Flexible(
-                child: Text(
-                  filterButtonLabels[widget.value]!,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: _ink,
-                  ),
-                ),
+                child: Text(filterButtonLabels[widget.value]!,
+                  overflow: TextOverflow.ellipsis, maxLines: 1,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
               ),
             ]),
           ),
