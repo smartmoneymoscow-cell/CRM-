@@ -1026,7 +1026,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     final btnSize = rb.size;
     final btnPos = rb.localToGlobal(Offset.zero);
 
-    const double _overlap = 9.0; // перекрываем нижние скруглённые углы кнопки
+    const double _overlap = 12.0; // перекрываем нижние скруглённые углы кнопки
     final dropdownW = btnSize.width;
 
     final dy = btnSize.height - _overlap;
@@ -1039,7 +1039,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
       btnBottomY: btnPos.dy + btnSize.height,
       screenH: screenH,
       bottomPadding: bottomSafe,
-    );
+    ) - _overlap; // kompensiruem sdvig vverh
 
     return OverlayEntry(
       builder: (overlayContext) => GestureDetector(
