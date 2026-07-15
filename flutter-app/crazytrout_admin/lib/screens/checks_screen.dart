@@ -985,15 +985,13 @@ class _ReceiptRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Container(
-              width: 22,
-              height: 22,
-              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: item.fiscal ? _orange : _hairline,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                item.fiscal ? 'Ф' : 'Б',
+                item.fiscal ? 'С ФН' : 'Без ФН',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
