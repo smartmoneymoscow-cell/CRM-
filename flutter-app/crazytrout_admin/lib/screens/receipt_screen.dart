@@ -8,7 +8,6 @@ import '../models/tariff.dart';
 import '../widgets/app_dropdown_field.dart';
 import '../widgets/catch_row_tile.dart';
 import '../widgets/receipt_result_sheet.dart';
-import '../widgets/segmented_control.dart';
 import '../utils/permission_helper.dart' deferred as perm_helper;
 import 'qr_scan_route.dart' deferred as qr_route;
 import '../utils/qr_lookup.dart';
@@ -187,15 +186,18 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: Center(child: Text('Выставление чека',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink))),
-        ),
-        const SizedBox(height: 16),
+    return Scaffold(
+      backgroundColor: const Color(0xFFEFE9DC),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        children: [
+          // Заголовок — отступы как на Карте пруда
+          const Padding(
+            padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
+            child: Center(child: Text('Выставление чека',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink))),
+          ),
+          const SizedBox(height: 14),
         _card(
           title: 'Клиент',
           child: Column(
@@ -330,26 +332,42 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
         ),
         const SizedBox(height: 16),
         _card(
-          title: 'Способ оплаты',
-          child: SegmentedControl<PaymentMethod>(
-            options: const [
-              SegmentedOption(PaymentMethod.cash, 'Наличными'),
-              SegmentedOption(PaymentMethod.card, 'Картой'),
+          title: 'Способ оплаты и тип чека',
+          child: Row(
+            children: [
+              Expanded(
+                child: _labeledField(
+                  'СПОСОБ ОПЛАТЫ',
+                  AppDropdownField<PaymentMethod>(
+                    value: _payment,
+                    items: const [
+                      AppDropdownItem(value: PaymentMethod.cash, child: Text('Наличными')),
+                      AppDropdownItem(value: PaymentMethod.card, child: Text('Картой')),
+                      AppDropdownItem(value: PaymentMethod.houseAccount, child: Text('Счет зав.')),
+                    ],
+                    onChanged: (v) => setState(() => _payment = v),
+                    fillColor: const Color(0xFFF3EEE4),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _labeledField(
+                  'ТИП ЧЕКА',
+                  AppDropdownField<bool>(
+                    value: _fiscal,
+                    items: const [
+                      AppDropdownItem(value: true, child: Text('Фискальный')),
+                      AppDropdownItem(value: false, child: Text('Нефискальный')),
+                    ],
+                    onChanged: (v) => setState(() => _fiscal = v),
+                    fillColor: const Color(0xFFF3EEE4),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  ),
+                ),
+              ),
             ],
-            selected: _payment,
-            onChanged: (v) => setState(() => _payment = v),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _card(
-          title: 'Тип чека',
-          child: SegmentedControl<bool>(
-            options: const [
-              SegmentedOption(true, 'Фискальный чек'),
-              SegmentedOption(false, 'Без ФН'),
-            ],
-            selected: _fiscal,
-            onChanged: (v) => setState(() => _fiscal = v),
           ),
         ),
         const SizedBox(height: 20),
@@ -364,6 +382,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           child: const Text('Создать и распечатать чек', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         ),
       ],
+      ),
     );
   }
 
