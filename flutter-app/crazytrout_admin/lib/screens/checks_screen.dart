@@ -449,13 +449,8 @@ class _ChecksScreenState extends State<ChecksScreen> {
   // ---------- открытия ----------
   Future<void> _openCalendar() async {
     final res = await _showRangeCalendarPicker(context, _dateRange);
-    if (!mounted) return;
-    if (res is _CalendarReset) {
-      setState(() => _dateRange = null);
-    } else if (res is DateTimeRange) {
-      setState(() => _dateRange = res);
-    }
-    // res == null → диалог закрыт (dismiss), ничего не делаем
+    if (!mounted || res == null) return;
+    setState(() => _dateRange = res);
   }
 
   void _openDetail(ReceiptHistoryItem r) {
@@ -1931,16 +1926,9 @@ const _monthsFull = [
 ];
 const _weekdaysShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-/// Маркер для кнопки «Сбросить» — отличается от dismiss (null).
-class _CalendarReset {
-  const _CalendarReset();
-}
-
-/// Возвращает DateTimeRange? для «Применить», _CalendarReset для «Сбросить»,
-/// null если диалог закрыт без действия.
-Future<Object?> _showRangeCalendarPicker(
+Future<DateTimeRange?> _showRangeCalendarPicker(
     BuildContext context, DateTimeRange? initial) {
-  return showDialog<Object>(
+  return showDialog<DateTimeRange>(
     context: context,
     barrierColor: const Color(0x7314130F),
     builder: (_) => _RangeCalendarPicker(initial: initial),
@@ -2128,7 +2116,10 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
             Row(children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context, const _CalendarReset()),
+                  onPressed: () => setState(() {
+                    start = null;
+                    end = null;
+                  }),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _muted,
                     side: const BorderSide(color: _outline),
