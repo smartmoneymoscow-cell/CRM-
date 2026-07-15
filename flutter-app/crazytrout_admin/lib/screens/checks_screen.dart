@@ -449,8 +449,13 @@ class _ChecksScreenState extends State<ChecksScreen> {
   // ---------- открытия ----------
   Future<void> _openCalendar() async {
     final res = await _showRangeCalendarPicker(context, _dateRange);
-    if (!mounted || res == null) return;
-    setState(() => _dateRange = res);
+    if (!mounted) return;
+    if (res is _CalendarReset) {
+      setState(() => _dateRange = null);
+    } else if (res is DateTimeRange) {
+      setState(() => _dateRange = res);
+    }
+    // res == null → диалог закрыт (dismiss), ничего не делаем
   }
 
   void _openDetail(ReceiptHistoryItem r) {
@@ -1926,9 +1931,16 @@ const _monthsFull = [
 ];
 const _weekdaysShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-Future<DateTimeRange?> _showRangeCalendarPicker(
+/// Маркер для кнопки «Сбросить» — отличается от dismiss (null).
+class _CalendarReset {
+  const _CalendarReset();
+}
+
+/// Возвращает DateTimeRange? для «Применить», _CalendarReset для «Сбросить»,
+/// null если диалог закрыт без действия.
+Future<Object?> _showRangeCalendarPicker(
     BuildContext context, DateTimeRange? initial) {
-  return showDialog<DateTimeRange>(
+  return showDialog<Object>(
     context: context,
     barrierColor: const Color(0x7314130F),
     builder: (_) => _RangeCalendarPicker(initial: initial),
@@ -2113,9 +2125,27 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
                   const TextStyle(fontSize: 11.5, color: _muted2),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context, const _CalendarReset()),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _muted,
+                    side: const BorderSide(color: _outline),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Сбросить',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
                   onPressed: start == null
                       ? null
                       : () => Navigator.pop(
@@ -2128,8 +2158,7 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: _hairline,
                     shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12)),
                     padding:
                         const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -2139,6 +2168,7 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
                           fontWeight: FontWeight.w700)),
                 ),
               ),
+            ]),
           ],
         ),
       ),
