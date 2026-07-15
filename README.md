@@ -15,8 +15,8 @@
 
 
 
-[![Build APK & IPA](https://github.com/smartmoneymoscow-cell/CRM-/actions/workflows/build-apk.yml/badge.svg)](https://github.com/smartmoneymoscow-cell/CRM-/actions/workflows/build-apk.yml)
-[![Latest Release](https://img.shields.io/github/v/release/smartmoneymoscow-cell/CRM-)](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest)
+[![Build APK & IPA](https://github.com/smartmoneymoscow-cell/CRM-Crazy_Trout_Arena/actions/workflows/build-apk.yml/badge.svg)](https://github.com/smartmoneymoscow-cell/CRM-Crazy_Trout_Arena/actions/workflows/build-apk.yml)
+[![Latest Release](https://img.shields.io/github/v/release/smartmoneymoscow-cell/CRM-Crazy_Trout_Arena)](https://github.com/smartmoneymoscow-cell/CRM-Crazy_Trout_Arena/releases/latest)
 [![License](https://img.shields.io/badge/license-proprietary-red)](#)
 
 ---
@@ -25,31 +25,20 @@
 
 | Платформа | Файл | Размер |
 |-----------|------|--------|
-| **Android** | [app-release.apk](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest/download/app-release.apk) | ~29 MB |
-| **iOS** | [app-release.ipa](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest/download/app-release.ipa) | ~18 MB |
+| **Android** | [app-release.apk](https://github.com/smartmoneymoscow-cell/CRM-Crazy_Trout_Arena/releases/latest/download/app-release.apk) | ~31 MB |
+| **iOS** | [app-release.ipa](https://github.com/smartmoneymoscow-cell/CRM-Crazy_Trout_Arena/releases/latest/download/app-release.ipa) | ~19 MB |
 
 > ⚠️ iOS-сборка без кодирования (no-codesign). Для установки на устройство нужен provisioning profile через Xcode / Apple Developer.
 
 ---
 
-## 🖥️ Эмулятор в браузере (Appetize.io)
+## 🖥️ Эмулятор в браузере
 
-Приложение можно запустить прямо в браузере через облачный эмулятор [Appetize.io](https://appetize.io/):
+Приложение можно запустить прямо в браузере:
 
-1. Зайди на https://appetize.io/demo
-2. Нажми **Upload** и загрузи [app-release.apk](https://github.com/smartmoneymoscow-cell/CRM-/releases/latest/download/app-release.apk)
-3. Выбери устройство и версию ОС
-4. Эмулятор запустится в браузере
+🔗 **[https://appetize.io/app/7vwzwig6blb6vr2otlstmzv37q](https://appetize.io/app/7vwzwig6blb6vr2otlstmzv37q)**
 
-**Через API:**
-```bash
-curl -X POST "https://api.appetize.io/v1/app/upload" \
-  -H "Authorization: Bearer YOUR_APPETIZE_API_TOKEN" \
-  -F "file=@app-release.apk" \
-  -F "platform=android"
-```
-
-> 📖 Подробная инструкция: [docs/APPETIZE.md](docs/APPETIZE.md)
+> 📖 Инструкция по загрузке новых сборок: [docs/APPETIZE.md](docs/APPETIZE.md)
 
 ---
 
@@ -62,10 +51,11 @@ curl -X POST "https://api.appetize.io/v1/app/upload" \
 - 🏷️ **Три тарифа** — Стандарт 750₽, Гостевой 500₽, Пенсионер 0₽
 - 🐠 **Улов** — 5 пород (Осётр, Карп, Амур, Линь, Форель) с фиксированными ценами за кг, раздельные поля кг/граммы, авторасчёт суммы
 - 💰 **Два типа чека** — фискальный (с ФН) и без ФН
-- 💳 **Оплата** — наличные или карта
+- 💳 **Три способа оплаты** — наличные, карта, счёт заведения
+- 📋 **54-ФЗ** — все обязательные реквизиты в ESC/POS, PDF и UI
 
 ### Печать
-- 🖨️ **Bluetooth-принтер** — ESC/POS протокол, кириллица UTF-8, команда отреза бумаги
+- 🖨️ **Bluetooth-принтер** — ESC/POS протокол, кириллица UTF-8, команда отреза бумаги, реквизиты по 54-ФЗ
 - 📄 **Системная печать** — AirPrint (iOS) / PDF через системный диалог
 
 ### Карта пруда
@@ -93,7 +83,7 @@ flutter-app/crazytrout_admin/
 │   │   ├── client.dart                  — модель клиента (id, имя, телефон, тариф, аватар)
 │   │   ├── tariff.dart                  — модель тарифа (id, label, цена)
 │   │   ├── catch_row.dart               — строка улова (порода, кг, г, цена/кг, сумма)
-│   │   └── receipt.dart                 — чек (клиент, тариф, улов, оплата, фискальность)
+│   │   └── receipt.dart                 — чек с реквизитами 54-ФЗ (продавец, СНО, ФН, ФД, ФПД, НДС)
 │   ├── data/
 │   │   └── demo_data.dart               — тарифы, породы с ценами, демо-клиенты
 │   ├── services/
@@ -160,14 +150,15 @@ flutter test
 **Покрытие тестов:**
 - ✅ Генерация чеков (фискальный, без ФН, гость, пустой улов, пенсионер)
 - ✅ Расчёт веса и суммы (кг + граммы → weight → sum)
-- ✅ ESC/POS байты (Bluetooth) — структура, заголовок, содержимое, кириллица UTF-8
-- ✅ PDF генерация (AirPrint) — все типы чекей
+- ✅ ESC/POS байты (Bluetooth) — структура, заголовок, содержимое, кириллица UTF-8, реквизиты 54-ФЗ
+- ✅ PDF генерация (AirPrint) — все типы чекей, реквизиты 54-ФЗ
+- ✅ Chunk splitting (BLE MTU / Classic SPP)
 - ✅ Корректность данных перед отправкой на принтер
 - ✅ Консистентность данных (тарифы, породы, клиенты)
 - ✅ Smoke-тесты приложения (запуск, навигация, элементы UI)
 - ✅ QR-сканер (поиск клиента по коду)
 - ✅ Логика экрана чека
-- ✅ Виджеты (SegmentedControl, CatchRowTile)
+- ✅ Виджеты (SegmentedControl, CatchRowTile, FiltersDropdown)
 
 ---
 
@@ -250,10 +241,10 @@ GitHub Actions автоматически собирает приложение 
 
 | Раздел | Статус |
 |--------|--------|
-| Чек (выставление) | ✅ Полностью функционален |
+| Чек (выставление) | ✅ Полностью функционален (54-ФЗ) |
 | QR-сканер | ✅ Функционален |
-| Печать Bluetooth (ESC/POS) | ✅ Функциональна (кириллица UTF-8 + отрез) |
-| Печать AirPrint (PDF) | ✅ Функциональна |
+| Печать Bluetooth (ESC/POS) | ✅ Функциональна (кириллица UTF-8 + отрез + 54-ФЗ) |
+| Печать AirPrint (PDF) | ✅ Функциональна (54-ФЗ) |
 | Аватары клиентов | ✅ Фото + инициалы для фолбэка |
 | Гостевой режим | ✅ С иконкой инкогнито |
 | Карта пруда | ✅ Секторы, фильтры, бронирования, профили клиентов |
@@ -267,6 +258,8 @@ GitHub Actions автоматически собирает приложение 
 
 | Версия | Дата | Изменения |
 |--------|------|-----------|
+| **v1.3.43** | 16.07.2026 | 54-ФЗ: фискальные реквизиты в ESC/POS, PDF и UI чека (продавец, СНО, ФН, ФД, ФПД, НДС, сайт ФНС) |
+| **v1.3.42** | 15.07.2026 | UI: карточки «Оплата»/«ИТОГО» переставлены, «Счет заведения», отступы выровнены по карте пруда |
 | **v1.3.23** | 14.07.2026 | Карта пруда — начальный экран, двойная рамка сектора, FittedBox для 3-значных значений, фильтры dropdown, BT UTF-8, тесты |
 | **v1.3.22** | 14.07.2026 | Карта пруда: секторы, фильтры, стили заголовков, секторы клиентов |
 | **v1.3.18** | 13.07.2026 | Настоящие фото рыб в дропдауне, правильная центровка |
