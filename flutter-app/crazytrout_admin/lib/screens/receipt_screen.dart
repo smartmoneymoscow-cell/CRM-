@@ -150,6 +150,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
     _receiptSeq += 1;
 
+    final fdNum = 10000 + _receiptSeq;
     final receipt = Receipt(
       number: _receiptSeq,
       date: DateTime.now(),
@@ -163,7 +164,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       total: _total,
       payment: _payment,
       fiscal: _fiscal,
-      fiscalDoc: _fiscal ? '№ФД-${10000 + _receiptSeq}' : null,
+      fdNumber: fdNum,
+      fpd: '${fdNum * 31 % 10000000000}'.padLeft(10, '0'),
+      buyerEmail: _selectedClient?.phone,
     );
 
     showReceiptResultSheet(context, receipt).then((_) => _resetForm());

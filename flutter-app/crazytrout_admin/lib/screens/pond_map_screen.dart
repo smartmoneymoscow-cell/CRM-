@@ -1026,9 +1026,10 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     final btnSize = rb.size;
     final btnPos = rb.localToGlobal(Offset.zero);
 
+    const double _overlap = 12.0; // перекрываем нижние скруглённые углы кнопки
     final dropdownW = btnSize.width;
 
-    final dy = btnSize.height + _gap;
+    final dy = btnSize.height - _overlap;
 
     // MediaQuery берём ЗДЕСЬ (в контексте виджета, не overlay) —
     // иначе значения могут быть неверными.
@@ -1064,13 +1065,12 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
                   ),
                   color: Colors.white,
                   child: Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
-                      borderRadius: const BorderRadius.only(
+                      borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(14),
                         bottomRight: Radius.circular(14),
                       ),
-                      border: Border.all(color: const Color(0xFFEFE8D8)),
                     ),
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
@@ -1119,31 +1119,31 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    // ClipRRect реально обрезает углы (BoxDecoration — только декоративно)
-    final radius = _isOpen
-        ? const BorderRadius.only(topLeft: Radius.circular(999), topRight: Radius.circular(999))
-        : BorderRadius.circular(999);
+    const pill = BorderRadius.all(Radius.circular(999));
 
     return CompositedTransformTarget(
       link: _layerLink,
       child: GestureDetector(
         onTap: _toggleDropdown,
-        child: Container(
-          width: 120,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: radius,
-          ),
-          child: Row(children: [
-            const Icon(Icons.filter_list, size: 13, color: _ember),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(filterButtonLabels[widget.value]!,
-                overflow: TextOverflow.ellipsis, maxLines: 1,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+        child: ClipRRect(
+          borderRadius: pill,
+          child: Container(
+            width: 120,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: pill,
             ),
-          ]),
+            child: Row(children: [
+              const Icon(Icons.filter_list, size: 13, color: _ember),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(filterButtonLabels[widget.value]!,
+                  overflow: TextOverflow.ellipsis, maxLines: 1,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+              ),
+            ]),
+          ),
         ),
       ),
     );

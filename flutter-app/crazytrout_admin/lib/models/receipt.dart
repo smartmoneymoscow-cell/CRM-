@@ -6,6 +6,30 @@ extension PaymentMethodLabel on PaymentMethod {
   String get label => this == PaymentMethod.cash ? 'Наличными' : 'Картой';
 }
 
+/// Система налогообложения (54-ФЗ, ст. 4.7).
+enum TaxSystem {
+  osn('ОСН'),
+  usnIncome('УСН доходы'),
+  usnIncomeMinusExpense('УСН доходы минус расходы'),
+  esn('ЕСН'),
+  patent('Патент');
+
+  final String label;
+  const TaxSystem(this.label);
+}
+
+/// Признак расчёта (54-ФЗ, ст. 4.7).
+enum OperationType {
+  income('Приход'),
+  incomeReturn('Возврат прихода'),
+  expense('Расход'),
+  expenseReturn('Возврат расхода');
+
+  final String label;
+  const OperationType(this.label);
+}
+
+/// Строка улова в чеке.
 class ReceiptRow {
   final String name;
   final double weight;
@@ -20,7 +44,9 @@ class ReceiptRow {
   });
 }
 
+/// Кассовый чек с реквизитами по 54-ФЗ ст. 4.7.
 class Receipt {
+  // ─── Основное ───
   final int number;
   final DateTime date;
   final Client? client;
@@ -31,7 +57,22 @@ class Receipt {
   final double total;
   final PaymentMethod payment;
   final bool fiscal;
-  final String? fiscalDoc;
+
+  // ─── Фискальные реквизиты (54-ФЗ) ───
+  final String sellerName;
+  final String sellerINN;
+  final String sellerAddress;
+  final String? sellerEmail;
+  final TaxSystem taxSystem;
+  final OperationType operationType;
+  final int shiftNumber;
+  final String kktNumber;
+  final String fnNumber;
+  final int fdNumber;
+  final String fpd;
+  final double ndsRate;    // ставка НДС в % (0, 10, 20)
+  final double ndsSum;     // сумма НДС в рублях
+  final String? buyerEmail;
 
   const Receipt({
     required this.number,
@@ -44,7 +85,20 @@ class Receipt {
     required this.total,
     required this.payment,
     required this.fiscal,
-    this.fiscalDoc,
+    this.sellerName = 'ИП Сидоров А.В.',
+    this.sellerINN = '770123456789',
+    this.sellerAddress = 'г. Москва, ул. Рыбацкая, д. 12',
+    this.sellerEmail = 'info@crazytrout.ru',
+    this.taxSystem = TaxSystem.usnIncome,
+    this.operationType = OperationType.income,
+    this.shiftNumber = 1,
+    this.kktNumber = '0001234567001234',
+    this.fnNumber = '9999078900001234',
+    required this.fdNumber,
+    required this.fpd,
+    this.ndsRate = 0,
+    this.ndsSum = 0,
+    this.buyerEmail,
   });
 
   String get clientLine => isGuest
