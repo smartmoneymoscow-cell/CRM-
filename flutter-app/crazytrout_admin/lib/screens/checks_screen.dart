@@ -576,10 +576,12 @@ class _FilterDropdownItem<T> {
   final T? value;
   final String label;
   final bool isReset;
+  final bool enabled;
   const _FilterDropdownItem({
     required this.value,
     required this.label,
     this.isReset = false,
+    this.enabled = true,
   });
 }
 
