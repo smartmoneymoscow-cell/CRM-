@@ -1994,11 +1994,22 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
       ...List.generate(daysInMonth, (i) => i + 1),
     ];
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_wasReset) {
+          Navigator.pop(context, DateTimeRange(
+              start: DateTime(2000), end: DateTime(2000)));
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
         width: 300,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -2128,8 +2139,6 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
                       end = null;
                       _wasReset = true;
                     });
-                    Navigator.pop(context, DateTimeRange(
-                        start: DateTime(2000), end: DateTime(2000)));
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _muted,
@@ -2174,7 +2183,8 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _navButton(IconData icon, VoidCallback onTap) =>
