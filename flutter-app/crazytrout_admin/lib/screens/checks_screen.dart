@@ -537,6 +537,12 @@ class _ChecksScreenState extends State<ChecksScreen> {
                         value: _type,
                         label: 'Тип',
                         items: [
+                          _FilterDropdownItem<_TypeFilter>(
+                            value: null,
+                            label: 'Все',
+                            isReset: true,
+                            enabled: _type != null,
+                          ),
                           for (final t in _TypeFilter.values)
                             _FilterDropdownItem<_TypeFilter>(
                               value: t,
