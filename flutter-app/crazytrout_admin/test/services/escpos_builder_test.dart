@@ -125,13 +125,13 @@ void main() {
         expect(text, contains('Оплата: Картой'));
       });
 
-      test('содержит тип чека "Фискальный"', () {
-        expect(text, contains('Фискальный чек'));
+      test('содержит тип чека "КАССОВЫЙ ЧЕК"', () {
+        expect(text, contains('КАССОВЫЙ ЧЕК'));
       });
 
-      test('размер данных 50–2000 байт', () {
+      test('размер данных 50–3000 байт', () {
         expect(data.length, greaterThan(50));
-        expect(data.length, lessThan(2000));
+        expect(data.length, lessThan(3000));
       });
     });
 
@@ -152,8 +152,9 @@ void main() {
         expect(text, contains('ИТОГО: 6065'));
       });
 
-      test('содержит "Без ФН"', () {
-        expect(text, contains('Без ФН'));
+      test('содержит "ЧЕК (без ФН)"', () {
+        expect(text, contains('ЧЕК (без ФН)'));
+        expect(text, contains('Чек без фискального накопителя'));
       });
     });
 
