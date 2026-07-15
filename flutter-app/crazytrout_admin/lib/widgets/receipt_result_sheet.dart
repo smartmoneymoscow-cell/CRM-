@@ -53,24 +53,54 @@ class _ReceiptResultSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Заголовок
                     const Text('CRAZY TROUT ARENA', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     Text(
-                      'Чек № ${r.number} · ${_fmtDate(r.date)}',
+                      r.fiscal ? 'КАССОВЫЙ ЧЕК (${r.operationType.label})' : 'ЧЕК (без ФН)',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                     ),
                     const Divider(height: 24),
+
+                    // Реквизиты продавца
+                    _small('Продавец: ${r.sellerName}'),
+                    _small('ИНН: ${r.sellerINN}'),
+                    _small('Адрес: ${r.sellerAddress}'),
+                    _small('Дата: ${_fmtDate(r.date)}  Чек №${r.number}  Смена №${r.shiftNumber}'),
+                    _small('СНО: ${r.taxSystem.label}'),
+                    const Divider(height: 24),
+
+                    // Клиент
                     _row('Клиент', r.clientLine),
                     _row('Тариф · ${r.tariffLabel}', money(r.tariffPrice)),
                     const Divider(height: 24),
+
+                    // Товары
                     ...r.rows.map((it) => _row(
                           '${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()}',
                           money(it.sum),
                         )),
                     const Divider(height: 24),
+
+                    // Итого
                     _row('ИТОГО', money(r.total), bold: true),
+                    _small(r.ndsRate > 0 ? 'НДС ${r.ndsRate.round()}%: ${money(r.ndsSum)}' : 'НДС не облагается'),
                     _row('Оплата', r.payment.label),
-                    _row('Тип чека', r.fiscal ? 'Фискальный ${r.fiscalDoc ?? ""}' : 'Без ФН'),
+                    const Divider(height: 24),
+
+                    // Фискальные реквизиты
+                    if (r.fiscal) ...[
+                      _small('ККТ: ${r.kktNumber}'),
+                      _small('ФН: ${r.fnNumber}'),
+                      _small('ФД №: ${r.fdNumber}  ФПД: ${r.fpd}'),
+                      _small('Проверка: nalog.ru'),
+                      if (r.buyerEmail != null && r.buyerEmail!.isNotEmpty)
+                        _small('Email покупателя: ${r.buyerEmail}'),
+                      if (r.sellerEmail != null && r.sellerEmail!.isNotEmpty)
+                        _small('Email продавца: ${r.sellerEmail}'),
+                    ] else ...[
+                      _small('Чек без фискального накопителя'),
+                    ],
                   ],
                 ),
               ),
@@ -133,6 +163,13 @@ class _ReceiptResultSheet extends StatelessWidget {
           Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.w600, fontSize: bold ? 16 : 13)),
         ],
       ),
+    );
+  }
+
+  Widget _small(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text(text, style: TextStyle(fontSize: 10, color: Colors.grey.shade700)),
     );
   }
 

@@ -54,6 +54,7 @@ class PrintService {
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
+            // Заголовок
             pw.Center(
               child: pw.Text(
                 'CRAZY TROUT ARENA',
@@ -61,28 +62,65 @@ class PrintService {
               ),
             ),
             pw.Center(
-              child: pw.Text(safeText('Чек № ${r.number} · ${_fmtDate(r.date)}'), style: pw.TextStyle(font: regular, fontSize: 9)),
+              child: pw.Text(
+                safeText(r.fiscal ? 'КАССОВЫЙ ЧЕК (${r.operationType.label})' : 'ЧЕК (без ФН)'),
+                style: pw.TextStyle(font: bold, fontSize: 10),
+              ),
             ),
             pw.Divider(),
-            pw.Text('Клиент: ${r.clientLine}', style: pw.TextStyle(font: regular, fontSize: 10)),
-            pw.Text('Тариф · ${r.tariffLabel}: ${safeMoney(r.tariffPrice)}', style: pw.TextStyle(font: regular, fontSize: 10)),
+
+            // Реквизиты продавца (54-ФЗ)
+            pw.Text(safeText('Продавец: ${r.sellerName}'), style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(safeText('ИНН: ${r.sellerINN}'), style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(safeText('Адрес: ${r.sellerAddress}'), style: pw.TextStyle(font: regular, fontSize: 9)),
+
+            // Дата, время, номер чека, смена
+            pw.Text(safeText('Дата: ${_fmtDate(r.date)}'), style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(safeText('Чек №${r.number}  Смена №${r.shiftNumber}'), style: pw.TextStyle(font: regular, fontSize: 9)),
+            pw.Text(safeText('СНО: ${r.taxSystem.label}'), style: pw.TextStyle(font: regular, fontSize: 9)),
             pw.Divider(),
+
+            // Клиент
+            pw.Text(safeText('Клиент: ${r.clientLine}'), style: pw.TextStyle(font: regular, fontSize: 10)),
+            pw.Text(safeText('Тариф · ${r.tariffLabel}: ${safeMoney(r.tariffPrice)}'), style: pw.TextStyle(font: regular, fontSize: 10)),
+            pw.Divider(),
+
+            // Товары
             ...r.rows.map(
               (it) => pw.Text(
-                '${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()} = ${safeMoney(it.sum)}',
+                safeText('${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()} = ${safeMoney(it.sum)}'),
                 style: pw.TextStyle(font: regular, fontSize: 10),
               ),
             ),
             pw.Divider(),
+
+            // Итого
             pw.Text(
               'ИТОГО: ${safeMoney(r.total)}',
               style: pw.TextStyle(font: bold, fontSize: 13),
             ),
-            pw.Text('Оплата: ${r.payment.label}', style: pw.TextStyle(font: regular, fontSize: 10)),
+            // НДС
             pw.Text(
-              r.fiscal ? safeText('Фискальный чек ${r.fiscalDoc ?? ""}') : 'Без ФН',
-              style: pw.TextStyle(font: regular, fontSize: 10),
+              safeText(r.ndsRate > 0 ? 'НДС ${r.ndsRate.round()}%: ${safeMoney(r.ndsSum)}' : 'НДС не облагается'),
+              style: pw.TextStyle(font: regular, fontSize: 9),
             ),
+            pw.Text(safeText('Оплата: ${r.payment.label}'), style: pw.TextStyle(font: regular, fontSize: 10)),
+            pw.Divider(),
+
+            // Фискальные реквизиты (54-ФЗ)
+            if (r.fiscal) ...[
+              pw.Text(safeText('ККТ: ${r.kktNumber}'), style: pw.TextStyle(font: regular, fontSize: 8)),
+              pw.Text(safeText('ФН: ${r.fnNumber}'), style: pw.TextStyle(font: regular, fontSize: 8)),
+              pw.Text(safeText('ФД №: ${r.fdNumber}'), style: pw.TextStyle(font: regular, fontSize: 8)),
+              pw.Text(safeText('ФПД: ${r.fpd}'), style: pw.TextStyle(font: regular, fontSize: 8)),
+              pw.Text(safeText('Проверка: nalog.ru'), style: pw.TextStyle(font: regular, fontSize: 8)),
+              if (r.buyerEmail != null && r.buyerEmail!.isNotEmpty)
+                pw.Text(safeText('Email покупателя: ${r.buyerEmail}'), style: pw.TextStyle(font: regular, fontSize: 8)),
+              if (r.sellerEmail != null && r.sellerEmail!.isNotEmpty)
+                pw.Text(safeText('Email продавца: ${r.sellerEmail}'), style: pw.TextStyle(font: regular, fontSize: 8)),
+            ] else ...[
+              pw.Text('Чек без фискального накопителя', style: pw.TextStyle(font: regular, fontSize: 9)),
+            ],
           ],
         ),
       ),
