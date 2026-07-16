@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/sales_decomposition.dart';
-import '../utils/format.dart';
 
 // ============================================================================
 // FinancePieChart — круговая диаграмма «Декомпозиция продаж».
