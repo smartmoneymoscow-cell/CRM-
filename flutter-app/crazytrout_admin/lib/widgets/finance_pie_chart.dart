@@ -198,17 +198,6 @@ class _DonutPainter extends CustomPainter {
       final sweep = 2 * math.pi * (segments[i].amount / total);
       final gradColors = _segGradients[i % _segGradients.length];
 
-      // Градиент по дуге
-      final midAngle = startAngle + sweep / 2;
-      final gradStart = center + Offset(
-        math.cos(startAngle) * radius,
-        math.sin(startAngle) * radius,
-      );
-      final gradEnd = center + Offset(
-        math.cos(startAngle + sweep) * radius,
-        math.sin(startAngle + sweep) * radius,
-      );
-
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle,
