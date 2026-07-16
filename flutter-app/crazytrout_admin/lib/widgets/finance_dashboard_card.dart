@@ -65,7 +65,7 @@ class FinanceDashboardCard extends StatelessWidget {
                         labelSub: 'прибыль',
                         value: money(stats.marginProfit),
                         pctLabel:
-                            '${_fmtPct(stats.marginPct)}% от выручки',
+                            '${_fmtPct(stats.marginPct)}% маржинальность',
                         dark: false,
                         progress: stats.marginPct / 100,
                         progressColor: const [

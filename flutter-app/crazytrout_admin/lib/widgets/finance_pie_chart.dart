@@ -41,6 +41,16 @@ const _segColors = <Color>[
   Color(0xFFD4C4A8), // бежевый — Вход на пруд
 ];
 
+// Градиентные пары для сегментов
+const _segGradients = <List<Color>>[
+  [Color(0xFFE8912B), Color(0xFFF2A84D)],
+  [Color(0xFF6B4226), Color(0xFF8B5A3A)],
+  [Color(0xFF9C5A3C), Color(0xFFB87050)],
+  [Color(0xFF4A7C59), Color(0xFF5FA87A)],
+  [Color(0xFF8B7355), Color(0xFFA88960)],
+  [Color(0xFFD4C4A8), Color(0xFFE0D4BA)],
+];
+
 class FinancePieChart extends StatelessWidget {
   final SalesDecomposition data;
   const FinancePieChart({super.key, required this.data});
@@ -98,12 +108,38 @@ class FinancePieChart extends StatelessWidget {
               SizedBox(
                 width: 140,
                 height: 140,
-                child: CustomPaint(
-                  painter: _DonutPainter(
-                    segments: data.segments,
-                    colors: _segColors,
-                    total: data.total,
-                  ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CustomPaint(
+                      size: const Size(140, 140),
+                      painter: _DonutPainter(
+                        segments: data.segments,
+                        colors: _segColors,
+                        total: data.total,
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${_fmtAmount(data.total)} ₽',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: _ink,
+                          ),
+                        ),
+                        const Text(
+                          'всего',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: _muted2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -160,7 +196,18 @@ class _DonutPainter extends CustomPainter {
 
     for (int i = 0; i < segments.length; i++) {
       final sweep = 2 * math.pi * (segments[i].amount / total);
-      final color = colors[i % colors.length];
+      final gradColors = _segGradients[i % _segGradients.length];
+
+      // Градиент по дуге
+      final midAngle = startAngle + sweep / 2;
+      final gradStart = center + Offset(
+        math.cos(startAngle) * radius,
+        math.sin(startAngle) * radius,
+      );
+      final gradEnd = center + Offset(
+        math.cos(startAngle + sweep) * radius,
+        math.sin(startAngle + sweep) * radius,
+      );
 
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
@@ -168,7 +215,11 @@ class _DonutPainter extends CustomPainter {
         sweep,
         false,
         Paint()
-          ..color = color
+          ..shader = LinearGradient(
+            colors: gradColors,
+            begin: Alignment(math.cos(startAngle), math.sin(startAngle)),
+            end: Alignment(math.cos(startAngle + sweep), math.sin(startAngle + sweep)),
+          ).createShader(Rect.fromCircle(center: center, radius: radius))
           ..style = PaintingStyle.stroke
           ..strokeWidth = strokeWidth
           ..strokeCap = StrokeCap.butt,
@@ -238,6 +289,8 @@ class _LegendRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,

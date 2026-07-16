@@ -33,7 +33,14 @@ const _muted2 = Color(0xFF9C9484);
 const _barColors = <Color>[
   Color(0xFFE8912B), // оранжевый — Картой
   Color(0xFF4A7C59), // зелёный — Наличными
-  Color(0xFF6B4226), // коричневый — Счёт заведения
+  Color(0xFF8B6F47), // золотой — Счёт заведения
+];
+
+// Градиенты для столбцов
+const _barGradients = <List<Color>>[
+  [Color(0xFFE8912B), Color(0xFFF2A84D)],
+  [Color(0xFF4A7C59), Color(0xFF5FA87A)],
+  [Color(0xFF8B6F47), Color(0xFFA88960)],
 ];
 
 // ── Палитра сегментов (тарифы) ──
@@ -41,6 +48,13 @@ const _tarColors = <Color>[
   Color(0xFFE8912B), // оранжевый — Стандарт
   Color(0xFFD4C4A8), // бежевый — Гостевой
   Color(0xFFB8B0A2), // серый — Пенсионер
+];
+
+// Градиенты для сегментов тарифов
+const _tarGradients = <List<Color>>[
+  [Color(0xFFE8912B), Color(0xFFF2A84D)],
+  [Color(0xFFD4C4A8), Color(0xFFE0D4BA)],
+  [Color(0xFFB8B0A2), Color(0xFFC8C0B4)],
 ];
 
 class PaymentTariffCard extends StatelessWidget {
@@ -106,6 +120,7 @@ class _PaymentBars extends StatelessWidget {
             amount: payments[i].amount,
             fraction: maxAmount > 0 ? payments[i].amount / maxAmount : 0,
             color: _barColors[i % _barColors.length],
+            gradient: _barGradients[i % _barGradients.length],
           ),
           if (i < payments.length - 1) const SizedBox(height: 10),
         ],
@@ -119,12 +134,14 @@ class _BarRow extends StatelessWidget {
   final double amount;
   final double fraction; // 0..1
   final Color color;
+  final List<Color> gradient;
 
   const _BarRow({
     required this.label,
     required this.amount,
     required this.fraction,
     required this.color,
+    required this.gradient,
   });
 
   @override
@@ -157,9 +174,9 @@ class _BarRow extends StatelessWidget {
         const SizedBox(height: 4),
         // Столбец
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(5),
           child: SizedBox(
-            height: 8,
+            height: 10,
             child: LayoutBuilder(
               builder: (context, constraints) => Stack(
                 children: [
@@ -167,8 +184,8 @@ class _BarRow extends StatelessWidget {
                   Container(
                     width: constraints.maxWidth * fraction.clamp(0.0, 1.0),
                     decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(5),
+                      gradient: LinearGradient(colors: gradient),
                     ),
                   ),
                 ],
@@ -206,12 +223,38 @@ class _TariffDonut extends StatelessWidget {
           child: SizedBox(
             width: 110,
             height: 110,
-            child: CustomPaint(
-              painter: _DonutPainter(
-                tariffs: tariffs,
-                colors: _tarColors,
-                total: total,
-              ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: const Size(110, 110),
+                  painter: _DonutPainter(
+                    tariffs: tariffs,
+                    colors: _tarColors,
+                    total: total,
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      money(total),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: _ink,
+                      ),
+                    ),
+                    const Text(
+                      'всего',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: _muted2,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

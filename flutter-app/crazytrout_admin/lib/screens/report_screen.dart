@@ -1868,7 +1868,12 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: _fill,
-            borderRadius: BorderRadius.circular(_borderRadius),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(_borderRadius),
+              topRight: Radius.circular(_borderRadius),
+              bottomLeft: Radius.circular(_open ? 0 : _borderRadius),
+              bottomRight: Radius.circular(_open ? 0 : _borderRadius),
+            ),
             border: Border.all(
                 color: _open ? _orange : _hairline),
           ),
