@@ -633,9 +633,9 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
       builder: (ctx) => Stack(
         children: [
           Positioned.fill(
-            child: Listener(
+            child: GestureDetector(
               behavior: HitTestBehavior.translucent,
-              onPointerDown: (_) => _close(),
+              onTap: _close,
             ),
           ),
           CompositedTransformFollower(
