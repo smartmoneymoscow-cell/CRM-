@@ -97,5 +97,30 @@ List<ReceiptHistoryItem> _buildDemo() {
       ],
       total: 6798, fiscal: false, paymentLabel: 'Наличными',
     ),
+    // Счёт заведения
+    ReceiptHistoryItem(
+      number: nextN(), date: d(2, 16, 30), client: _c(3), isGuest: false,
+      tariffLabel: 'Стандарт', tariffPrice: 750,
+      rows: const [
+        ReceiptHistoryRow(name: 'Карп', weight: 2.5, price: 590, sum: 1475),
+      ],
+      total: 2225, fiscal: true, paymentLabel: 'Счет заведения', fiscalDoc: '#48300',
+    ),
+    ReceiptHistoryItem(
+      number: nextN(), date: d(5, 10, 0), client: _c(6), isGuest: false,
+      tariffLabel: 'Стандарт', tariffPrice: 750,
+      rows: const [
+        ReceiptHistoryRow(name: 'Форель', weight: 1.8, price: 1200, sum: 2160),
+      ],
+      total: 2910, fiscal: true, paymentLabel: 'Счет заведения', fiscalDoc: '#48295',
+    ),
+    ReceiptHistoryItem(
+      number: nextN(), date: d(15, 14, 20), client: _c(8), isGuest: false,
+      tariffLabel: 'Стандарт', tariffPrice: 750,
+      rows: const [
+        ReceiptHistoryRow(name: 'Амур', weight: 1.5, price: 750, sum: 1125),
+      ],
+      total: 1875, fiscal: false, paymentLabel: 'Счет заведения',
+    ),
   ]..sort((a, b) => b.date.compareTo(a.date));
 }
