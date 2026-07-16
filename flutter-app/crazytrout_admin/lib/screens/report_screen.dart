@@ -170,12 +170,12 @@ class _FishStatsContent extends StatelessWidget {
   const _FishStatsContent();
 
   static const _speciesImageHeight = <String, double>{
-    'Осётр': 33,
-    'Амур': 30,
-    'Форель': 27,
-    'Карп': 27,
+    'Осётр': 23,
+    'Амур': 21,
+    'Форель': 19,
+    'Карп': 19,
   };
-  static const _defaultImageHeight = 24.0;
+  static const _defaultImageHeight = 17.0;
 
   // Градиент выручки: бледно-оранжевый (мин) → зелёный (макс)
   static const _revenueMin = Color(0xFFFBE8D0); // бледно-оранжевый
@@ -232,7 +232,7 @@ class _FishStatsContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFFBF6EC),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFEFE8D8)),
               ),
@@ -353,7 +353,7 @@ class _FishStatsContent extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: const Color(0xFFFBF6EC),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                             color: const Color(0xFFEFE8D8)),
