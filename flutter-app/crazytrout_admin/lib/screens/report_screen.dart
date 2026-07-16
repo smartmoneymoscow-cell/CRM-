@@ -538,12 +538,13 @@ class _IconSlot extends StatelessWidget {
 // ============================================================================
 // _FilterDropdown — точная копия из checks_screen.dart
 // ============================================================================
+// _FilterDropdown — OverlayEntry-based dropdown (как AppDropdownField)
+// ============================================================================
 class _FilterDropdownItem<T> {
   final T? value;
   final String label;
   final bool isReset;
   final bool enabled;
-
   const _FilterDropdownItem({
     required this.value,
     required this.label,
@@ -595,14 +596,15 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
       builder: (ctx) => Stack(
         children: [
           Positioned.fill(
-            child: GestureDetector(
+            child: Listener(
               behavior: HitTestBehavior.translucent,
-              onTap: _close,
+              onPointerDown: (_) => _close(),
             ),
           ),
           CompositedTransformFollower(
             link: _link,
             showWhenUnlinked: false,
+            // Ноль зазора — список приклеен к полю
             offset: Offset(0, size.height),
             child: Material(
               color: Colors.transparent,
@@ -623,48 +625,50 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
                           offset: Offset(0, 6)),
                     ],
                   ),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
+                  clipBehavior: Clip.antiAlias,
+                  child: ListView(
                     shrinkWrap: true,
-                    itemCount: widget.items.length,
-                    itemBuilder: (_, i) {
-                      final item = widget.items[i];
-                      final selected =
-                          !item.isReset && item.value == widget.value;
+                    padding: EdgeInsets.zero,
+                    children: widget.items.map((item) {
+                      final selected = item.value == widget.value &&
+                          item.value != null;
+                      final enabled = item.enabled;
                       return GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: !item.enabled
-                            ? null
-                            : () {
-                                widget.onChanged(
-                                    item.isReset ? null : item.value);
+                        onTap: enabled
+                            ? () {
+                                widget.onChanged(item.value);
                                 _close();
-                              },
+                              }
+                            : null,
                         child: Container(
+                          width: double.infinity,
                           height: _itemHeight,
                           padding:
-                              const EdgeInsets.symmetric(horizontal: 14),
-                          alignment: Alignment.centerLeft,
+                              const EdgeInsets.symmetric(horizontal: 12),
                           color: selected
                               ? _selected
                               : Colors.transparent,
-                          child: Text(
-                            item.label,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: !item.enabled
-                                  ? _muted.withOpacity(0.4)
-                                  : selected
-                                      ? _ink
-                                      : _muted,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              item.label,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: item.isReset
+                                    ? FontWeight.w400
+                                    : selected
+                                        ? FontWeight.w700
+                                        : FontWeight.w400,
+                                color: enabled
+                                    ? (item.isReset ? _muted2 : _ink)
+                                    : _muted,
+                              ),
                             ),
                           ),
                         ),
                       );
-                    },
+                    }).toList(),
                   ),
                 ),
               ),
@@ -679,54 +683,70 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
   }
 
   void _close() {
-    _entry?.remove();
+    final entry = _entry;
     _entry = null;
-    setState(() => _open = false);
+    if (mounted) setState(() => _open = false);
+    if (mounted) entry?.remove();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasValue = widget.value != null;
+    // Когда меню открыто — срезаем нижние углы поля
+    final radius = BorderRadius.only(
+      topLeft: const Radius.circular(_borderRadius),
+      topRight: const Radius.circular(_borderRadius),
+      bottomLeft: Radius.circular(_open ? 0 : _borderRadius),
+      bottomRight: Radius.circular(_open ? 0 : _borderRadius),
+    );
+
+    // Определяем текущий лейбл
+    String displayLabel = widget.label;
+    if (widget.value != null) {
+      for (final item in widget.items) {
+        if (item.value == widget.value && !item.isReset) {
+          displayLabel = item.label;
+          break;
+        }
+      }
+    }
+    final active = widget.value != null;
+
     return CompositedTransformTarget(
       link: _link,
-      child: GestureDetector(
-        key: _fieldKey,
-        onTap: _toggle,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: _fill,
-            borderRadius: BorderRadius.circular(_borderRadius),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  hasValue
-                      ? widget.items
-                          .firstWhere(
-                              (i) => i.value == widget.value && !i.isReset)
-                          .label
-                      : widget.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight:
-                        hasValue ? FontWeight.w600 : FontWeight.w500,
-                    color: hasValue ? _ink : _muted,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: _fieldKey,
+          onTap: _toggle,
+          child: Ink(
+            decoration: BoxDecoration(color: _fill, borderRadius: radius),
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    displayLabel,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          active ? FontWeight.w700 : FontWeight.w400,
+                      color: active ? _ink : _muted2,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Icon(
-                _open
-                    ? Icons.keyboard_arrow_up
-                    : Icons.keyboard_arrow_down,
-                size: 20,
-                color: _muted,
-              ),
-            ],
+                Icon(
+                  _open
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 20,
+                  color: _muted2,
+                ),
+              ],
+            ),
           ),
         ),
       ),
