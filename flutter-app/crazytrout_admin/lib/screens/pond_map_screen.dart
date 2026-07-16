@@ -989,7 +989,8 @@ class FiltersDropdown extends StatefulWidget {
   final FilterValue value;
   final ValueChanged<FilterValue> onChange;
   final ValueNotifier<bool>? isOpenNotifier;
-  const FiltersDropdown({super.key, required this.value, required this.onChange, this.isOpenNotifier});
+  final ScrollController? scrollController;
+  const FiltersDropdown({super.key, required this.value, required this.onChange, this.isOpenNotifier, this.scrollController});
 
   @override
   State<FiltersDropdown> createState() => _FiltersDropdownState();
@@ -997,11 +998,14 @@ class FiltersDropdown extends StatefulWidget {
 
 class _FiltersDropdownState extends State<FiltersDropdown> {
   bool _isOpen = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
 
   @override
   void initState() {
     super.initState();
     widget.isOpenNotifier?.addListener(_onNotifierChanged);
+    widget.scrollController?.addListener(_onScroll);
   }
 
   @override
@@ -1011,116 +1015,142 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
       oldWidget.isOpenNotifier?.removeListener(_onNotifierChanged);
       widget.isOpenNotifier?.addListener(_onNotifierChanged);
     }
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController?.removeListener(_onScroll);
+      widget.scrollController?.addListener(_onScroll);
+    }
   }
 
   @override
   void dispose() {
+    _removeOverlay();
     widget.isOpenNotifier?.removeListener(_onNotifierChanged);
+    widget.scrollController?.removeListener(_onScroll);
     super.dispose();
   }
 
   void _onNotifierChanged() {
     final val = widget.isOpenNotifier?.value ?? false;
     if (!val && _isOpen && mounted) {
+      _removeOverlay();
       setState(() => _isOpen = false);
     }
   }
 
+  void _onScroll() {
+    if (_isOpen) _closeDropdown();
+  }
+
   void _toggleDropdown() {
-    setState(() {
-      _isOpen = !_isOpen;
-      widget.isOpenNotifier?.value = _isOpen;
+    if (_isOpen) {
+      _closeDropdown();
+    } else {
+      _openDropdown();
+    }
+  }
+
+  void _openDropdown() {
+    _overlayEntry = OverlayEntry(builder: (context) {
+      return Stack(children: [
+        // Прозрачный слой для закрытия по тапу вне
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _closeDropdown,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 40),
+          child: SizedBox(
+            width: 120,
+            child: Material(
+              elevation: 4,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(14),
+              ),
+              color: Colors.white,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: kDropdownVPadding),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    ...filterOptions.entries.map((e) {
+                      final isSelected = widget.value == e.key;
+                      return InkWell(
+                        onTap: () {
+                          widget.onChange(e.key);
+                          _closeDropdown();
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          color: isSelected ? const Color(0xFFF5EEDC) : Colors.transparent,
+                          child: Text(e.value,
+                            style: TextStyle(fontSize: 13, color: _ink,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400)),
+                        ),
+                      );
+                    }),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ]);
     });
+    Overlay.of(context).insert(_overlayEntry!);
+    setState(() => _isOpen = true);
+    widget.isOpenNotifier?.value = true;
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
   void _closeDropdown() {
-    if (mounted) setState(() {
-      _isOpen = false;
-      widget.isOpenNotifier?.value = false;
-    });
+    _removeOverlay();
+    if (mounted) setState(() => _isOpen = false);
+    widget.isOpenNotifier?.value = false;
   }
 
   @override
   Widget build(BuildContext context) {
     const pill = BorderRadius.all(Radius.circular(999));
 
-    // Используем Stack вместо Overlay — дропдаун внутри дерева виджетов,
-    // не перекрывает нижнее меню, не блокирует скролл.
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Кнопка
-        GestureDetector(
-          onTap: _toggleDropdown,
-          child: Container(
-            width: 120,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: pill,
-            ),
-            child: Row(children: [
-              const Icon(Icons.filter_list, size: 13, color: _ember),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(filterButtonLabels[widget.value]!,
-                  overflow: TextOverflow.ellipsis, maxLines: 1,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
-              ),
-            ]),
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        onTap: _toggleDropdown,
+        child: Container(
+          width: 120,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: pill,
           ),
+          child: Row(children: [
+            const Icon(Icons.filter_list, size: 13, color: _ember),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(filterButtonLabels[widget.value]!,
+                overflow: TextOverflow.ellipsis, maxLines: 1,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+            ),
+          ]),
         ),
-
-        // Дропдаун — позиционируется ниже кнопки
-        if (_isOpen)
-          Positioned(
-            top: 36, // высота кнопки (8+8 padding + ~20 текст)
-            left: 0,
-            width: 120,
-            child: GestureDetector(
-              onTap: () {}, // перехватываем тап, чтобы не закрывать
-              child: Material(
-                elevation: 4,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(14),
-                  bottomRight: Radius.circular(14),
-                ),
-                color: Colors.white,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(14),
-                      bottomRight: Radius.circular(14),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: kDropdownVPadding),
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      ...filterOptions.entries.map((e) {
-                        final isSelected = widget.value == e.key;
-                        return InkWell(
-                          onTap: () {
-                            widget.onChange(e.key);
-                            _closeDropdown();
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            color: isSelected ? const Color(0xFFF5EEDC) : Colors.transparent,
-                            child: Text(e.value,
-                              style: TextStyle(fontSize: 13, color: _ink,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400)),
-                          ),
-                        );
-                      }),
-                    ]),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
@@ -1146,10 +1176,12 @@ class _PondMapScreenState extends State<PondMapScreen> {
   int? selected;
   FilterValue filter = FilterValue.none;
   final _dropdownOpen = ValueNotifier<bool>(false);
+  final _scrollController = ScrollController();
 
   @override
   void dispose() {
     _dropdownOpen.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
