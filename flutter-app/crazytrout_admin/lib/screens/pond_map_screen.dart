@@ -995,59 +995,72 @@ class FiltersDropdown extends StatefulWidget {
 }
 
 class _FiltersDropdownState extends State<FiltersDropdown> {
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
   bool _isOpen = false;
 
-  static const double _dropdownVPadding = kDropdownVPadding;
-
   void _toggleDropdown() {
-    if (_isOpen) {
-      _closeDropdown();
-    } else {
-      _openDropdown();
-    }
+    setState(() => _isOpen = !_isOpen);
   }
 
-  void _openDropdown() {
-    _overlayEntry = OverlayEntry(builder: (context) {
-      return Stack(children: [
-        // Прозрачный слой для закрытия по тапу вне
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _closeDropdown,
-            child: const SizedBox.expand(),
+  void _closeDropdown() {
+    if (mounted) setState(() => _isOpen = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const pill = BorderRadius.all(Radius.circular(999));
+
+    // Используем Stack вместо Overlay — дропдаун внутри дерева виджетов,
+    // не перекрывает нижнее меню, не блокирует скролл.
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Кнопка
+        GestureDetector(
+          onTap: _toggleDropdown,
+          child: Container(
+            width: 120,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: pill,
+            ),
+            child: Row(children: [
+              const Icon(Icons.filter_list, size: 13, color: _ember),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(filterButtonLabels[widget.value]!,
+                  overflow: TextOverflow.ellipsis, maxLines: 1,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
+              ),
+            ]),
           ),
         ),
-        CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: const Offset(0, 0),
-          child: SizedBox(
+
+        // Дропдаун — позиционируется ниже кнопки
+        if (_isOpen)
+          Positioned(
+            top: 36, // высота кнопки (8+8 padding + ~20 текст)
+            left: 0,
             width: 120,
-            child: Material(
-              elevation: 4,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(14),
-                bottomRight: Radius.circular(14),
-              ),
-              color: Colors.white,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(14),
-                    bottomRight: Radius.circular(14),
-                  ),
+            child: GestureDetector(
+              onTap: () {}, // перехватываем тап, чтобы не закрывать
+              child: Material(
+                elevation: 4,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(14),
+                  bottomRight: Radius.circular(14),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(14),
-                    bottomRight: Radius.circular(14),
+                color: Colors.white,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(14),
+                      bottomRight: Radius.circular(14),
+                    ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: _dropdownVPadding),
+                    padding: const EdgeInsets.symmetric(vertical: kDropdownVPadding),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       ...filterOptions.entries.map((e) {
                         final isSelected = widget.value == e.key;
@@ -1072,58 +1085,8 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
               ),
             ),
           ),
-        ),
-      ]);
-    });
-    Overlay.of(context).insert(_overlayEntry!);
-    setState(() => _isOpen = true);
-  }
-
-  void _closeDropdown() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    if (mounted) setState(() => _isOpen = false);
-  }
-
-  @override
-  void dispose() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const pill = BorderRadius.all(Radius.circular(999));
-
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: _buildButton(pill),
+      ],
     );
-  }
-
-  Widget _buildButton(BorderRadius pill) {
-
-    return GestureDetector(
-        onTap: _toggleDropdown,
-        child: Container(
-          width: 120,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(999)),
-          ),
-          child: Row(children: [
-            const Icon(Icons.filter_list, size: 13, color: _ember),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(filterButtonLabels[widget.value]!,
-                overflow: TextOverflow.ellipsis, maxLines: 1,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink)),
-            ),
-          ]),
-        ),
-      );
   }
 }
 
@@ -1147,6 +1110,22 @@ class _PondMapScreenState extends State<PondMapScreen> {
   int hour = 6;
   int? selected;
   FilterValue filter = FilterValue.none;
+  final _filterDropdownKey = GlobalKey<_FiltersDropdownState>();
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      _filterDropdownKey.currentState?._closeDropdown();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   List<List<Slot>> get schedules =>
       List.generate(16, (i) => _scheduleFor(date, i + 1));
@@ -1164,7 +1143,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
       body: SafeArea(child: Column(children: [
-        Expanded(child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+        Expanded(child: ListView(controller: _scrollController, padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
           // Заголовок
           const Padding(
             padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
@@ -1200,7 +1179,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
             onTap: (n) => setState(() => selected = selected == n ? null : n)),
           const SizedBox(height: 16),
           Row(children: [
-            FiltersDropdown(value: filter, onChange: (v) => setState(() => filter = v)),
+            FiltersDropdown(key: _filterDropdownKey, value: filter, onChange: (v) => setState(() => filter = v)),
             const Spacer(),
             _legend(_green, 'Свободно $free'),
             const SizedBox(width: 12),
