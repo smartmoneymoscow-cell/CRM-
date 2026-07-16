@@ -1001,7 +1001,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     setState(() => _isOpen = !_isOpen);
   }
 
-  void _closeDropdown() {
+  void closeDropdown() {
     if (mounted) setState(() => _isOpen = false);
   }
 
@@ -1067,7 +1067,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
                         return InkWell(
                           onTap: () {
                             widget.onChange(e.key);
-                            _closeDropdown();
+                            closeDropdown();
                           },
                           child: Container(
                             width: double.infinity,
@@ -1117,7 +1117,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(() {
-      _filterDropdownKey.currentState?._closeDropdown();
+      _filterDropdownKey.currentState?.closeDropdown();
     });
   }
 
