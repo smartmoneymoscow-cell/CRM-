@@ -31,7 +31,7 @@ class KpiCards extends StatelessWidget {
             Expanded(child: _KpiCard(
               icon: Icons.calendar_month_outlined, iconColor: const Color(0xFF4A7C59),
               title: 'LT / LTV',
-              value: '${stats.avgVisits.toStringAsFixed(1)} / ${_fmtMoney(stats.avgLtv.round())} ₽',
+              value: '${stats.avgVisits.toStringAsFixed(1)} / ${_formatLtv(stats.avgLtv)}',
               subtitle: 'среднее на клиента',
               delta: '+18,3%', deltaPositive: true,
             )),
@@ -49,20 +49,21 @@ class KpiCards extends StatelessWidget {
             )),
             const SizedBox(width: 10),
             Expanded(child: _KpiCard(
-              icon: Icons.star_rounded, iconColor: _orange,
-              title: 'Оценка сервиса',
-              value: stats.avgRating.toStringAsFixed(1).replaceAll('.', ','),
-              subtitle: '${stats.reviewsCount} отзывов',
-              stars: stats.avgRating,
+              icon: Icons.phishing, iconColor: const Color(0xFF4A7C59),
+              title: 'Средний улов на клиента',
+              value: '${stats.avgFishPerClient.toStringAsFixed(1).replaceAll('.', ',')} кг',
+              delta: '+9,7%', deltaPositive: true,
             )),
           ],
         ),
         const SizedBox(height: 10),
         _KpiCard(
-          icon: Icons.set_meal_outlined, iconColor: const Color(0xFF4A7C59),
-          title: 'Средний улов на клиента',
-          value: '${stats.avgFishPerClient.toStringAsFixed(1).replaceAll('.', ',')} кг',
-          delta: '+9,7%', deltaPositive: true, wide: true,
+          icon: Icons.star_rounded, iconColor: _orange,
+          title: 'Оценка сервиса',
+          value: stats.avgRating.toStringAsFixed(1).replaceAll('.', ','),
+          subtitle: '${stats.reviewsCount} отзывов',
+          stars: stats.avgRating,
+          wide: true,
         ),
       ],
     );
@@ -76,6 +77,19 @@ class KpiCards extends StatelessWidget {
       buf.write(s[i]);
     }
     return buf.toString();
+  }
+
+  String _formatLtv(double rubles) {
+    final k = (rubles / 1000).round();
+    if (k >= 1000) {
+      final v = k / 1000.0;
+      final rounded = (v * 10).round() / 10.0;
+      final str = rounded == rounded.roundToDouble()
+          ? rounded.toStringAsFixed(0)
+          : rounded.toStringAsFixed(1);
+      return '${str.replaceAll('.', ',')} млн';
+    }
+    return '$k тыс.';
   }
 }
 
@@ -165,6 +179,9 @@ class _KpiCard extends StatelessWidget {
             const Text('к прошлому периоду', style: TextStyle(fontSize: 11, color: _muted2)),
           ],
         ]),
+        if (stars != null) ...[const SizedBox(height: 6), _StarRating(rating: stars!)],
+        if (subtitle != null) ...[const SizedBox(height: 2),
+          Text(subtitle!, style: const TextStyle(fontSize: 11, color: _muted2))],
       ])),
     ]);
   }

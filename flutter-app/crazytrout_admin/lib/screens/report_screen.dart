@@ -10,7 +10,7 @@ import '../widgets/revenue_dynamics_chart.dart';
 import '../data/finance_kpi_stats.dart';
 import '../data/revenue_dynamics_data.dart';
 import '../data/demo_receipts.dart';
-import '../data/demo_data.dart' as app_data show kDemoClients;
+import '../data/demo_data.dart' as app_data show kDemoClients, kSpecies, kSpeciesImage;
 import '../models/client.dart';
 import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
@@ -330,7 +330,7 @@ final List<_FullClient> _fullClients = app_data.kDemoClients.map((c) {
     fish: s.fish,
     totalWeight: s.totalWeight,
     firstVisit: s.firstVisit,
-    lastVisit: s.lastVisit,
+    lastVisit: _lastVisitFromReceipts[c.id] ?? s.lastVisit,
     bestCatch: s.bestCatch,
     currentSector: s.currentSector,
   );
@@ -390,6 +390,19 @@ List<_ClientPaymentEntry> _buildPaymentFeed() {
 
 final List<_ClientPaymentEntry> _paymentFeed = _buildPaymentFeed();
 
+// Compute last visit dates from actual receipt data
+final Map<int, String> _lastVisitFromReceipts = () {
+  final latestMap = <int, DateTime>{};
+  for (final r in kDemoReceipts) {
+    if (r.isGuest || r.client == null) continue;
+    final id = r.client!.id;
+    if (!latestMap.containsKey(id) || r.date.isAfter(latestMap[id]!)) {
+      latestMap[id] = r.date;
+    }
+  }
+  return latestMap.map((id, dt) => MapEntry(id, _fmtDate(dt)));
+}();
+
 // ─── Утилиты ─────────────────────────────────────────────────────────────────
 String _fmtDate(DateTime d) {
   two(int n) => n.toString().padLeft(2, '0');
@@ -421,13 +434,34 @@ class _ReportScreenState extends State<ReportScreen> {
   DateTimeRange? _dateRange;
   int _selectedIcon = 0; // 0 = ruble, 1 = clients, 2 = fish
 
+  // Tracks which filter was set last: 'calendar' or 'dropdown' or null
+  String? _lastFilterSource;
+
+  /// Effective period — calendar takes priority if it was set last.
+  _PeriodFilter? get _effectivePeriod {
+    if (_lastFilterSource == 'calendar') return null;
+    return _period;
+  }
+
+  /// Effective date range — dropdown takes priority if it was set last.
+  DateTimeRange? get _effectiveDateRange {
+    if (_lastFilterSource == 'dropdown') return null;
+    return _dateRange;
+  }
+
   Future<void> _openCalendar() async {
     final res = await _showRangeCalendarPicker(context, _dateRange);
     if (!mounted || res == null) return;
     if (res.start.year == 2000 && res.end.year == 2000) {
-      setState(() => _dateRange = null);
+      setState(() {
+        _dateRange = null;
+        _lastFilterSource = _period != null ? 'dropdown' : null;
+      });
     } else {
-      setState(() => _dateRange = res);
+      setState(() {
+        _dateRange = res;
+        _lastFilterSource = 'calendar';
+      });
     }
   }
 
@@ -477,7 +511,10 @@ class _ReportScreenState extends State<ReportScreen> {
                           label: p.label,
                         ),
                     ],
-                    onChanged: (v) => setState(() => _period = v),
+                    onChanged: (v) => setState(() {
+                    _period = v;
+                    _lastFilterSource = v != null ? 'dropdown' : (_dateRange != null ? 'calendar' : null);
+                  }),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -514,10 +551,10 @@ class _ReportScreenState extends State<ReportScreen> {
           Expanded(
             child: switch (_selectedIcon) {
               1 => _ClientStatsContent(
-                    period: _period,
-                    dateRange: _dateRange,
+                    period: _effectivePeriod,
+                    dateRange: _effectiveDateRange,
                   ),
-              2 => _FishStatsContent(period: _period, dateRange: _dateRange),
+              2 => _FishStatsContent(period: _effectivePeriod, dateRange: _effectiveDateRange),
               _ => const _FinanceContent(),
             },
           ),
@@ -1298,7 +1335,7 @@ class _FishStatsContent extends StatelessWidget {
                 Expanded(flex: 2, child: Text('Вес (кг.)', textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
-                Expanded(flex: 3, child: Text('Выручка\n(₽)', textAlign: TextAlign.center,
+                Expanded(flex: 3, child: Text('Выручка', textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
                 Expanded(flex: 2, child: Text('Остаток\n(шт.)', textAlign: TextAlign.center,
@@ -1392,7 +1429,6 @@ class _FishStatsContent extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 6),
           ],
 
           // ── ИТОГО строка таблицы 1 ──
@@ -1542,6 +1578,7 @@ class _FishStatsContent extends StatelessWidget {
                               barColor: const Color(0xFFE8912B),
                             ),
                           ),
+                          const SizedBox(width: 4),
                           Expanded(
                             flex: 3,
                             child: _PercentCell(
@@ -1553,7 +1590,6 @@ class _FishStatsContent extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 6),
                   ],
                   // ── ИТОГО строка таблицы 2 ──
                   Container(
@@ -1581,6 +1617,7 @@ class _FishStatsContent extends StatelessWidget {
                             barColor: const Color(0xFFE8912B),
                           ),
                         ),
+                        const SizedBox(width: 4),
                         Expanded(
                           flex: 3,
                           child: _PercentCell(
@@ -1594,6 +1631,20 @@ class _FishStatsContent extends StatelessWidget {
                 ],
               );
             },
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── Добавить рыбу в пруд ──
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFBF6EC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFEFE8D8)),
+            ),
+            child: _AddFishForm(),
           ),
         ],
       ),
@@ -1617,10 +1668,10 @@ class _FishStatsContent extends StatelessWidget {
     if (rounded >= 1000000) {
       final m = rounded / 1000000.0;
       final r = (m * 10).round() / 10.0;
-      return '${r.toStringAsFixed(1).replaceAll('.', ',')} млн ₽';
+      return '${r.toStringAsFixed(1).replaceAll('.', ',')} млн';
     }
     if (rounded > 999) {
-      return '${(rounded / 1000).round()} тыс. ₽';
+      return '${(rounded / 1000).round()} тыс.';
     }
     final s = rounded.toString();
     final buf = StringBuffer();
@@ -1628,7 +1679,7 @@ class _FishStatsContent extends StatelessWidget {
       if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
       buf.write(s[i]);
     }
-    return '${buf.toString()} ₽';
+    return buf.toString();
   }
 }
 
@@ -1680,8 +1731,171 @@ class _PercentCell extends StatelessWidget {
 }
 
 // ============================================================================
-// _IconSlot — иконка-кнопка 44×44
+// _AddFishForm — форма добавления рыбы в пруд
 // ============================================================================
+class _AddFishForm extends StatefulWidget {
+  const _AddFishForm();
+
+  @override
+  State<_AddFishForm> createState() => _AddFishFormState();
+}
+
+class _AddFishFormState extends State<_AddFishForm> {
+  String? _selectedSpecies;
+  final _qtyController = TextEditingController();
+  final _costController = TextEditingController();
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    _costController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'ДОБАВИТЬ РЫБУ В ПРУД',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF8C8576),
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Species dropdown
+        Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3EEE4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFEFE8D8)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedSpecies,
+              hint: const Text('Выберите рыбу',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF9C9484))),
+              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF9C9484)),
+              items: app_data.kSpecies.map((sp) => DropdownMenuItem(
+                value: sp,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Image.asset(app_data.kSpeciesImage[sp]!, fit: BoxFit.contain),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(sp, style: const TextStyle(fontSize: 14, color: Color(0xFF14130F))),
+                  ],
+                ),
+              )).toList(),
+              onChanged: (v) => setState(() => _selectedSpecies = v),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Quantity + Cost row
+        Row(
+          children: [
+            Expanded(
+              child: _NumberInput(
+                controller: _qtyController,
+                label: 'Количество (шт.)',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _NumberInput(
+                controller: _costController,
+                label: 'Затраты',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Submit button
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE8912B),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            onPressed: _selectedSpecies != null ? () {
+              // Demo — just show a snackbar
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${_selectedSpecies!}: ${_qtyController.text.isEmpty ? "0" : _qtyController.text} шт. добавлено',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  backgroundColor: const Color(0xFF4A7C59),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+              setState(() {
+                _selectedSpecies = null;
+                _qtyController.clear();
+                _costController.clear();
+              });
+            } : null,
+            child: const Text(
+              'Добавить',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NumberInput extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+
+  const _NumberInput({required this.controller, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3EEE4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEFE8D8)),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        style: const TextStyle(fontSize: 14, color: Color(0xFF14130F)),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: label,
+          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9C9484)),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// _IconSlot — иконка-кнопка 44×44
+// ============================================================================ 
 class _IconSlot extends StatelessWidget {
   final IconData? icon;
   final String? assetPath;
@@ -1884,17 +2098,25 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: _fill,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(_borderRadius),
-              topRight: Radius.circular(_borderRadius),
-              bottomLeft: Radius.circular(_open ? 0 : _borderRadius),
-              bottomRight: Radius.circular(_open ? 0 : _borderRadius),
+            borderRadius: BorderRadius.all(
+              Radius.circular(_open ? 0 : _borderRadius),
             ),
             border: Border.all(
                 color: _open ? _orange : _hairline),
           ),
           child: Row(
             children: [
+              if (widget.value != null) ...[
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: _orange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
               Expanded(
                 child: Text(
                   widget.value != null

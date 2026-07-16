@@ -5,18 +5,17 @@ import '../data/payment_tariff_stats.dart';
 import '../utils/format.dart';
 
 // ============================================================================
-// PaymentTariffCard — две диаграммы на одной строке:
+// PaymentTariffCard — две столбчатые диаграммы на одной строке:
 //   Слева: столбчатая — выручка по способам оплаты
-//   Справа: кольцевая — выручка по тарифам
+//   Справа: столбчатая — количество оплат по тарифам
 //
 //   ┌─────────────────────┬────────────────────┐
 //   │ По способам оплаты  │  По тарифам        │
 //   │                     │                    │
-//   │  Картой    ████████ │    ╭───────╮       │
-//   │  Наличными ████     │   ╱ Станд. ╲      │
-//   │  Счёт      ██       │  │  Гостев.  │     │
-//   │                     │   ╲ Пенсион.╱      │
-//   │                     │    ╰───────╯       │
+//   │  Картой    ████████ │  Стандарт ████████ │
+//   │  Наличными ████     │  Гостевой ████     │
+//   │  Счёт      ██       │  Пенсион. ██       │
+//   │                     │                    │
 //   └─────────────────────┴────────────────────┘
 // ============================================================================
 
@@ -81,9 +80,9 @@ class PaymentTariffCard extends StatelessWidget {
 
           const SizedBox(width: 14),
 
-          // ── Справа: кольцо (тарифы) ──
+          // ── Справа: столбцы (тарифы по количеству) ──
           Expanded(
-            child: _TariffDonut(tariffs: stats.tariffs),
+            child: _TariffBars(tariffs: stats.tariffs),
           ),
         ],
       ),
@@ -198,14 +197,17 @@ class _BarRow extends StatelessWidget {
   }
 }
 
-// ─── Кольцевая диаграмма тарифов ────────────────────────────────────────────
-class _TariffDonut extends StatelessWidget {
+// ─── Горизонтальные столбцы тарифов (по количеству) ────────────────────────
+class _TariffBars extends StatelessWidget {
   final List<TariffBreakdown> tariffs;
-  const _TariffDonut({required this.tariffs});
+  const _TariffBars({required this.tariffs});
 
   @override
   Widget build(BuildContext context) {
-    final total = tariffs.fold<double>(0, (s, e) => s + e.amount);
+    if (tariffs.isEmpty) return const SizedBox.shrink();
+
+    final totalCount = tariffs.fold<int>(0, (s, e) => s + e.count);
+    final maxCount = tariffs.map((e) => e.count).reduce(math.max);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,197 +220,91 @@ class _TariffDonut extends StatelessWidget {
             color: _ink,
           ),
         ),
-        const SizedBox(height: 12),
-        Center(
-          child: SizedBox(
-            width: 110,
-            height: 110,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: const Size(110, 110),
-                  painter: _DonutPainter(
-                    tariffs: tariffs,
-                    colors: _tarColors,
-                    total: total,
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      money(total),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: _ink,
-                      ),
-                    ),
-                    const Text(
-                      'всего',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: _muted2,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Легенда
+        const SizedBox(height: 14),
         for (int i = 0; i < tariffs.length; i++) ...[
-          _LegendDot(
-            color: _tarColors[i % _tarColors.length],
+          _TariffBarRow(
             label: tariffs[i].label,
-            pct: total > 0
-                ? '${(tariffs[i].amount / total * 100).toStringAsFixed(0).replaceAll('.', ',')}%'
-                : '0%',
             count: tariffs[i].count,
+            totalCount: totalCount,
+            fraction: maxCount > 0 ? tariffs[i].count / maxCount : 0,
+            color: _tarColors[i % _tarColors.length],
+            gradient: _tarGradients[i % _tarGradients.length],
           ),
-          if (i < tariffs.length - 1) const SizedBox(height: 6),
+          if (i < tariffs.length - 1) const SizedBox(height: 10),
         ],
       ],
     );
   }
 }
 
-class _DonutPainter extends CustomPainter {
-  final List<TariffBreakdown> tariffs;
-  final List<Color> colors;
-  final double total;
-
-  _DonutPainter({
-    required this.tariffs,
-    required this.colors,
-    required this.total,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2;
-    const strokeWidth = 20.0;
-
-    if (total <= 0 || tariffs.isEmpty) {
-      canvas.drawCircle(
-        center,
-        radius,
-        Paint()
-          ..color = const Color(0xFFE1DCCF)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth,
-      );
-      return;
-    }
-
-    double startAngle = -math.pi / 2;
-
-    for (int i = 0; i < tariffs.length; i++) {
-      if (tariffs[i].amount <= 0) continue;
-      final sweep = 2 * math.pi * (tariffs[i].amount / total);
-      final color = colors[i % colors.length];
-
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweep,
-        false,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.butt,
-      );
-
-      // Белый разделитель
-      if (sweep > 0.03) {
-        final sepAngle = startAngle + sweep;
-        final inner = center + Offset(
-          math.cos(sepAngle) * (radius - strokeWidth / 2 - 1),
-          math.sin(sepAngle) * (radius - strokeWidth / 2 - 1),
-        );
-        final outer = center + Offset(
-          math.cos(sepAngle) * (radius + strokeWidth / 2 + 1),
-          math.sin(sepAngle) * (radius + strokeWidth / 2 + 1),
-        );
-        canvas.drawLine(
-          inner,
-          outer,
-          Paint()
-            ..color = const Color(0xFFFBF6EC)
-            ..strokeWidth = 2.5
-            ..strokeCap = StrokeCap.round,
-        );
-      }
-
-      startAngle += sweep;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DonutPainter old) =>
-      old.tariffs != tariffs || old.total != total;
-}
-
-// ─── Легенда с точкой ──────────────────────────────────────────────────────
-class _LegendDot extends StatelessWidget {
-  final Color color;
+class _TariffBarRow extends StatelessWidget {
   final String label;
-  final String pct;
   final int count;
+  final int totalCount;
+  final double fraction;
+  final Color color;
+  final List<Color> gradient;
 
-  const _LegendDot({
-    required this.color,
+  const _TariffBarRow({
     required this.label,
-    required this.pct,
     required this.count,
+    required this.totalCount,
+    required this.fraction,
+    required this.color,
+    required this.gradient,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final pct = totalCount > 0 ? (count / totalCount * 100).round() : 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: _ink,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: _ink,
+              ),
             ),
-          ),
+            Text(
+              '$count ($pct%)',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: _ink,
+              ),
+            ),
+          ],
         ),
-        Text(
-          pct,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: _muted,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '($count)',
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w400,
-            color: _muted2,
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: SizedBox(
+            height: 10,
+            child: LayoutBuilder(
+              builder: (context, constraints) => Stack(
+                children: [
+                  Container(color: _fill),
+                  Container(
+                    width: constraints.maxWidth * fraction.clamp(0.0, 1.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      gradient: LinearGradient(colors: gradient),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 }
+
+

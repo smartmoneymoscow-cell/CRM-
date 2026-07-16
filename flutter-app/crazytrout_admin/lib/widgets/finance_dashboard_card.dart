@@ -22,6 +22,7 @@ const _cream = Color(0xFFF3EFE7);
 const _orange = Color(0xFFE08A35);
 const _textLight = Color(0xFFEFE9DF);
 const _statLight = Color(0xFFF8F5EF);
+const _statGreen = Color(0xFFF0F7F2);
 const _delta = Color(0xFF4F9D75);
 const _deltaLabel = Color(0xFF8B8579);
 
@@ -214,7 +215,7 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
         borderRadius: radius,
-        color: dark ? null : _statLight,
+        color: dark ? null : _statGreen,
         gradient: dark
             ? const LinearGradient(
                 begin: Alignment(-0.6, -1),
@@ -343,31 +344,35 @@ class _BracePainter extends CustomPainter {
     // Единый замкнутый путь:
     // 1) Внешний контур сверху вниз
     // 2) Внутренний контур снизу вверх
+    // Nose tip point — sharp
+    final tipX = 0.0;
+    final tipY = h * 0.493;
+
     final path = Path()
       // Начало: верхний правый угол внешнего контура
       ..moveTo(w, 0)
-      // Внешний контур вниз к кончику
+      // Внешний контур вниз к кончику — control points converge to tip
       ..cubicTo(
         w * 0.385, h * 0.075,
-        w * 0.385, h * 0.425,
-        -w * 0.008, h * 0.493,
+        w * 0.12, tipY,
+        tipX, tipY,
       )
       // Внешний контур от кончика вниз
       ..cubicTo(
-        w * 0.385, h * 0.575,
+        w * 0.12, tipY,
         w * 0.385, h * 0.925,
         w, h,
       )
       // Переход к внутреннему контру снизу
-      // Внутренний контур снизу вверх к кончику
+      // Внутренний контур снизу вверх к кончику — control points converge to tip
       ..cubicTo(
         w * 0.555, h * 0.953,
-        w * 0.555, h * 0.548,
-        w * 0.008, h * 0.493,
+        w * 0.15, tipY,
+        tipX + w * 0.016, tipY,
       )
       // Внутренний контур от кончика вверх
       ..cubicTo(
-        w * 0.555, h * 0.453,
+        w * 0.15, tipY,
         w * 0.555, h * 0.048,
         w, h * 0.002,
       )

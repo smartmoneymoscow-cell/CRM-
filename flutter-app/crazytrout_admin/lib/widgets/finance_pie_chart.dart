@@ -43,7 +43,7 @@ class FinancePieChart extends StatelessWidget {
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: _ink)),
         const SizedBox(height: 16),
         Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Expanded(child: Column(
+          Flexible(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (int i = 0; i < data.segments.length; i++) ...[
@@ -57,17 +57,17 @@ class FinancePieChart extends StatelessWidget {
               ],
             ],
           )),
-          const SizedBox(width: 20),
-          SizedBox(width: 140, height: 140, child: Stack(
+          const SizedBox(width: 16),
+          SizedBox(width: 120, height: 120, child: Stack(
             alignment: Alignment.center,
             children: [
-              CustomPaint(size: const Size(140, 140),
+              CustomPaint(size: const Size(120, 120),
                 painter: _DonutPainter(segments: data.segments, colors: _segColors, total: data.total)),
               Column(mainAxisSize: MainAxisSize.min, children: [
                 Text(_fmtAmount(data.total),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink, letterSpacing: -0.3)),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink, letterSpacing: -0.3)),
                 const SizedBox(height: 2),
-                const Text('₽ всего', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: _muted2)),
+                const Text('₽ всего', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: _muted2)),
               ]),
             ],
           )),
