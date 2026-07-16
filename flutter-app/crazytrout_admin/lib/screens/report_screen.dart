@@ -510,7 +510,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     period: _period,
                     dateRange: _dateRange,
                   ),
-              2 => const _FishStatsContent(),
+              2 => _FishStatsContent(period: _period, dateRange: _dateRange),
               _ => const _FinanceContent(),
             },
           ),
@@ -1201,8 +1201,28 @@ class _MedalPainter extends CustomPainter {
 // ============================================================================
 // _FishStatsContent — контент вкладки «Статистика улова рыбы»
 // ============================================================================
+// ── Обёртка для масштабирования демо-данных по периоду ──
+class _ScaledFishStats implements FishSpeciesStats {
+  final FishSpeciesStats _inner;
+  final double _factor;
+  _ScaledFishStats(this._inner, this._factor);
+
+  @override String get species => _inner.species;
+  @override String get imageAsset => _inner.imageAsset;
+  @override int get count => (_inner.count * _factor).round().clamp(0, _inner.count);
+  @override double get weightKg => (_inner.weightKg * _factor).clamp(0, _inner.weightKg);
+  @override double get pricePerKg => _inner.pricePerKg;
+  @override int get remaining => _inner.remaining;
+  @override double get marginPct => _inner.marginPct;
+  @override double get revenue => weightKg * pricePerKg;
+  @override double get avgWeight => count > 0 ? weightKg / count : 0;
+}
+
 class _FishStatsContent extends StatelessWidget {
-  const _FishStatsContent();
+  final _PeriodFilter? period;
+  final DateTimeRange? dateRange;
+
+  _FishStatsContent({this.period, this.dateRange});
 
   static const double _imageSize = 28;
 
@@ -1217,7 +1237,25 @@ class _FishStatsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stats = kDemoFishStats;
+    // ── Фильтрация данных по периоду / календарю ──
+    List<FishSpeciesStats> stats = kDemoFishStats;
+    if (period != null && period != _PeriodFilter.all) {
+      final daysBack = switch (period!) {
+        _PeriodFilter.today => 1,
+        _PeriodFilter.week => 7,
+        _PeriodFilter.month => 30,
+        _PeriodFilter.quarter => 90,
+        _PeriodFilter.all => 99999,
+      };
+      // Scale demo data proportionally to represent the period
+      final factor = daysBack / 30.0;
+      stats = kDemoFishStats.map((s) => _ScaledFishStats(s, factor)).toList();
+    }
+    if (dateRange != null) {
+      final days = dateRange!.end.difference(dateRange!.start).inDays + 1;
+      final factor = days / 30.0;
+      stats = kDemoFishStats.map((s) => _ScaledFishStats(s, factor)).toList();
+    }
     final revenues = stats.map((s) => s.revenue).toList();
     final minRev = revenues.reduce((a, b) => a < b ? a : b);
     final maxRev = revenues.reduce((a, b) => a > b ? a : b);
@@ -1341,6 +1379,78 @@ class _FishStatsContent extends StatelessWidget {
             const SizedBox(height: 6),
           ],
 
+          // ── ИТОГО строка таблицы 1 ──
+          Builder(
+            builder: (context) {
+              final totalCount = stats.fold<int>(0, (s, e) => s + e.count);
+              final totalWeight = stats.fold<double>(0, (s, e) => s + e.weightKg);
+              final totalRevenue = stats.fold<double>(0, (s, e) => s + e.revenue);
+              final totalRemaining = stats.fold<int>(0, (s, e) => s + e.remaining);
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3EEE4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFDDD3BC)),
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      flex: 3,
+                      child: Text('ИТОГО',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w800,
+                              color: Color(0xFF14130F))),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(_formatNum(totalCount), textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700,
+                              color: Color(0xFF14130F))),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(totalWeight.toStringAsFixed(1),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700,
+                              color: Color(0xFF14130F))),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4EDDA),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _formatRevenue(totalRevenue),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w800,
+                              color: Color(0xFF14130F)),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        _formatNum(totalRemaining),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w700,
+                            color: Color(0xFF14130F)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
           const SizedBox(height: 18),
 
           // ── Таблица 2: Доля в выручке + Маржинальность ──
@@ -1429,6 +1539,42 @@ class _FishStatsContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                   ],
+                  // ── ИТОГО строка таблицы 2 ──
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3EEE4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFDDD3BC)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          flex: 3,
+                          child: Text('ИТОГО',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w800,
+                                  color: Color(0xFF14130F))),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: _PercentCell(
+                            pct: 100,
+                            barColor: const Color(0xFFE8912B),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: _PercentCell(
+                            pct: (stats.fold<double>(0, (s, e) => s + e.marginPct) / stats.length).round(),
+                            barColor: const Color(0xFF3FA66B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             },
@@ -1492,19 +1638,22 @@ class _PercentCell extends StatelessWidget {
             style: const TextStyle(
                 fontSize: 13, color: Color(0xFF14130F))),
         const SizedBox(height: 4),
-        Container(
-          height: 6,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEFE8D8),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: (pct / 100).clamp(0.0, 1.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: barColor,
-                borderRadius: BorderRadius.circular(3),
+        SizedBox(
+          width: double.infinity,
+          child: Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFE8D8),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: (pct / 100).clamp(0.0, 1.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: barColor,
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
             ),
           ),

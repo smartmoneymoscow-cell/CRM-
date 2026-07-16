@@ -1046,7 +1046,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
                     bottomLeft: Radius.circular(14),
                     bottomRight: Radius.circular(14),
                   ),
-                  child: SingleChildScrollView(
+                  child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: _dropdownVPadding),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       ...filterOptions.entries.map((e) {

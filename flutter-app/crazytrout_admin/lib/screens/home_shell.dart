@@ -28,7 +28,7 @@ class _HomeShellState extends State<HomeShell> {
     _BottomItem(Icons.map_outlined, 'Карта'),
     _BottomItem(Icons.receipt_outlined, 'Чек'),
     _BottomItem(Icons.receipt_long_outlined, 'Чеки'),
-    _BottomItem(Icons.show_chart, 'Отчёт'),
+    _BottomItem(Icons.show_chart, 'Отчёты'),
     _BottomItem(Icons.person_outline, 'Профиль'),
   ];
 
