@@ -1145,20 +1145,10 @@ class _PondMapScreenState extends State<PondMapScreen> {
   int hour = 6;
   int? selected;
   FilterValue filter = FilterValue.none;
-  final _scrollController = ScrollController();
   final _dropdownOpen = ValueNotifier<bool>(false);
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (_dropdownOpen.value) _dropdownOpen.value = false;
-    });
-  }
-
-  @override
   void dispose() {
-    _scrollController.dispose();
     _dropdownOpen.dispose();
     super.dispose();
   }
