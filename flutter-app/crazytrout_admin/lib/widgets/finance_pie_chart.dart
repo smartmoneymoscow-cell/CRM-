@@ -1,126 +1,113 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-import '../data/demo_finance_stats.dart';
+import '../data/sales_decomposition.dart';
 import '../utils/format.dart';
 
 // ============================================================================
-// FinancePieChart — круговая диаграмма «Структура выручки».
+// FinancePieChart — круговая диаграмма «Декомпозиция продаж».
 //
-//   ┌─────────────────────────────────────┐
-//   │  Структура выручки                  │
-//   │        ╭──────╮                     │
-//   │      ╱  Зел.  ╲  45,1%             │
-//   │    ╱   Маржа    ╲                   │
-//   │    ╲   Расходы  ╱  54,9%           │
-//   │      ╲  Красн. ╱                   │
-//   │        ╰──────╯                     │
-//   │  ● Маржинальная прибыль  186 240 ₽  │
-//   │  ● Переменные расходы    226 560 ₽  │
-//   └─────────────────────────────────────┘
+// Легенда слева, кольцевая диаграмма справа.
+// Стиль: flat, тонкие белые разделители, палитра приложения.
 //
-// Цвета — из палитры приложения: бежевая, оранжевые акценты,
-// зелёный/красный для сегментов.
+//   ┌──────────────────────────────────────────┐
+//   │  Декомпозиция продаж                     │
+//   │                                          │
+//   │  ● Осётр        36%   148 800 ₽   ╭───╮│
+//   │  ● Форель       28%   115 200 ₽ ╭╯   ╰╮│
+//   │  ● Карп         18%    74 400 ₽ │     ││
+//   │  ● Амур         ...   ...     ╰╮   ╭╯│
+//   │  ● Линь         ...   ...      ╰───╯ │
+//   │  ● Вход на пруд ...   ...             │
+//   └──────────────────────────────────────────┘
 // ============================================================================
 
+// ── Цветовые константы (единые с приложением) ──
+const _ink = Color(0xFF14130F);
 const _paper = Color(0xFFFBF6EC);
 const _fill = Color(0xFFF3EEE4);
-const _ink = Color(0xFF14130F);
+const _orange = Color(0xFFE8912B);
+const _hairline2 = Color(0xFFE7E0D1);
 const _muted = Color(0xFF8C8576);
 const _muted2 = Color(0xFF9C9484);
+const _white = Color(0xFFFFFFFF);
 
-// Сегменты
-const _segMargin = Color(0xFF2F8F5B);     // зелёный — маржа
-const _segExpenses = Color(0xFFC0392B);   // красный — расходы
-const _segTrack = Color(0xFFE1DCCF);      // фон кольца
+// ── Палитра сегментов (тёплая, как в примере) ──
+const _segColors = <Color>[
+  Color(0xFFE8912B), // оранжевый — Осётр (главный)
+  Color(0xFF6B4226), // тёмно-коричневый — Форель
+  Color(0xFF9C5A3C), // каштановый — Карп
+  Color(0xFF4A7C59), // зелёный — Амур
+  Color(0xFF8B7355), // охра — Линь
+  Color(0xFFD4C4A8), // бежевый — Вход на пруд
+];
 
 class FinancePieChart extends StatelessWidget {
-  final FinanceStats stats;
-  const FinancePieChart({super.key, this.stats = kDemoFinanceStats});
+  final SalesDecomposition data;
+  const FinancePieChart({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final marginPct = stats.marginPct;
-    final expensesPct = stats.expensesPct;
-
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: _fill,
-        borderRadius: BorderRadius.circular(20),
+        color: _paper,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _hairline2, width: 0.5),
       ),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Заголовок ──
           const Text(
-            'Структура выручки',
+            'Декомпозиция продаж',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: _ink,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
-          // ── Диаграмма + проценты ──
-          Center(
-            child: SizedBox(
-              width: 160,
-              height: 160,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CustomPaint(
-                    size: const Size(160, 160),
-                    painter: _PiePainter(
-                      marginFrac: marginPct / 100,
-                      expensesFrac: expensesPct / 100,
-                    ),
-                  ),
-                  // Центральная сумма
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        money(stats.revenue),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: _ink,
-                          letterSpacing: -0.3,
-                        ),
+          // ── Легенда + Диаграмма ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ── Легенда (слева) ──
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int i = 0; i < data.segments.length; i++) ...[
+                      _LegendRow(
+                        color: _segColors[i % _segColors.length],
+                        label: data.segments[i].label,
+                        pct: '${_fmtPct(data.pct(data.segments[i]))}%',
+                        amount: '${_fmtAmount(data.segments[i].amount)} ₽',
                       ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'выручка',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          color: _muted2,
-                        ),
-                      ),
+                      if (i < data.segments.length - 1)
+                        const SizedBox(height: 10),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 18),
 
-          // ── Легенда ──
-          _LegendRow(
-            color: _segMargin,
-            label: 'Маржинальная прибыль',
-            value: money(stats.marginProfit),
-            pct: '${_fmtPct(marginPct)}%',
-          ),
-          const SizedBox(height: 10),
-          _LegendRow(
-            color: _segExpenses,
-            label: 'Переменные расходы',
-            value: money(stats.variableExpenses),
-            pct: '${_fmtPct(expensesPct)}%',
+              const SizedBox(width: 16),
+
+              // ── Кольцевая диаграмма (справа) ──
+              SizedBox(
+                width: 140,
+                height: 140,
+                child: CustomPaint(
+                  painter: _DonutPainter(
+                    segments: data.segments,
+                    colors: _segColors,
+                    total: data.total,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -130,121 +117,164 @@ class FinancePieChart extends StatelessWidget {
 
 String _fmtPct(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
 
-// ─── Рисователь круговой диаграммы ──────────────────────────────────────────
-class _PiePainter extends CustomPainter {
-  final double marginFrac;  // 0..1
-  final double expensesFrac;
+String _fmtAmount(double v) {
+  final s = v.round().toString();
+  final buf = StringBuffer();
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
+    buf.write(s[i]);
+  }
+  return buf.toString();
+}
 
-  _PiePainter({required this.marginFrac, required this.expensesFrac});
+// ─── Рисователь кольцевой диаграммы ─────────────────────────────────────────
+class _DonutPainter extends CustomPainter {
+  final List<SalesSegment> segments;
+  final List<Color> colors;
+  final double total;
+
+  _DonutPainter({
+    required this.segments,
+    required this.colors,
+    required this.total,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
-    const strokeWidth = 22.0;
+    const strokeWidth = 26.0;
 
-    // Фоновое кольцо
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = _segTrack
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth,
-    );
+    if (total <= 0 || segments.isEmpty) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = const Color(0xFFE1DCCF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth,
+      );
+      return;
+    }
 
-    // Сегменты (начинаем сверху, -90°)
-    const startAngle = -math.pi / 2;
+    double startAngle = -math.pi / 2;
 
-    // Маржа (зелёный)
-    final marginSweep = 2 * math.pi * marginFrac;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      marginSweep,
-      false,
-      Paint()
-        ..color = _segMargin
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round,
-    );
+    for (int i = 0; i < segments.length; i++) {
+      final sweep = 2 * math.pi * (segments[i].amount / total);
+      final color = colors[i % colors.length];
 
-    // Расходы (красный)
-    final expensesSweep = 2 * math.pi * expensesFrac;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle + marginSweep,
-      expensesSweep,
-      false,
-      Paint()
-        ..color = _segExpenses
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round,
-    );
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweep,
+        false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.butt,
+      );
+
+      // Белый разделитель
+      if (sweep > 0.02) {
+        final sepAngle = startAngle + sweep;
+        final inner = center + Offset(
+          math.cos(sepAngle) * (radius - strokeWidth / 2 - 1),
+          math.sin(sepAngle) * (radius - strokeWidth / 2 - 1),
+        );
+        final outer = center + Offset(
+          math.cos(sepAngle) * (radius + strokeWidth / 2 + 1),
+          math.sin(sepAngle) * (radius + strokeWidth / 2 + 1),
+        );
+        canvas.drawLine(
+          inner,
+          outer,
+          Paint()
+            ..color = _white
+            ..strokeWidth = 2.5
+            ..strokeCap = StrokeCap.round,
+        );
+      }
+
+      startAngle += sweep;
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _PiePainter old) =>
-      old.marginFrac != marginFrac || old.expensesFrac != expensesFrac;
+  bool shouldRepaint(covariant _DonutPainter old) =>
+      old.segments != segments || old.total != total;
 }
 
 // ─── Строка легенды ─────────────────────────────────────────────────────────
 class _LegendRow extends StatelessWidget {
   final Color color;
   final String label;
-  final String value;
   final String pct;
+  final String amount;
 
   const _LegendRow({
     required this.color,
     required this.label,
-    required this.value,
     required this.pct,
+    required this.amount,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-              color: _ink,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Row(
+        children: [
+          // Цветная точка
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: _ink,
+          const SizedBox(width: 8),
+          // Название
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: _ink,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          pct,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: _muted,
+          // Процент
+          SizedBox(
+            width: 42,
+            child: Text(
+              pct,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _muted,
+              ),
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          // Сумма
+          SizedBox(
+            width: 74,
+            child: Text(
+              amount,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _ink,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

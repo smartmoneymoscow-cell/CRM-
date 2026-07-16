@@ -4,12 +4,12 @@
 
 ## Ссылка
 
-🔗 **https://appetize.io/app/yi7k2wtilanayxdmcsfnmb7zni**
+🔗 **https://appetize.io/app/ycj34xymn6yympbgogaxwil37i**
 
 ## API-ключ
 
 ```
-tok_mmcyms2cp2sd43fgi53ypx6wsi
+tok_5l2agl6ota5qqqbeduznpztfa4
 ```
 
 > ⚠️ Не публикуй ключ в открытом доступе. Используй только для автоматизации сборок.
@@ -20,7 +20,7 @@ tok_mmcyms2cp2sd43fgi53ypx6wsi
 
 ```bash
 curl -X POST "https://api.appetize.io/v1/apps" \
-  -u "tok_mmcyms2cp2sd43fgi53ypx6wsi:" \
+  -u "tok_5l2agl6ota5qqqbeduznpztfa4:" \
   -F "file=@app-release.apk" \
   -F "platform=android" \
   -F "note=Crazy Trout Arena CRM vX.Y.Z"
@@ -36,5 +36,5 @@ curl -X POST "https://api.appetize.io/v1/apps" \
 
 ## Управление
 
-- Панель: https://appetize.io/manage/yi7k2wtilanayxdmcsfnmb7zni
+- Панель: https://appetize.io/manage/ycj34xymn6yympbgogaxwil37i
 - Настройки API-ключей: https://appetize.io/account/api-keys
