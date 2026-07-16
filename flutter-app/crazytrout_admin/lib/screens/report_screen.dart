@@ -216,7 +216,7 @@ class _FishStatsContent extends StatelessWidget {
                 Expanded(flex: 2, child: Text('Вес (кг.)', textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
-                Expanded(flex: 2, child: Text('Выручка\n(₽)', textAlign: TextAlign.center,
+                Expanded(flex: 3, child: Text('Выручка\n(₽)', textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
                 Expanded(flex: 2, child: Text('Остаток\n(шт.)', textAlign: TextAlign.center,
@@ -238,24 +238,24 @@ class _FishStatsContent extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // 1. Тип рыбы: название + изображение
+                  // 1. Тип рыбы: изображение + название под ним
                   Expanded(
                     flex: 3,
-                    child: Row(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Text(s.species,
-                              style: const TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.w600,
-                                  color: Color(0xFF14130F))),
-                        ),
-                        const SizedBox(width: 8),
                         Image.asset(
                           s.imageAsset,
                           height: _speciesImageHeight[s.species]
                               ?? _defaultImageHeight,
                           fit: BoxFit.contain,
                         ),
+                        const SizedBox(height: 4),
+                        Text(s.species,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600,
+                                color: Color(0xFF14130F))),
                       ],
                     ),
                   ),
@@ -276,7 +276,7 @@ class _FishStatsContent extends StatelessWidget {
                   ),
                   // 4. Выручка (₽) — градиентный фон
                   Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 4),
@@ -362,22 +362,22 @@ class _FishStatsContent extends StatelessWidget {
                         children: [
                           Expanded(
                             flex: 3,
-                            child: Row(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Expanded(
-                                  child: Text(s.species,
-                                      style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF14130F))),
-                                ),
-                                const SizedBox(width: 8),
                                 Image.asset(
                                   s.imageAsset,
                                   height: _speciesImageHeight[s.species]
                                       ?? _defaultImageHeight,
                                   fit: BoxFit.contain,
                                 ),
+                                const SizedBox(height: 4),
+                                Text(s.species,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF14130F))),
                               ],
                             ),
                           ),
@@ -404,9 +404,9 @@ class _FishStatsContent extends StatelessWidget {
                     children: [
                       // flex:3 — как «Тип рыбы» (пустой отступ)
                       const Expanded(flex: 3, child: SizedBox()),
-                      // flex:8 — две шкалы делят пространство колонок 2-5
+                      // flex:9 — две шкалы делят пространство колонок 2-5
                       Expanded(
-                        flex: 8,
+                        flex: 9,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
