@@ -664,7 +664,7 @@ class _ClientPaymentRow extends StatelessWidget {
               const SizedBox(height: 2),
               // LT/LTV
               Text(
-                'LTV ${formatLtv(entry.ltvK)}',
+                '${entry.visits} / ${formatLtv(entry.ltvK)}',
                 style:
                     const TextStyle(fontSize: 11.5, color: _muted2),
               ),
