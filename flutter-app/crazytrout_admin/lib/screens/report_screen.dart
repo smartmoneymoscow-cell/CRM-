@@ -210,7 +210,7 @@ class _FishStatsContent extends StatelessWidget {
                 Expanded(flex: 3, child: Text('Тип рыбы',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
-                Expanded(flex: 2, child: Text('Выловлено\n(шт.)', textAlign: TextAlign.center,
+                Expanded(flex: 2, child: Text('Вылов\n(шт.)', textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
                 Expanded(flex: 2, child: Text('Вес (кг.)', textAlign: TextAlign.center,
@@ -259,7 +259,7 @@ class _FishStatsContent extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // 2. Выловлено (шт.)
+                  // 2. Вылов (шт.)
                   Expanded(
                     flex: 2,
                     child: Text(_formatNum(s.count), textAlign: TextAlign.center,
@@ -318,7 +318,7 @@ class _FishStatsContent extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          // ── Таблица 2: Доля в выручке ──
+          // ── Таблица 2: Доля в выручке + Маржинальность ──
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -330,7 +330,10 @@ class _FishStatsContent extends StatelessWidget {
                 Expanded(flex: 3, child: Text('Тип рыбы',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
-                Expanded(flex: 2, child: Text('Доля в\nвыручке', textAlign: TextAlign.center,
+                Expanded(flex: 3, child: Text('Доля в выручке', textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                        color: Color(0xFF8C8576)))),
+                Expanded(flex: 3, child: Text('Маржа', textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                         color: Color(0xFF8C8576)))),
               ],
@@ -342,9 +345,6 @@ class _FishStatsContent extends StatelessWidget {
           Builder(
             builder: (context) {
               final totalRev = stats.fold<double>(0, (s, e) => s + e.revenue);
-              // Демо: общая выручка пруда (включая тарифы) > выручка от рыбы
-              const pondTotalRev = 1520000.0;
-              final fishPct = (totalRev / pondTotalRev).clamp(0.0, 1.0);
 
               return Column(
                 children: [
@@ -360,6 +360,7 @@ class _FishStatsContent extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
+                          // 1. Тип рыбы
                           Expanded(
                             flex: 3,
                             child: Column(
@@ -381,14 +382,22 @@ class _FishStatsContent extends StatelessWidget {
                               ],
                             ),
                           ),
+                          // 2. Доля в выручке + мини-шкала
                           Expanded(
-                            flex: 2,
-                            child: Text(
-                              '${(s.revenue / totalRev * 100).round()}%',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF14130F)),
+                            flex: 3,
+                            child: _PercentCell(
+                              pct: (s.revenue / totalRev * 100).round(),
+                              barColor: const Color(0xFFE8912B),
+                              bgColor: const Color(0xFFF3EEE4),
+                            ),
+                          ),
+                          // 3. Маржинальность + мини-шкала
+                          Expanded(
+                            flex: 3,
+                            child: _PercentCell(
+                              pct: s.marginPct.round(),
+                              barColor: const Color(0xFF3FA66B),
+                              bgColor: const Color(0xFFC9302C),
                             ),
                           ),
                         ],
@@ -396,96 +405,6 @@ class _FishStatsContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                   ],
-
-                  // ── Две шкалы (выровнены с колонками таблицы) ──
-                  const SizedBox(height: 10),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // flex:3 — как «Тип рыбы» (пустой отступ)
-                      const Expanded(flex: 3, child: SizedBox()),
-                      // flex:9 — две шкалы делят пространство колонок 2-5
-                      Expanded(
-                        flex: 9,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 1. Доля рыбы в выручке
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    '${(fishPct * 100).round()}% от общей\nвыручки пруда',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF8C8576)),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF3EEE4),
-                                      borderRadius:
-                                          BorderRadius.circular(7),
-                                    ),
-                                    child: FractionallySizedBox(
-                                      alignment: Alignment.centerLeft,
-                                      widthFactor: fishPct,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color:
-                                              const Color(0xFFE8912B),
-                                          borderRadius:
-                                              BorderRadius.circular(7),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // 2. Маржинальность
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    '68% маржинальность',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF8C8576)),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFC9302C),
-                                      borderRadius:
-                                          BorderRadius.circular(7),
-                                    ),
-                                    child: FractionallySizedBox(
-                                      alignment: Alignment.centerLeft,
-                                      widthFactor: 0.68,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color:
-                                              const Color(0xFF3FA66B),
-                                          borderRadius:
-                                              BorderRadius.circular(7),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               );
             },
@@ -540,6 +459,49 @@ IconData _iconForAsset(String assetPath) {
 
 // _IconSlot — иконка-кнопка 44×44 (аналог _CalendarChip, без индикатора)
 // ============================================================================
+class _PercentCell extends StatelessWidget {
+  final int pct;
+  final Color barColor;
+  final Color bgColor;
+
+  const _PercentCell({
+    required this.pct,
+    required this.barColor,
+    required this.bgColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('$pct%',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                fontSize: 13, color: Color(0xFF14130F))),
+        const SizedBox(height: 4),
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: pct / 100.0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: barColor,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _IconSlot extends StatelessWidget {
   final IconData? icon;
   final String? assetPath;

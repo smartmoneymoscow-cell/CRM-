@@ -11,6 +11,7 @@ class FishSpeciesStats {
   final double weightKg; // общий вес в кг
   final double pricePerKg;
   final int remaining;   // остаток в пруду (шт.)
+  final double marginPct; // маржинальность (%)
 
   const FishSpeciesStats({
     required this.species,
@@ -19,6 +20,7 @@ class FishSpeciesStats {
     required this.weightKg,
     required this.pricePerKg,
     required this.remaining,
+    required this.marginPct,
   });
 
   double get revenue => weightKg * pricePerKg;
@@ -33,6 +35,7 @@ const List<FishSpeciesStats> kDemoFishStats = [
     weightKg: 312.5,
     pricePerKg: 1890,
     remaining: 38,
+    marginPct: 72,
   ),
   FishSpeciesStats(
     species: 'Карп',
@@ -41,6 +44,7 @@ const List<FishSpeciesStats> kDemoFishStats = [
     weightKg: 289.3,
     pricePerKg: 590,
     remaining: 120,
+    marginPct: 58,
   ),
   FishSpeciesStats(
     species: 'Амур',
@@ -49,6 +53,7 @@ const List<FishSpeciesStats> kDemoFishStats = [
     weightKg: 178.6,
     pricePerKg: 750,
     remaining: 45,
+    marginPct: 65,
   ),
   FishSpeciesStats(
     species: 'Линь',
@@ -57,6 +62,7 @@ const List<FishSpeciesStats> kDemoFishStats = [
     weightKg: 67.2,
     pricePerKg: 690,
     remaining: 22,
+    marginPct: 44,
   ),
   FishSpeciesStats(
     species: 'Форель',
@@ -65,5 +71,6 @@ const List<FishSpeciesStats> kDemoFishStats = [
     weightKg: 156.8,
     pricePerKg: 1200,
     remaining: 8,
+    marginPct: 68,
   ),
 ];
