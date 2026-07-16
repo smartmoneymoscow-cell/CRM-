@@ -6,6 +6,7 @@ import '../models/client.dart';
 import '../models/receipt_history.dart';
 import '../services/print_route.dart' deferred as print_route;
 import '../models/receipt.dart' as receipt_model;
+import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
 // ============================================================================
 // Экран «Чеки» — история выставленных чеков.
@@ -641,6 +642,11 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
   void _show() {
     final box = _fieldKey.currentContext!.findRenderObject() as RenderBox;
     final size = box.size;
+    // Глобальная Y нижнего края кнопки — для ограничения высоты dropdown.
+    final btnBottomY = box.localToGlobal(Offset(0, size.height)).dy;
+    final mq = MediaQuery.of(context);
+    // Dropdown НЕ перекрывает нижнее меню.
+    final maxH = mq.size.height - btnBottomY - kBottomNavHeight - mq.padding.bottom - 8;
 
     _entry = OverlayEntry(
       builder: (ctx) => Stack(
@@ -661,7 +667,7 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
               child: SizedBox(
                 width: size.width,
                 child: Container(
-                  constraints: const BoxConstraints(maxHeight: 320),
+                  constraints: BoxConstraints(maxHeight: maxH > 0 ? maxH : 0),
                   decoration: BoxDecoration(
                     color: _fill,
                     borderRadius: const BorderRadius.only(

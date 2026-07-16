@@ -12,6 +12,7 @@ import '../data/revenue_dynamics_data.dart';
 import '../data/demo_receipts.dart';
 import '../data/demo_data.dart' as app_data show kDemoClients;
 import '../models/client.dart';
+import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
 // ============================================================================
 // Экран «Отчёт» — отчёт по прибыли и убыткам.
@@ -1774,6 +1775,11 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
   void _show() {
     final box = _fieldKey.currentContext!.findRenderObject() as RenderBox;
     final size = box.size;
+    // Глобальная Y нижнего края кнопки — для ограничения высоты dropdown.
+    final btnBottomY = box.localToGlobal(Offset(0, size.height)).dy;
+    final mq = MediaQuery.of(context);
+    // Dropdown НЕ перекрывает нижнее меню.
+    final maxH = mq.size.height - btnBottomY - kBottomNavHeight - mq.padding.bottom - 8;
 
     _entry = OverlayEntry(
       builder: (ctx) => Stack(
@@ -1807,7 +1813,7 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(_borderRadius),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 320),
+                    constraints: BoxConstraints(maxHeight: maxH > 0 ? maxH : 0),
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       shrinkWrap: true,
