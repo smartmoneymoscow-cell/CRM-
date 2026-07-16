@@ -4,6 +4,7 @@ import 'checks_screen.dart';
 import 'pond_map_screen.dart';
 import 'receipt_screen.dart';
 import 'stub_screen.dart';
+import 'report_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -19,7 +20,7 @@ class _HomeShellState extends State<HomeShell> {
     PondMapScreen(),
     ReceiptScreen(),
     ChecksScreen(),
-    StubScreen(title: 'P&L', icon: Icons.show_chart, note: 'Отчёт по прибыли и убыткам — раздел в разработке.'),
+    ReportScreen(),
     StubScreen(title: 'Профиль', icon: Icons.person_outline, note: 'Профиль администратора — раздел в разработке.'),
   ];
 
@@ -27,7 +28,7 @@ class _HomeShellState extends State<HomeShell> {
     _BottomItem(Icons.map_outlined, 'Карта'),
     _BottomItem(Icons.receipt_outlined, 'Чек'),
     _BottomItem(Icons.receipt_long_outlined, 'Чеки'),
-    _BottomItem(Icons.show_chart, 'P&L'),
+    _BottomItem(Icons.show_chart, 'Отчёт'),
     _BottomItem(Icons.person_outline, 'Профиль'),
   ];
 
