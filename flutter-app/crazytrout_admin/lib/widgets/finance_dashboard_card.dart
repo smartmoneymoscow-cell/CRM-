@@ -19,7 +19,6 @@ import '../utils/format.dart';
 // ============================================================================
 
 const _cream = Color(0xFFF3EFE7);
-const _frame = Color(0xFF141312);
 const _orange = Color(0xFFE08A35);
 const _textLight = Color(0xFFEFE9DF);
 const _statLight = Color(0xFFF8F5EF);
@@ -35,18 +34,12 @@ class FinanceDashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _frame,
-        borderRadius: BorderRadius.circular(26),
+        color: _cream,
+        borderRadius: BorderRadius.circular(18),
       ),
-      padding: const EdgeInsets.all(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: _cream,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
         child: IntrinsicHeight(
-          child: Row(
+        child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Левая карточка: выручка + спарклайн ──
@@ -347,9 +340,9 @@ class _BracePainter extends CustomPainter {
     final h = size.height;
 
     final path = Path()
-      ..moveTo(w * 0.75, 0)
-      ..cubicTo(w * 0.15, h * 0.18, w * 0.15, h * 0.32, 0, h * 0.5)
-      ..cubicTo(w * 0.15, h * 0.68, w * 0.15, h * 0.82, w * 0.75, h);
+      ..moveTo(w * 0.8, 0)
+      ..cubicTo(w * 0.2, h * 0.15, w * 0.2, h * 0.35, w * 0.1, h * 0.5)
+      ..cubicTo(w * 0.2, h * 0.65, w * 0.2, h * 0.85, w * 0.8, h);
 
     canvas.drawPath(path, paint);
   }
