@@ -1597,7 +1597,7 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
           CompositedTransformFollower(
             link: _link,
             showWhenUnlinked: false,
-            offset: Offset(0, size.height + 4),
+            offset: Offset(0, size.height),
             child: Material(
               color: Colors.transparent,
               child: Container(
@@ -1617,9 +1617,7 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(_borderRadius),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: _itemHeight * widget.items.length + 8,
-                    ),
+                    constraints: const BoxConstraints(maxHeight: 320),
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       shrinkWrap: true,
