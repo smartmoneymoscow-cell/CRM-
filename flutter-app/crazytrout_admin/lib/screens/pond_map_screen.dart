@@ -1051,7 +1051,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
       builder: (overlayContext) => GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: _closeDropdown,
-          child: Stack(children: [
+        child: Stack(children: [
           Positioned(
             width: dropdownW,
             child: CompositedTransformFollower(
@@ -1107,7 +1107,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
               ),
             ),
           ),
-          ),
+        ],
         ),
       ),
     );
