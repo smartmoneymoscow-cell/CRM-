@@ -528,6 +528,16 @@ class _FishStatsContent extends StatelessWidget {
 }
 
 // ============================================================================
+// ── Маппинг asset → IconData ──
+IconData _iconForAsset(String assetPath) {
+  return switch (assetPath) {
+    'assets/icons/ruble.png'  => Icons.currency_ruble,
+    'assets/icons/clients.png' => Icons.people,
+    'assets/icons/fish.png'    => Icons.set_meal,
+    _                          => Icons.help_outline,
+  };
+}
+
 // _IconSlot — иконка-кнопка 44×44 (аналог _CalendarChip, без индикатора)
 // ============================================================================
 class _IconSlot extends StatelessWidget {
@@ -545,6 +555,7 @@ class _IconSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayIcon = icon ?? _iconForAsset(assetPath!);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -555,15 +566,8 @@ class _IconSlot extends StatelessWidget {
           color: active ? _orange : _fill,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: assetPath != null
-            ? Padding(
-                padding: const EdgeInsets.all(10),
-                child: Image.asset(assetPath!,
-                    color: active ? Colors.white : _ink,
-                    fit: BoxFit.contain),
-              )
-            : Icon(icon,
-                size: 19, color: active ? Colors.white : _ink),
+        child: Icon(displayIcon,
+            size: 19, color: active ? Colors.white : _ink),
       ),
     );
   }
