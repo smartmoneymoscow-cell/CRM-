@@ -332,17 +332,47 @@ class _BracePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFFC9BFA9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeCap = StrokeCap.round;
+      ..style = PaintingStyle.fill;
 
+    // Пропорции из HTML SVG (viewBox 0 0 28 400):
+    //   внешний край: x от 28 → 10.75 (в центре) → 28
+    //   внутренний край: x от 28 → 17 (в центре) → 28
+    //   кончик: x ≈ -0.23, y ≈ 197/400 ≈ 0.493
     final w = size.width;
     final h = size.height;
 
+    // Единый замкнутый путь:
+    // 1) Внешний контур сверху вниз
+    // 2) Внутренний контур снизу вверх
     final path = Path()
-      ..moveTo(w * 0.8, 0)
-      ..cubicTo(w * 0.2, h * 0.15, w * 0.2, h * 0.35, w * 0.1, h * 0.5)
-      ..cubicTo(w * 0.2, h * 0.65, w * 0.2, h * 0.85, w * 0.8, h);
+      // Начало: верхний правый угол внешнего контура
+      ..moveTo(w, 0)
+      // Внешний контур вниз к кончику
+      ..cubicTo(
+        w * 0.385, h * 0.075,
+        w * 0.385, h * 0.425,
+        -w * 0.008, h * 0.493,
+      )
+      // Внешний контур от кончика вниз
+      ..cubicTo(
+        w * 0.385, h * 0.575,
+        w * 0.385, h * 0.925,
+        w, h,
+      )
+      // Переход к внутреннему контру снизу
+      // Внутренний контур снизу вверх к кончику
+      ..cubicTo(
+        w * 0.555, h * 0.953,
+        w * 0.555, h * 0.548,
+        w * 0.008, h * 0.493,
+      )
+      // Внутренний контур от кончика вверх
+      ..cubicTo(
+        w * 0.555, h * 0.453,
+        w * 0.555, h * 0.048,
+        w, h * 0.002,
+      )
+      ..close();
 
     canvas.drawPath(path, paint);
   }
