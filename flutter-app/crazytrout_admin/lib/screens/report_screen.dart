@@ -1388,6 +1388,7 @@ class _FishStatsContent extends StatelessWidget {
                             flex: 3,
                             child: _PercentCell(
                               pct: (s.revenue / totalRev * 100).round(),
+                              maxPct: stats.map((e) => (e.revenue / totalRev * 100).round()).reduce((a, b) => a > b ? a : b),
                               barColor: const Color(0xFFE8912B),
                             ),
                           ),
@@ -1395,6 +1396,7 @@ class _FishStatsContent extends StatelessWidget {
                             flex: 3,
                             child: _PercentCell(
                               pct: s.marginPct.round(),
+                              maxPct: stats.map((e) => e.marginPct.round()).reduce((a, b) => a > b ? a : b),
                               barColor: const Color(0xFF3FA66B),
                             ),
                           ),
@@ -1449,10 +1451,12 @@ class _FishStatsContent extends StatelessWidget {
 // ============================================================================
 class _PercentCell extends StatelessWidget {
   final int pct;
+  final int maxPct;
   final Color barColor;
 
   const _PercentCell({
     required this.pct,
+      required this.maxPct,
     required this.barColor,
   });
 
@@ -1474,7 +1478,7 @@ class _PercentCell extends StatelessWidget {
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
-            widthFactor: pct / 100.0,
+            widthFactor: maxPct > 0 ? (pct / maxPct).clamp(0.0, 1.0) : 0,
             child: Container(
               decoration: BoxDecoration(
                 color: barColor,
