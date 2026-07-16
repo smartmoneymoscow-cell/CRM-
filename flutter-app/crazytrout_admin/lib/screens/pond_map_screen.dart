@@ -1045,12 +1045,12 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     ) + _overlap;
 
     return OverlayEntry(
-      builder: (overlayContext) => Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerDown: (_) => _closeDropdown(),
-        child: Stack(children: [
+      builder: (overlayContext) => Stack(children: [
           Positioned.fill(
-            child: Container(color: Colors.transparent),
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _closeDropdown,
+            ),
           ),
           Positioned(
             width: dropdownW,
@@ -1108,7 +1108,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
             ),
           ),
           ),
-        ]),
+        ],
       ),
     );
   }
