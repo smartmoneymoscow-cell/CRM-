@@ -4,24 +4,20 @@ import 'package:flutter/material.dart';
 import '../data/sales_decomposition.dart';
 
 // ============================================================================
-// FinancePieChart — круговая диаграмма «Декомпозиция продаж».
-//
-// Легенда слева, кольцевая диаграмма справа.
-// Стиль: flat, тонкие белые разделители, палитра приложения.
+// FinancePieChart — премиум карточка «Структура выручки»
 //
 //   ┌──────────────────────────────────────────┐
-//   │  Декомпозиция продаж                     │
+//   │  Структура выручки                       │
 //   │                                          │
-//   │  ● Осётр        36%   148 800 ₽   ╭───╮│
-//   │  ● Форель       28%   115 200 ₽ ╭╯   ╰╮│
-//   │  ● Карп         18%    74 400 ₽ │     ││
-//   │  ● Амур         ...   ...     ╰╮   ╭╯│
-//   │  ● Линь         ...   ...      ╰───╯ │
-//   │  ● Вход на пруд ...   ...             │
+//   │  Осётр        36%   148 800 ₽    ╭───╮  │
+//   │  Форель       28%   115 200 ₽  ╭╯   ╰╮ │
+//   │  Карп         18%    74 400 ₽  │     │ │
+//   │  ...                             ╰╮   ╭╯│
+//   │                                   ╰───╯ │
 //   └──────────────────────────────────────────┘
 // ============================================================================
 
-// ── Цветовые константы (единые с приложением) ──
+// ── Цветовые константы ──
 const _ink = Color(0xFF14130F);
 const _paper = Color(0xFFFBF6EC);
 const _fill = Color(0xFFF3EEE4);
@@ -31,9 +27,9 @@ const _muted = Color(0xFF8C8576);
 const _muted2 = Color(0xFF9C9484);
 const _white = Color(0xFFFFFFFF);
 
-// ── Палитра сегментов (тёплая, как в примере) ──
+// ── Палитра сегментов ──
 const _segColors = <Color>[
-  Color(0xFFE8912B), // оранжевый — Осётр (главный)
+  Color(0xFFE8912B), // оранжевый — Осётр
   Color(0xFF6B4226), // тёмно-коричневый — Форель
   Color(0xFF9C5A3C), // каштановый — Карп
   Color(0xFF4A7C59), // зелёный — Амур
@@ -41,7 +37,7 @@ const _segColors = <Color>[
   Color(0xFFD4C4A8), // бежевый — Вход на пруд
 ];
 
-// Градиентные пары для сегментов
+// ── Градиентные пары ──
 const _segGradients = <List<Color>>[
   [Color(0xFFE8912B), Color(0xFFF2A84D)],
   [Color(0xFF6B4226), Color(0xFF8B5A3A)],
@@ -64,13 +60,13 @@ class FinancePieChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _hairline2, width: 0.5),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Заголовок ──
           const Text(
-            'Декомпозиция продаж',
+            'Структура выручки',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -96,13 +92,13 @@ class FinancePieChart extends StatelessWidget {
                         amount: '${_fmtAmount(data.segments[i].amount)} ₽',
                       ),
                       if (i < data.segments.length - 1)
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                     ],
                   ],
                 ),
               ),
 
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
 
               // ── Кольцевая диаграмма (справа) ──
               SizedBox(
@@ -123,17 +119,20 @@ class FinancePieChart extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${_fmtAmount(data.total)} ₽',
+                          _fmtAmount(data.total),
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: _ink,
+                            letterSpacing: -0.3,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         const Text(
-                          'всего',
+                          '₽ всего',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
                             color: _muted2,
                           ),
                         ),
@@ -178,7 +177,7 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
-    const strokeWidth = 26.0;
+    const strokeWidth = 24.0;
 
     if (total <= 0 || segments.isEmpty) {
       canvas.drawCircle(
@@ -260,62 +259,62 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
-      child: Row(
-        children: [
-          // Цветная точка
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
+    return Row(
+      children: [
+        // Цветная точка
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Название — фиксированная ширина, без переноса
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: _ink,
             ),
           ),
-          const SizedBox(width: 8),
-          // Название
-          Expanded(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: _ink,
-              ),
+        ),
+        // Процент
+        SizedBox(
+          width: 40,
+          child: Text(
+            pct,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _muted,
             ),
           ),
-          // Процент
-          SizedBox(
-            width: 42,
-            child: Text(
-              pct,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: _muted,
-              ),
+        ),
+        const SizedBox(width: 10),
+        // Сумма
+        Expanded(
+          child: Text(
+            amount,
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            softWrap: false,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: _ink,
             ),
           ),
-          const SizedBox(width: 8),
-          // Сумма
-          SizedBox(
-            width: 74,
-            child: Text(
-              amount,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: _ink,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

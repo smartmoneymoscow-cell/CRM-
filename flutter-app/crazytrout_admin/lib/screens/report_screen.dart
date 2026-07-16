@@ -3,8 +3,8 @@ import '../data/demo_fish_stats.dart';
 import '../widgets/finance_dashboard_card.dart';
 import '../widgets/finance_pie_chart.dart';
 import '../data/sales_decomposition.dart';
-import '../widgets/payment_tariff_card.dart';
-import '../data/payment_tariff_stats.dart';
+import '../widgets/kpi_cards.dart';
+import '../widgets/revenue_dynamics_chart.dart';
 import '../data/demo_receipts.dart';
 import '../data/demo_data.dart' as app_data show kDemoClients;
 import '../models/client.dart';
@@ -525,8 +525,7 @@ class _ReportScreenState extends State<ReportScreen> {
 // ============================================================================
 // _FinanceContent — контент вкладки «Финансы и метрики».
 //
-// Дашборд «Выручка / Маржинальная прибыль / Переменные расходы» со
-// спарклайном, портированный из dashboard_2.html (см. FinanceDashboardCard).
+// Дашборд с KPI-карточками, декомпозицией продаж и графиком динамики.
 // ============================================================================
 class _FinanceContent extends StatelessWidget {
   const _FinanceContent();
@@ -534,16 +533,17 @@ class _FinanceContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final salesData = buildSalesDecomposition();
-    final paymentData = buildPaymentTariffStats();
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
       child: Column(
         children: [
           const FinanceDashboardCard(),
           const SizedBox(height: 14),
+          const KpiCards(),
+          const SizedBox(height: 14),
           FinancePieChart(data: salesData),
           const SizedBox(height: 14),
-          PaymentTariffCard(stats: paymentData),
+          const RevenueDynamicsChart(),
         ],
       ),
     );
