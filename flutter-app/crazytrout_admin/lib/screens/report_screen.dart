@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/demo_fish_stats.dart';
 import '../widgets/finance_dashboard_card.dart';
+import '../widgets/finance_pie_chart.dart';
 import '../data/demo_receipts.dart';
 import '../data/demo_data.dart' as app_data show kDemoClients;
 import '../models/client.dart';
@@ -536,7 +537,13 @@ class _FinanceContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
-      child: const FinanceDashboardCard(),
+      child: Column(
+        children: const [
+          FinanceDashboardCard(),
+          SizedBox(height: 14),
+          FinancePieChart(),
+        ],
+      ),
     );
   }
 }
