@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../data/demo_fish_stats.dart';
-import '../widgets/finance_dashboard_card.dart';
-import '../widgets/finance_pie_chart.dart';
 import '../data/demo_receipts.dart';
 import '../data/demo_data.dart' as app_data show kDemoClients;
 import '../models/client.dart';
@@ -435,8 +433,8 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Center(
               child: Text(
                 switch (_selectedIcon) {
-                  1 => 'Статистика клиентов',
-                  2 => 'Статистика улова рыбы',
+                  1 => 'Статистика улова рыбы',
+                  2 => 'Статистика клиентов',
                   _ => 'Финансы и метрики',
                 },
                 style: const TextStyle(
@@ -486,14 +484,14 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
                 const SizedBox(width: 8),
                 _IconSlot(
-                  assetPath: 'assets/icons/clients.png',
+                  assetPath: 'assets/icons/fish.png',
                   active: _selectedIcon == 1,
                   onTap: () => setState(() =>
                       _selectedIcon = _selectedIcon == 1 ? -1 : 1),
                 ),
                 const SizedBox(width: 8),
                 _IconSlot(
-                  assetPath: 'assets/icons/fish.png',
+                  assetPath: 'assets/icons/clients.png',
                   active: _selectedIcon == 2,
                   onTap: () => setState(() =>
                       _selectedIcon = _selectedIcon == 2 ? -1 : 2),
@@ -505,12 +503,11 @@ class _ReportScreenState extends State<ReportScreen> {
           // ── Контент ──
           Expanded(
             child: switch (_selectedIcon) {
-              0 => const _FinanceContent(),
-              1 => _ClientStatsContent(
+              1 => const _FishStatsContent(),
+              2 => _ClientStatsContent(
                     period: _period,
                     dateRange: _dateRange,
                   ),
-              2 => const _FishStatsContent(),
               _ => const Center(
                     child: Text('Раздел в разработке',
                         style: TextStyle(
@@ -518,30 +515,6 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
             },
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// _FinanceContent — контент вкладки «Финансы и метрики».
-//
-// Дашборд «Выручка / Маржинальная прибыль / Переменные расходы» со
-// спарклайном, портированный из dashboard_2.html (см. FinanceDashboardCard).
-// ============================================================================
-class _FinanceContent extends StatelessWidget {
-  const _FinanceContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
-      child: Column(
-        children: const [
-          FinanceDashboardCard(),
-          SizedBox(height: 14),
-          FinancePieChart(),
         ],
       ),
     );
@@ -1417,6 +1390,7 @@ class _FishStatsContent extends StatelessWidget {
                             flex: 3,
                             child: _PercentCell(
                               pct: (s.revenue / totalRev * 100).round(),
+                              maxPct: stats.map((e) => (e.revenue / totalRev * 100).round()).reduce((a, b) => a > b ? a : b),
                               barColor: const Color(0xFFE8912B),
                             ),
                           ),
@@ -1424,6 +1398,7 @@ class _FishStatsContent extends StatelessWidget {
                             flex: 3,
                             child: _PercentCell(
                               pct: s.marginPct.round(),
+                              maxPct: stats.map((e) => e.marginPct.round()).reduce((a, b) => a > b ? a : b),
                               barColor: const Color(0xFF3FA66B),
                             ),
                           ),
@@ -1478,10 +1453,12 @@ class _FishStatsContent extends StatelessWidget {
 // ============================================================================
 class _PercentCell extends StatelessWidget {
   final int pct;
+  final int maxPct;
   final Color barColor;
 
   const _PercentCell({
     required this.pct,
+      required this.maxPct,
     required this.barColor,
   });
 
@@ -1503,7 +1480,7 @@ class _PercentCell extends StatelessWidget {
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
-            widthFactor: (pct / 100).clamp(0.0, 1.0),
+            widthFactor: maxPct > 0 ? (pct / maxPct).clamp(0.0, 1.0) : 0,
             child: Container(
               decoration: BoxDecoration(
                 color: barColor,
