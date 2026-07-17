@@ -952,6 +952,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
           const SizedBox(height: 8),
           _buildFeed(scheds),
         ]),
+      ),
     );
   }
 
@@ -1049,7 +1050,6 @@ class _PondMapScreenState extends State<PondMapScreen> {
                   ),
                 );
               }).toList(),
-            ),
           ),
         ),
       ),
