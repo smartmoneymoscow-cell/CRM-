@@ -11,28 +11,41 @@ import 'package:crazytrout_admin/screens/pond_map_filter_config.dart';
 void main() {
   group('Баг #1: Контент двигается вниз (inline Stack)', () {
     testWidgets('при открытии dropdown позиция контента НЕ меняется', (tester) async {
-      // Измеряем позицию элемента ПЕРЕД открытием dropdown,
-      // открываем dropdown, проверяем что позиция НЕ сдвинулась.
       await tester.pumpWidget(const MaterialApp(home: PondMapScreen()));
       await tester.pumpAndSettle();
 
-      // Находим кнопку фильтров
-      final filterBtn = find.text('Фильтры');
-      expect(filterBtn, findsOneWidget);
-
-      // Запоминаем позицию элемента "Карта пруда" (заголовок)
+      // Запоминаем позицию заголовка ПЕРЕД открытием
       final titleFinder = find.text('Карта пруда');
       expect(titleFinder, findsOneWidget);
       final titlePosBefore = tester.getCenter(titleFinder);
 
       // Открываем dropdown
-      await tester.tap(filterBtn);
+      await tester.tap(find.text('Фильтры'));
       await tester.pumpAndSettle();
 
-      // Проверяем что заголовок НЕ сдвинулся
+      // Заголовок НЕ сдвинулся
       final titlePosAfter = tester.getCenter(titleFinder);
       expect(titlePosAfter.dy, titlePosBefore.dy,
         reason: 'Контент не должен двигаться при открытии dropdown (OverlayEntry)');
+    });
+
+    testWidgets('контент ПОД dropdown не сдвигается при открытии', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: PondMapScreen()));
+      await tester.pumpAndSettle();
+
+      // Находим ленту броней (текст ПОД фильтрами)
+      final feedText = find.textContaining('ЛЕНТА БРОНИРОВАНИЙ');
+      expect(feedText, findsOneWidget);
+      final feedPosBefore = tester.getCenter(feedText);
+
+      // Открываем dropdown
+      await tester.tap(find.text('Фильтры'));
+      await tester.pumpAndSettle();
+
+      // Лента броней НЕ сдвинулась
+      final feedPosAfter = tester.getCenter(feedText);
+      expect(feedPosAfter.dy, feedPosBefore.dy,
+        reason: 'Контент под dropdown не должен двигаться — OverlayEntry поверх контента');
     });
   });
 
