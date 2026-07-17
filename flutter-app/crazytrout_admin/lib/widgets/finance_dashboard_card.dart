@@ -208,7 +208,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelColor = dark ? const Color(0xFFF0D9D3) : const Color(0xFF7A7266);
     final subColor = dark ? const Color(0xFFA97B71) : const Color(0xFFB7B0A2);
-    final valueColor = dark ? const Color(0xFFE2604C) : const Color(0xFF1C1A17);
+    final valueColor = dark ? const Color(0xFFE2604C) : const Color(0xFF2E7D4F);
     final pctColor = dark ? const Color(0xFFB98077) : const Color(0xFFA49C8D);
     final trackColor = dark ? const Color(0xFF4A2B26) : const Color(0xFFE1DCCF);
 
