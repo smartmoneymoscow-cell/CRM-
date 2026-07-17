@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../data/demo_receipts.dart';
-import '../data/demo_data.dart' as app_data show kDemoClients;
 import '../models/client.dart';
 import '../models/receipt_history.dart';
 import '../services/print_route.dart' deferred as print_route;

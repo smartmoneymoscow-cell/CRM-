@@ -1,8 +1,6 @@
-# Строгий линтер — very_good_analysis
-# https://pub.dev/packages/very_good_analysis
-include: package:very_good_analysis/analysis_options.yaml
+# Линтер
+include: package:flutter_lints/flutter.yaml
 
-# Переопределения (если нужно отключить конкретные правила)
 linter:
   rules:
     # prefer_const_constructors: false  # если мешает

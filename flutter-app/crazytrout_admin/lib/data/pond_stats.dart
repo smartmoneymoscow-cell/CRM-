@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../models/client.dart';
 import 'demo_data.dart' as app_data show kDemoClients;
 
 // ─── Модель статистики клиента на пруду ─────────────────────────────────────

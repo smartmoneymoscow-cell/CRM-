@@ -19,7 +19,6 @@ import '../widgets/client_avatar.dart';
 import '../widgets/level_badge.dart';
 import '../data/filter_types.dart';
 import '../widgets/filter_dropdown.dart';
-import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
 /// Конвертирует PeriodFilter в DateTimeRange для фильтрации данных.
 DateTimeRange? _periodToDateRange(PeriodFilter? period) {
@@ -60,19 +59,6 @@ List<_ClientPaymentEntry> _buildPaymentFeed() {
 }
 
 final List<_ClientPaymentEntry> _paymentFeed = _buildPaymentFeed();
-
-// Compute last visit dates from actual receipt data
-final Map<int, String> _lastVisitFromReceipts = () {
-  final latestMap = <int, DateTime>{};
-  for (final r in kDemoReceipts) {
-    if (r.isGuest || r.client == null) continue;
-    final id = r.client!.id;
-    if (!latestMap.containsKey(id) || r.date.isAfter(latestMap[id]!)) {
-      latestMap[id] = r.date;
-    }
-  }
-  return latestMap.map((id, dt) => MapEntry(id, _fmtDate(dt)));
-}();
 
 // ─── Утилиты ─────────────────────────────────────────────────────────────────
 String _fmtDate(DateTime d) {

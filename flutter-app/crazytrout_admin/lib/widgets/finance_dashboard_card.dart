@@ -23,7 +23,7 @@ import '../theme/app_theme.dart';
 
 const _cream = Color(0xFFF3EFE7);
 const _textLight = Color(0xFFEFE9DF);
-const _statLight = Color(0xFFF8F5EF);
+
 const _statGreen = Color(0xFFF0F7F2);
 
 class FinanceDashboardCard extends StatelessWidget {

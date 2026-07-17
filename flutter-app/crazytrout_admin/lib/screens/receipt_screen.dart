@@ -417,14 +417,6 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     );
   }
 
-  InputDecoration _fieldDecoration() => InputDecoration(
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        filled: true,
-        fillColor: const Color(0xFFF3EEE4),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-      );
-
   Widget _labeledField(String label, Widget child) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
