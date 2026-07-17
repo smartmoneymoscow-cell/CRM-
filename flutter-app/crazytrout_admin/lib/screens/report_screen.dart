@@ -2042,7 +2042,10 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
                 width: size.width,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(_borderRadius),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(_borderRadius),
+                    bottomRight: Radius.circular(_borderRadius),
+                  ),
                   border: Border.all(color: _outline),
                   boxShadow: [
                     BoxShadow(
