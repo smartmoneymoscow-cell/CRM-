@@ -777,9 +777,8 @@ class _ChecksScreenState extends State<ChecksScreen> {
                     ),
                   ],
                 ),
-              ],
-              // Кнопка «Сбросить фильтры» — видна когда хотя бы один фильтр активен
-              if (_period != null || _dateRange != null || _type != null || _hasAdvancedFilters)
+                // Кнопка «Сбросить фильтры» — видна когда хотя бы один фильтр активен
+                if (_period != null || _dateRange != null || _type != null || _hasAdvancedFilters)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: GestureDetector(
