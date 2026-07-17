@@ -143,4 +143,24 @@ void main() {
         reason: 'Dropdown не должен содержать SingleChildScrollView');
     });
   });
+
+  group('Dropdown НИКОГДА не открывается вверх', () {
+    testWidgets('dropdown всегда ниже кнопки (offset положительный)', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: PondMapScreen()));
+      await tester.pumpAndSettle();
+
+      final filterBtn = find.text('Фильтры');
+      final btnRect = tester.getRect(filterBtn);
+
+      await tester.tap(filterBtn);
+      await tester.pumpAndSettle();
+
+      final firstItem = find.text('Нет');
+      if (firstItem.evaluate().isNotEmpty) {
+        final itemRect = tester.getRect(firstItem);
+        expect(itemRect.top, greaterThanOrEqualTo(btnRect.bottom),
+          reason: 'Dropdown всегда открывается вниз от кнопки, НИКОГДА вверх');
+      }
+    });
+  });
 }
