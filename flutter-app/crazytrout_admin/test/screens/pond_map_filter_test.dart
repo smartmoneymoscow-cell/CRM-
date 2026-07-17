@@ -42,13 +42,13 @@ void main() {
   group('calcMaxDropdownHeight()', () {
     test('ограничивает высоту снизу навбаром', () {
       // Экран 800px, кнопка заканчивается на Y=600, safe area bottom=34
-      // Доступное пространство: 800 - 600 - 60 - 34 = 106
+      // Доступное пространство: 800 - 600 - 34 = 166
       final h = calcMaxDropdownHeight(
         btnBottomY: 600,
         screenH: 800,
         bottomPadding: 34,
       );
-      expect(h, 106.0);
+      expect(h, 166.0);
     });
 
     test('возвращает отрицательное если кнопка слишком низко', () {
@@ -69,8 +69,8 @@ void main() {
         screenH: 900,
         bottomPadding: 34,
       );
-      // 900 - 400 - 60 - 34 = 406
-      expect(h, 406.0);
+      // 900 - 400 - 34 = 466
+      expect(h, 466.0);
     });
   });
 

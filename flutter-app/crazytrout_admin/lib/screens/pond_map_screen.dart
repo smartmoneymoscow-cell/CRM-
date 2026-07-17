@@ -1044,7 +1044,7 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     // Максимальная высота дропдауна: от нижнего края кнопки до верхнего края
     // нижнего меню (с запасом 8px). Гарантирует: список НЕ перекрывает
     // нижнее меню (требование 4).
-    final maxH = screenH - btnBottomY - kBottomNavHeight - bottomPadding;
+    final maxH = screenH - btnBottomY - bottomPadding;
 
     _entry = OverlayEntry(builder: (ctx) {
       return Stack(children: [
