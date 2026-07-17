@@ -39,6 +39,9 @@ const double kDropdownVPadding = 8.0;
 /// Высота нижней навигации (BottomNavigationBar + SafeArea).
 const double kBottomNavHeight = 60.0;
 
+/// Высота строки фильтров (кнопка + padding).
+const double kFilterRowHeight = 36.0;
+
 /// Рассчитывает максимальную высоту дропдауна, чтобы не перекрывать нижнее меню.
 /// [btnBottomY] — глобальная Y-координата нижнего края кнопки.
 /// [screenH] — высота экрана.
