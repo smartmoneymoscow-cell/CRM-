@@ -1687,7 +1687,6 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                       ],
                     ),
                   ),
-                    ],
                   ),
                 ),
               );
