@@ -160,7 +160,7 @@ class _ChartPainter extends CustomPainter {
 
   String _fmtShort(double v) {
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
-    if (v >= 1000) return '${(v / 1000).round()}k';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
     return v.round().toString();
   }
 
