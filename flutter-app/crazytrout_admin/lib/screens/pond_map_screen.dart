@@ -1080,15 +1080,31 @@ class _PondMapScreenState extends State<PondMapScreen> {
   FilterValue filter = FilterValue.none;
   bool _isFilterOpen = false;
   final _scrollController = ScrollController();
-  final _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-  final _filterKey = GlobalKey();
+  final _filterBtnKey = GlobalKey();
+  final _stackKey = GlobalKey();
+  double _filterBtnTop = 0;
+  double _filterBtnLeft = 0;
+  double _filterBtnWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
-    _removeDropdown();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_isFilterOpen) {
+      // Позиция кнопки изменилась — пересчитываем и обновляем UI.
+      _updateFilterBtnPosition();
+      setState(() {});
+    }
   }
 
   List<List<Slot>> get schedules =>
@@ -1106,7 +1122,9 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
-      body: SafeArea(child: ListView(controller: _scrollController, padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+      body: SafeArea(child: Stack(key: _stackKey, children: [
+        // Слой 1: вся страница единым скроллом.
+        ListView(controller: _scrollController, padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
             child: Center(child: Text('Карта пруда',
@@ -1150,15 +1168,50 @@ class _PondMapScreenState extends State<PondMapScreen> {
           const SizedBox(height: 8),
           _buildFeed(scheds),
         ]),
-    );
+      setState(() => _isFilterOpen = false);
+    } else {
+      setState(() => _isFilterOpen = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateFilterBtnPosition();
+        if (mounted) setState(() {});
+      });
+    }
+  }
+  void _closeFilter() { if (mounted && _isFilterOpen) setState(() => _isFilterOpen = false); }
+
+  /// Вычисляет глобальную позицию кнопки фильтров относительно Stack.
+  void _updateFilterBtnPosition() {
+    final btnCtx = _filterBtnKey.currentContext;
+    if (btnCtx == null) return;
+    final btnBox = btnCtx.findRenderObject() as RenderBox?;
+    if (btnBox == null || !btnBox.attached) return;
+    final btnPos = btnBox.localToGlobal(Offset.zero);
+    final btnSize = btnBox.size;
+    // Координаты Stack — контейнера для Positioned dropdown.
+    final stackCtx = _stackKey.currentContext;
+    if (stackCtx == null) return;
+    final stackBox = stackCtx.findRenderObject() as RenderBox?;
+    if (stackBox == null || !stackBox.attached) return;
+    final stackPos = stackBox.localToGlobal(Offset.zero);
+    _filterBtnTop = btnPos.dy - stackPos.dy + btnSize.height;
+    _filterBtnLeft = btnPos.dx - stackPos.dx;
+    _filterBtnWidth = btnSize.width;
   }
 
-  void _toggleFilter() {
-    if (_isFilterOpen) {
-      _removeDropdown();
-    } else {
-      _openDropdown();
-    }
+  Widget _buildFilterRow(int free, int occupied) {
+    return Row(children: [
+      FiltersDropdown(
+        key: _filterBtnKey,
+        value: filter,
+        onChange: (v) => setState(() => filter = v),
+        isOpen: _isFilterOpen,
+        onToggle: _toggleFilter,
+      ),
+      const Spacer(),
+      _legend(_green, 'Свободно $free'),
+      const SizedBox(width: 12),
+      _legend(_orange, 'Занято $occupied'),
+    ]);
   }
 
   void _closeFilter() {
@@ -1237,13 +1290,14 @@ class _PondMapScreenState extends State<PondMapScreen> {
   /// Строит dropdown-меню фильтров. Рендерится через OverlayEntry + CompositedTransformFollower.
   Widget _buildDropdown([double? maxHOverride]) {
     final mq = MediaQuery.of(context);
-    // Ограничение высоты: от строки фильтров до нижнего меню.
-    final maxH = maxHOverride ?? (mq.size.height - mq.padding.bottom - kBottomNavHeight);
+    // Ограничение высоты: от кнопки фильтров до нижнего меню.
+    final stackH = mq.size.height - mq.padding.top - mq.padding.bottom;
+    final maxH = stackH - _filterBtnTop - kBottomNavHeight;
 
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 120,
+        width: _filterBtnWidth > 0 ? _filterBtnWidth : 120,
         constraints: BoxConstraints(
           maxHeight: maxH > 0 ? maxH : 0,
         ),
