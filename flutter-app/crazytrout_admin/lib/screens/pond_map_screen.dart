@@ -1080,8 +1080,14 @@ class _PondMapScreenState extends State<PondMapScreen> {
   FilterValue filter = FilterValue.none;
   bool _isFilterOpen = false;
   final _scrollController = ScrollController();
+  final _filterKey = GlobalKey();
+  double _dropdownTop = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateDropdownPosition);
+  }
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -1149,21 +1155,47 @@ class _PondMapScreenState extends State<PondMapScreen> {
           const SizedBox(height: 8),
           _buildFeed(scheds),
         ]),
-        // Слой 2: dropdown overlay — поверх всего контента, под нижним меню.
+        // Слой 2: tap-to-close — закрывает dropdown при тапе вне.
+        if (_isFilterOpen)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _closeFilter,
+            ),
+          ),
+        // Слой 3: dropdown overlay — строго под кнопкой фильтров.
         if (_isFilterOpen)
           Positioned(
-            top: 36, left: 20,
-            child: _buildDropdown(),
+            top: _dropdownTop, left: 20,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {},
+              child: _buildDropdown(),
+            ),
           ),
       ])),
     );
   }
 
-  void _toggleFilter() => setState(() => _isFilterOpen = !_isFilterOpen);
+  void _toggleFilter() {
+    setState(() => _isFilterOpen = !_isFilterOpen);
+    if (_isFilterOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _updateDropdownPosition());
+    }
+  }
   void _closeFilter() { if (mounted && _isFilterOpen) setState(() => _isFilterOpen = false); }
 
+  void _updateDropdownPosition() {
+    final ctx = _filterKey.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final pos = box.localToGlobal(Offset.zero);
+    setState(() { _dropdownTop = pos.dy + box.size.height; });
+  }
+
   Widget _buildFilterRow(int free, int occupied) {
-    return Row(children: [
+    return Row(key: _filterKey, children: [
       FiltersDropdown(
         value: filter,
         onChange: (v) => setState(() => filter = v),
