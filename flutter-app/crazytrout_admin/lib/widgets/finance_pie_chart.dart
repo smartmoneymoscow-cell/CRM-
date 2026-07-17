@@ -96,7 +96,8 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
-    const strokeWidth = 24.0;
+    const strokeWidth = 20.0;
+    final r = radius - strokeWidth / 2 - 1;
 
     if (total <= 0 || segments.isEmpty) {
       canvas.drawCircle(center, radius, Paint()..color = const Color(0xFFE1DCCF)
@@ -108,7 +109,7 @@ class _DonutPainter extends CustomPainter {
     for (int i = 0; i < segments.length; i++) {
       final sweep = 2 * math.pi * (segments[i].amount / total);
       final gradColors = _segGradients[i % _segGradients.length];
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweep, false,
+      canvas.drawArc(Rect.fromCircle(center: center, radius: r), startAngle, sweep, false,
         Paint()
           ..shader = LinearGradient(colors: gradColors,
             begin: Alignment(math.cos(startAngle), math.sin(startAngle)),
@@ -119,8 +120,8 @@ class _DonutPainter extends CustomPainter {
       if (sweep > 0.02) {
         final sepAngle = startAngle + sweep;
         canvas.drawLine(
-          center + Offset(math.cos(sepAngle) * (radius - strokeWidth / 2 - 1), math.sin(sepAngle) * (radius - strokeWidth / 2 - 1)),
-          center + Offset(math.cos(sepAngle) * (radius + strokeWidth / 2 + 1), math.sin(sepAngle) * (radius + strokeWidth / 2 + 1)),
+          center + Offset(math.cos(sepAngle) * (r - strokeWidth / 2 - 1), math.sin(sepAngle) * (r - strokeWidth / 2 - 1)),
+          center + Offset(math.cos(sepAngle) * (r + strokeWidth / 2 + 1), math.sin(sepAngle) * (r + strokeWidth / 2 + 1)),
           Paint()..color = kWhite..strokeWidth = 2.5..strokeCap = StrokeCap.round);
       }
       startAngle += sweep;

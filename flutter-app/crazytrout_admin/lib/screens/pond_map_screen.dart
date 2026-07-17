@@ -963,42 +963,24 @@ class _PondMapScreenState extends State<PondMapScreen> {
   }
 
   Widget _buildFilterRow(int free, int occupied) {
-    return Stack(
-      clipBehavior: Clip.hardEdge,
-      children: [
-        Row(children: [
-          // Кнопка фильтра — оборачиваем в GestureDetector
-          GestureDetector(
-            onTap: _toggleFilter,
-            child: FiltersDropdown(
-              value: filter,
-              onChange: (v) => setState(() => filter = v),
-              isOpen: _isFilterOpen,
-              onToggle: _toggleFilter,
-            ),
+    return Row(children: [
+      CompositedTransformTarget(
+        link: _filterLink,
+        child: GestureDetector(
+          onTap: _toggleFilter,
+          child: FiltersDropdown(
+            value: filter,
+            onChange: (v) => setState(() => filter = v),
+            isOpen: _isFilterOpen,
+            onToggle: _toggleFilter,
           ),
-          const Spacer(),
-          _legend(_green, 'Свободно $free'),
-          const SizedBox(width: 12),
-          _legend(kOrange, 'Занято $occupied'),
-        ]),
-        // Dropdown — строго под кнопкой, без зазора
-        if (_isFilterOpen)
-          Positioned(
-            top: kFilterRowHeight,
-            left: 0,
-            child: _buildDropdown(),
-          ),
-        // Клик вне dropdown — закрывает
-        if (_isFilterOpen)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () => setState(() => _isFilterOpen = false),
-            ),
-          ),
-      ],
-    );
+        ),
+      ),
+      const Spacer(),
+      _legend(_green, 'Свободно $free'),
+      const SizedBox(width: 12),
+      _legend(kOrange, 'Занято $occupied'),
+    ]);
   }
 
   /// Строит dropdown-меню фильтров. Рендерится в слое Stack (поверх feed, под нижним меню).

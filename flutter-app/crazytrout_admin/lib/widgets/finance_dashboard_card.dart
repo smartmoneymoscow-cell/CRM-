@@ -367,7 +367,7 @@ class _BracePainter extends CustomPainter {
 
   static const _color = Color(0xFFC9BFA9);
   static const _wMin = 0.6;
-  static const _wMax = 6.5;
+  static const _wMax = 4.5;
 
   static Offset _cubic(Offset p0, Offset p1, Offset p2, Offset p3, double t) {
     final mt = 1 - t;
