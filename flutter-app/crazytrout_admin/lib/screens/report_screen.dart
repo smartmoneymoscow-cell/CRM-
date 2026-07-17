@@ -1305,7 +1305,7 @@ class _FishStatsContent extends StatelessWidget {
 
   _FishStatsContent({this.period, this.dateRange});
 
-  static const double _imageSize = 48;
+  static const double _imageSize = 36;
 
   static const _revenueMin = Color(0xFFFBE8D0);
   static const _revenueMax = Color(0xFFD4EDDA);
@@ -1390,12 +1390,15 @@ class _FishStatsContent extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          width: _imageSize,
-                          height: _imageSize,
-                          child: Image.asset(
-                            s.imageAsset,
-                            fit: BoxFit.contain,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: SizedBox(
+                            width: _imageSize,
+                            height: _imageSize,
+                            child: Image.asset(
+                              s.imageAsset,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1580,12 +1583,15 @@ class _FishStatsContent extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(
-                                  width: _imageSize,
-                                  height: _imageSize,
-                                  child: Image.asset(
-                                    s.imageAsset,
-                                    fit: BoxFit.contain,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: SizedBox(
+                                    width: _imageSize,
+                                    height: _imageSize,
+                                    child: Image.asset(
+                                      s.imageAsset,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
