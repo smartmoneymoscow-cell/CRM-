@@ -381,7 +381,15 @@ class _ChecksScreenState extends State<ChecksScreen> {
   _PeriodFilter? _period;
   _TypeFilter? _type;
   DateTimeRange? _dateRange;
-  String _sortMode = 'date'; // date, total, name
+
+  // ── Расширенные фильтры (диалог) ──
+  Set<String> _filterTariffs = {};    // 'Стандарт', 'Гостевой', 'Пенсионер'
+  Set<String> _filterPayments = {};   // 'Наличными', 'Картой', 'Счет заведения'
+  bool _filterFirstTime = false;
+
+  // ── Сортировка ──
+  bool _sortDesc = true;              // true = по убыванию
+  String _sortField = 'date';         // date, total, visits, ltv, fish
 
   @override
   void dispose() {
@@ -437,24 +445,59 @@ class _ChecksScreenState extends State<ChecksScreen> {
     return _type == _TypeFilter.fiscal ? r.fiscal : !r.fiscal;
   }
 
+  bool _matchesAdvancedFilters(ReceiptHistoryItem r) {
+    // Тариф
+    if (_filterTariffs.isNotEmpty && !_filterTariffs.contains(r.tariffLabel)) return false;
+    // Способ оплаты
+    if (_filterPayments.isNotEmpty && !_filterPayments.contains(r.paymentLabel)) return false;
+    // Первый раз на пруду
+    if (_filterFirstTime && !r.isGuest) {
+      final stats = r.client != null ? _pondStatsById[r.client!.id] : null;
+      if (stats == null || stats.visits > 1) return false;
+    }
+    return true;
+  }
+
+  bool get _hasAdvancedFilters =>
+      _filterTariffs.isNotEmpty || _filterPayments.isNotEmpty || _filterFirstTime;
+
   List<ReceiptHistoryItem> get _filtered {
     final list = kDemoReceipts
         .where((r) =>
             _matchesQuery(r) &&
             _matchesPeriod(r) &&
             _matchesRange(r) &&
-            _matchesType(r))
+            _matchesType(r) &&
+            _matchesAdvancedFilters(r))
         .toList();
-    switch (_sortMode) {
+
+    // Сортировка
+    int Function(ReceiptHistoryItem, ReceiptHistoryItem) cmp;
+    switch (_sortField) {
       case 'total':
-        list.sort((a, b) => b.total.compareTo(a.total));
+        cmp = (a, b) => a.total.compareTo(b.total);
         break;
-      case 'name':
-        list.sort((a, b) => a.displayName.compareTo(b.displayName));
+      case 'visits':
+        cmp = (a, b) {
+          final av = a.client != null ? (_pondStatsById[a.client!.id]?.visits ?? 0) : 0;
+          final bv = b.client != null ? (_pondStatsById[b.client!.id]?.visits ?? 0) : 0;
+          return av.compareTo(bv);
+        };
+        break;
+      case 'ltv':
+        cmp = (a, b) {
+          final av = a.client != null ? (_pondStatsById[a.client!.id]?.ltvK ?? 0) : 0;
+          final bv = b.client != null ? (_pondStatsById[b.client!.id]?.ltvK ?? 0) : 0;
+          return av.compareTo(bv);
+        };
+        break;
+      case 'fish':
+        cmp = (a, b) => a.rows.length.compareTo(b.rows.length);
         break;
       default: // date
-        list.sort((a, b) => b.date.compareTo(a.date));
+        cmp = (a, b) => a.date.compareTo(b.date);
     }
+    list.sort(_sortDesc ? (a, b) => cmp(b, a) : cmp);
     return list;
   }
 
@@ -476,67 +519,251 @@ class _ChecksScreenState extends State<ChecksScreen> {
   }
 
   // ---------- открытия ----------
-  void _showFiscalFilterMenu(BuildContext context) {
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final offset = box.localToGlobal(Offset.zero);
-    showMenu<_TypeFilter?>(
+  // ---------- Диалог фильтров (центр экрана) ----------
+  void _showFilterDialog() {
+    // Локальные копии для редактирования
+    Set<String> tmpTariffs = Set.from(_filterTariffs);
+    Set<String> tmpPayments = Set.from(_filterPayments);
+    bool tmpFirstTime = _filterFirstTime;
+    _TypeFilter? tmpType = _type;
+
+    showDialog(
       context: context,
-      position: RelativeRect.fromLTRB(offset.dx + box.size.width - 120, offset.dy + 50, offset.dx + box.size.width, offset.dy),
-      items: [
-        PopupMenuItem<_TypeFilter?>(
-          value: null,
-          child: Row(
-            children: [
-              if (_type == null) const Icon(Icons.check, size: 16, color: _orange) else const SizedBox(width: 16),
-              const SizedBox(width: 8),
-              const Text('Все'),
-            ],
-          ),
-        ),
-        for (final t in _TypeFilter.values)
-          PopupMenuItem<_TypeFilter?>(
-            value: t,
-            child: Row(
-              children: [
-                if (_type == t) const Icon(Icons.check, size: 16, color: _orange) else const SizedBox(width: 16),
-                const SizedBox(width: 8),
-                Text(t.label),
-              ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: _paper,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(child: Text('Фильтры',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _ink))),
+                  const SizedBox(height: 20),
+
+                  // ── Тип чека ──
+                  _filterSectionTitle('Тип чека'),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    _filterChip('С ФН', tmpType == _TypeFilter.fiscal, () {
+                      setDialogState(() => tmpType = tmpType == _TypeFilter.fiscal ? null : _TypeFilter.fiscal);
+                    }),
+                    _filterChip('Без ФН', tmpType == _TypeFilter.nonfiscal, () {
+                      setDialogState(() => tmpType = tmpType == _TypeFilter.nonfiscal ? null : _TypeFilter.nonfiscal);
+                    }),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  // ── Тариф ──
+                  _filterSectionTitle('Тариф'),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final t in ['Стандарт', 'Гостевой', 'Пенсионер'])
+                      _filterChip(t, tmpTariffs.contains(t), () {
+                        setDialogState(() {
+                          tmpTariffs.contains(t) ? tmpTariffs.remove(t) : tmpTariffs.add(t);
+                        });
+                      }),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  // ── Способ оплаты ──
+                  _filterSectionTitle('Способ оплаты'),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final p in ['Наличными', 'Картой', 'Счет заведения'])
+                      _filterChip(p, tmpPayments.contains(p), () {
+                        setDialogState(() {
+                          tmpPayments.contains(p) ? tmpPayments.remove(p) : tmpPayments.add(p);
+                        });
+                      }),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  // ── Первый раз на пруду ──
+                  GestureDetector(
+                    onTap: () => setDialogState(() => tmpFirstTime = !tmpFirstTime),
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(children: [
+                      SizedBox(width: 24, height: 24, child: Checkbox(
+                        value: tmpFirstTime,
+                        onChanged: (v) => setDialogState(() => tmpFirstTime = v ?? false),
+                        activeColor: _orange,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      )),
+                      const SizedBox(width: 10),
+                      const Text('Первый раз на пруду',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: _ink)),
+                    ]),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ── Кнопки ──
+                  Row(children: [
+                    Expanded(child: OutlinedButton(
+                      onPressed: () {
+                        setDialogState(() {
+                          tmpTariffs.clear();
+                          tmpPayments.clear();
+                          tmpFirstTime = false;
+                          tmpType = null;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _muted,
+                        side: const BorderSide(color: _outline),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        minimumSize: const Size(0, 44),
+                      ),
+                      child: const Text('Сбросить'),
+                    )),
+                    const SizedBox(width: 12),
+                    Expanded(child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _filterTariffs = tmpTariffs;
+                          _filterPayments = tmpPayments;
+                          _filterFirstTime = tmpFirstTime;
+                          _type = tmpType;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                        minimumSize: const Size(0, 44),
+                      ),
+                      child: const Text('Применить'),
+                    )),
+                  ]),
+                ],
+              ),
             ),
           ),
-      ],
-    ).then((v) {
-      if (v == null && _type == null) return;
-      setState(() => _type = v);
-    });
+        ),
+      ),
+    );
   }
 
-  void _showSortMenu(BuildContext context) {
+  Widget _filterSectionTitle(String text) => Text(text,
+    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _muted));
+
+  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? _selected : _fill,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: selected ? _orange : _hairline2, width: selected ? 1.5 : 0.5),
+        ),
+        child: Text(label, style: TextStyle(
+          fontSize: 13,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: selected ? _ink : _muted,
+        )),
+      ),
+    );
+  }
+
+  // ---------- Dropdown сортировки ----------
+  void _showSortDropdown(BuildContext context) {
     final RenderBox box = context.findRenderObject() as RenderBox;
+    final size = box.size;
     final offset = box.localToGlobal(Offset.zero);
+
+    final sortLabels = {
+      'date': 'По дате',
+      'total': 'По сумме чека',
+      'visits': 'По числу посещений',
+      'ltv': 'По LTV',
+      'fish': 'По кол-ву пойманной рыбы',
+    };
+
     showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(offset.dx + box.size.width - 120, offset.dy + 50, offset.dx + box.size.width, offset.dy),
+      position: RelativeRect.fromLTRB(
+        offset.dx + size.width - 200,
+        offset.dy + size.height + 4,
+        offset.dx + size.width,
+        0,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: _paper,
+      elevation: 8,
       items: [
-        _sortMenuItem('date', 'По дате'),
-        _sortMenuItem('total', 'По сумме'),
-        _sortMenuItem('name', 'По имени'),
+        // ── Порядок ──
+        PopupMenuItem<String>(
+          enabled: false,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text('Порядок', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _muted)),
+        ),
+        _sortRadioItem('desc', 'По убыванию', _sortDesc),
+        _sortRadioItem('asc', 'По возрастанию', !_sortDesc),
+        const PopupMenuItem<String>(
+          enabled: false,
+          height: 8,
+          child: Divider(height: 1, color: _hairline2),
+        ),
+        // ── Поле ──
+        PopupMenuItem<String>(
+          enabled: false,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text('Сортировать по', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _muted)),
+        ),
+        for (final e in sortLabels.entries)
+          _sortFieldItem(e.key, e.value, _sortField == e.key),
       ],
     ).then((v) {
-      if (v != null) setState(() => _sortMode = v);
+      if (v == null) return;
+      setState(() {
+        if (v == 'desc' || v == 'asc') {
+          _sortDesc = v == 'desc';
+        } else {
+          _sortField = v;
+        }
+      });
     });
   }
 
-  PopupMenuItem<String> _sortMenuItem(String value, String label) {
+  PopupMenuItem<String> _sortRadioItem(String value, String label, bool selected) {
     return PopupMenuItem<String>(
       value: value,
-      child: Row(
-        children: [
-          if (_sortMode == value) const Icon(Icons.check, size: 16, color: _orange) else const SizedBox(width: 16),
-          const SizedBox(width: 8),
-          Text(label),
-        ],
-      ),
+      height: 36,
+      child: Row(children: [
+        Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+          size: 18, color: selected ? _orange : _muted2),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(
+          fontSize: 13,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          color: selected ? _ink : _muted,
+        )),
+      ]),
+    );
+  }
+
+  PopupMenuItem<String> _sortFieldItem(String value, String label, bool selected) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 36,
+      child: Row(children: [
+        Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+          size: 18, color: selected ? _orange : _muted2),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(
+          fontSize: 13,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          color: selected ? _ink : _muted,
+        )),
+      ]),
     );
   }
 
@@ -627,11 +854,12 @@ class _ChecksScreenState extends State<ChecksScreen> {
                     const SizedBox(width: 8),
                     _FiscalFilterChip(
                       type: _type,
-                      onTap: () => _showFiscalFilterMenu(context),
+                      hasAdvanced: _hasAdvancedFilters,
+                      onTap: _showFilterDialog,
                     ),
                     const SizedBox(width: 8),
                     _SortChip(
-                      onTap: () => _showSortMenu(context),
+                      onTap: () => _showSortDropdown(context),
                     ),
                   ],
                 ),
@@ -1021,12 +1249,13 @@ class _CalendarChip extends StatelessWidget {
 
 class _FiscalFilterChip extends StatelessWidget {
   final _TypeFilter? type;
+  final bool hasAdvanced;
   final VoidCallback onTap;
-  const _FiscalFilterChip({required this.type, required this.onTap});
+  const _FiscalFilterChip({required this.type, required this.hasAdvanced, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final active = type != null;
+    final active = type != null || hasAdvanced;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
