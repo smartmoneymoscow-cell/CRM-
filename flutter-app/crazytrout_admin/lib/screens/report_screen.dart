@@ -449,6 +449,14 @@ class _ReportScreenState extends State<ReportScreen> {
     return _dateRange;
   }
 
+  /// DateTimeRange для вкладки «Финансы».
+  DateTimeRange? get _effectiveDateForFinance {
+    if (_lastFilterSource == 'dropdown') {
+      return _periodToDateRange(_period);
+    }
+    return _dateRange;
+  }
+
   Future<void> _openCalendar() async {
     final res = await _showRangeCalendarPicker(context, _dateRange);
     if (!mounted || res == null) return;
