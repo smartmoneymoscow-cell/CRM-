@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crazytrout_admin/data/demo_data.dart';
-import 'package:crazytrout_admin/models/tariff.dart';
 
 void main() {
   group('DemoData — консистентность данных', () {

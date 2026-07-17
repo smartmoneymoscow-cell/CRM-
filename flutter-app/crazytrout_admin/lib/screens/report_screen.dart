@@ -11,7 +11,7 @@ import '../data/finance_kpi_stats.dart';
 import '../data/demo_finance_stats.dart' show buildFinanceStats;
 import '../data/revenue_dynamics_data.dart';
 import '../data/demo_receipts.dart';
-import '../data/demo_data.dart' as app_data show kDemoClients, kSpecies, kSpeciesImage, kSpeciesImageHeight, kSpeciesImageHeightDefault;
+import '../data/demo_data.dart' as app_data show kSpecies, kSpeciesImage, kSpeciesImageHeight, kSpeciesImageHeightDefault;
 import '../models/client.dart';
 import '../theme/app_theme.dart';
 import '../data/pond_stats.dart';
