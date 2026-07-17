@@ -1011,6 +1011,138 @@ class FiltersDropdown extends StatefulWidget {
 class _FiltersDropdownState extends State<FiltersDropdown> {
   bool _isOpen = false;
   final LayerLink _layerLink = LayerLink();
+  final GlobalKey _buttonKey = GlobalKey();
+
+  void _toggle() {
+    setState(() => _isOpen = !_isOpen);
+  }
+
+  void _close() {
+    if (mounted && _isOpen) setState(() => _isOpen = false);
+  }
+
+  double get _btnHeight {
+    final box = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    return box?.size.height ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // При открытии нижние углы кнопки выпрямляются (требование 6).
+    const pill = BorderRadius.all(Radius.circular(999));
+    final radius = _isOpen
+        ? const BorderRadius.only(
+            topLeft: Radius.circular(999),
+            topRight: Radius.circular(999),
+            bottomLeft: Radius.circular(0),
+            bottomRight: Radius.circular(0),
+          )
+        : pill;
+
+    // Требование 8: Stack внутри Scaffold.body, НЕ OverlayEntry.
+    // Требование 9: без maxHeight — контент полной высоты.
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Stack(clipBehavior: Clip.none, children: [
+        // Кнопка — первый ребёнок → приоритет hit test.
+        GestureDetector(
+          key: _buttonKey,
+          onTap: _toggle,
+          child: Container(
+            width: 120,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: radius,
+            ),
+            child: Row(children: [
+              const Icon(Icons.filter_list, size: 13, color: _ember),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  filterButtonLabels[widget.value]!,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _ink),
+                ),
+              ),
+            ]),
+          ),
+        ),
+        // Тап-за-пределами — закрывает dropdown.
+        if (_isOpen)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _close,
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ),
+        // Dropdown — строго под кнопкой через CompositedTransformFollower.
+        if (_isOpen)
+          CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: Offset(0, _btnHeight), // gap = 0, под кнопкой
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 120,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x22000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: filterOptions.entries.map((e) {
+                    final isSelected = widget.value == e.key;
+                    return InkWell(
+                      onTap: () {
+                        widget.onChange(e.key);
+                        _close();
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        color: isSelected ? const Color(0xFFF5EEDC) : Colors.transparent,
+                        child: Text(
+                          e.value,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: _ink,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+});
+
+  @override
+  State<FiltersDropdown> createState() => _FiltersDropdownState();
+}
+
+class _FiltersDropdownState extends State<FiltersDropdown> {
+  bool _isOpen = false;
+  final LayerLink _layerLink = LayerLink();
 
   void _toggle() {
     setState(() => _isOpen = !_isOpen);
