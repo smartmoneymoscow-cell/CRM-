@@ -107,6 +107,7 @@ final List<FullClient> _clients = app_data.kDemoClients.map((c) {
     fish: s.fish,
     totalWeight: s.totalWeight,
     firstVisit: s.firstVisit,
+    lastVisit: s.lastVisit,
     bestCatch: s.bestCatch,
     currentSector: s.currentSector,
   );
@@ -128,7 +129,7 @@ String formatLtv(int k) {
 // ─────────────────────────── Мок-расписание ───────────────────────────
 class Slot {
   final int start, end;
-  final FullClient client;
+  final FullClient? client;
   const Slot(this.start, this.end, this.client);
 }
 
