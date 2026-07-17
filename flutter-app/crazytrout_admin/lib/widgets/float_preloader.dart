@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 /// Анимированный поплавок-бобber с анимацией поклёвки.
@@ -238,84 +239,127 @@ class _FloatPainter extends CustomPainter {
     canvas.translate(cx, waterY - 2 + bob + dipOffset);
     canvas.rotate(tilt);
 
-    // --- Antenna: long thin red stick with ball on top ---
-    const double stickW = 2.5;
-    const double antTop = -65;
-    const double antBot = -14;
-
-    // Red stick
-    canvas.drawRect(
-      Rect.fromLTWH(-stickW / 2, antTop + 6, stickW, antBot - antTop - 6),
-      Paint()..color = const Color(0xFFC9302C),
-    );
-
-    // White stripe across
-    const double stripeY = antTop + (antBot - antTop) * 0.45;
-    canvas.drawRect(
-      Rect.fromLTWH(-stickW / 2 - 0.5, stripeY, stickW + 1, 3),
-      Paint()..color = const Color(0xFFF5F0E3),
-    );
-
-    // Red ball on top
-    canvas.drawCircle(
-      const Offset(0, antTop + 6),
-      4.5,
-      Paint()..color = const Color(0xFFC9302C),
-    );
-    // Highlight
-    canvas.drawCircle(
-      const Offset(-1.5, antTop + 4.5),
-      1.5,
-      Paint()..color = Colors.white.withOpacity(0.45),
-    );
-
-    // --- Body: elongated teardrop ---
-    // Red top (elongated oval)
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, -8), width: 16, height: 28),
-      Paint()..color = const Color(0xFFC9302C),
-    );
-    // Glossy
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(-2, -12), width: 5, height: 10),
-      Paint()..color = Colors.white.withOpacity(0.35),
-    );
-
-    // White bottom (slightly wider)
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 8), width: 18, height: 26),
-      Paint()..color = const Color(0xFFF5F0E3),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 8), width: 18, height: 26),
+    // --- Keel (draw first, behind body) ---
+    canvas.drawLine(
+      const Offset(0, 26),
+      const Offset(0, 42),
       Paint()
-        ..color = Colors.black.withOpacity(0.08)
+        ..color = const Color(0xFF6B5B3A)
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round,
+    );
+    // Keel weight — tapered oval
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(0, 44), width: 6, height: 10),
+      Paint()..color = const Color(0xFF4A3D28),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(0, 44), width: 6, height: 10),
+      Paint()
+        ..color = Colors.black.withOpacity(0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5,
+    );
+
+    // --- Body: realistic pear shape ---
+    // White bottom portion (below waterline)
+    final whitePath = Path()
+      ..moveTo(0, -6)
+      ..cubicTo(7, -2, 11, 10, 9, 22)
+      ..cubicTo(7, 26, 3, 26, 0, 26)
+      ..cubicTo(-3, 26, -7, 26, -9, 22)
+      ..cubicTo(-11, 10, -7, -2, 0, -6)
+      ..close();
+    final whiteShader = ui.Gradient.linear(
+      const Offset(-10, 0),
+      const Offset(10, 0),
+      [const Color(0xFFE8E0D0), const Color(0xFFFAF5EA), const Color(0xFFFAF5EA), const Color(0xFFD8D0C0)],
+      [0.0, 0.3, 0.7, 1.0],
+    );
+    canvas.drawPath(whitePath, Paint()..shader = whiteShader);
+    canvas.drawPath(
+      whitePath,
+      Paint()
+        ..color = Colors.black.withOpacity(0.12)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7,
+    );
+
+    // Red top portion (above waterline)
+    final redPath = Path()
+      ..moveTo(0, -22)
+      ..cubicTo(5, -20, 8, -14, 7, -6)
+      ..lineTo(-7, -6)
+      ..cubicTo(-8, -14, -5, -20, 0, -22)
+      ..close();
+    final redShader = ui.Gradient.linear(
+      const Offset(-8, -14),
+      const Offset(8, -14),
+      [const Color(0xFFA02020), const Color(0xFFD43838), const Color(0xFFE04040), const Color(0xFFA02020)],
+      [0.0, 0.3, 0.6, 1.0],
+    );
+    canvas.drawPath(redPath, Paint()..shader = redShader);
+    canvas.drawPath(
+      redPath,
+      Paint()
+        ..color = Colors.black.withOpacity(0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7,
+    );
+
+    // Glossy highlight on red
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(-2, -14), width: 4, height: 12),
+      Paint()..color = Colors.white.withOpacity(0.3),
+    );
+
+    // Waterline ring
+    canvas.drawOval(
+      Rect.fromCenter(center: const Offset(0, -6), width: 15, height: 3),
+      Paint()
+        ..color = const Color(0xFF645032).withOpacity(0.25)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.8,
     );
 
-    // Dividing line
-    canvas.drawLine(
-      const Offset(-9, 0),
-      const Offset(9, 0),
-      Paint()
-        ..color = const Color(0xFF8C8576).withOpacity(0.4)
-        ..strokeWidth = 0.8,
+    // --- Antenna ---
+    const double stickW = 1.8;
+    const double antTop = -70;
+    const double antBase = -22;
+
+    // Tapered stick
+    final stickPath = Path()
+      ..moveTo(-stickW / 2 - 0.3, antBase)
+      ..lineTo(-stickW / 2, antTop + 8)
+      ..lineTo(stickW / 2, antTop + 8)
+      ..lineTo(stickW / 2 + 0.3, antBase)
+      ..close();
+    canvas.drawPath(stickPath, Paint()..color = const Color(0xFFE04040));
+
+    // White band
+    const double bandY = antTop + (antBase - antTop) * 0.5;
+    canvas.drawRect(
+      Rect.fromLTWH(-stickW / 2 - 0.2, bandY, stickW + 0.4, 4),
+      Paint()..color = const Color(0xFFF5F0E3),
     );
 
-    // --- Keel ---
-    canvas.drawLine(
-      const Offset(0, 21),
-      const Offset(0, 32),
-      Paint()
-        ..color = const Color(0xFF5C4D2F)
-        ..strokeWidth = 1.2
-        ..strokeCap = StrokeCap.round,
+    // Ball on top
+    final ballShader = ui.Gradient.radial(
+      Offset(-1, antTop + 6.5),
+      0.5,
+      [const Color(0xFFFF6060), const Color(0xFFD43838), const Color(0xFFA02020)],
+      [0.0, 0.5, 1.0],
     );
-
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(0, 33), width: 5, height: 3.6),
-      Paint()..color = const Color(0xFF3A3225),
+    canvas.drawCircle(
+      Offset(0, antTop + 8),
+      3.8,
+      Paint()..shader = ballShader,
+    );
+    // Highlight
+    canvas.drawCircle(
+      Offset(-1.2, antTop + 6.5),
+      1.2,
+      Paint()..color = Colors.white.withOpacity(0.5),
     );
 
     canvas.restore();

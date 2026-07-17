@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Float Preloader — v5</title>
+<title>Float Preloader — v6</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -78,7 +78,7 @@ canvas { display: block; }
 </head>
 <body>
 
-<h1>🐟 Float Preloader — v5</h1>
+<h1>🐟 Float Preloader — v6</h1>
 
 <div class="card">
   <h2>Покой + Поклёвка</h2>
@@ -102,7 +102,6 @@ canvas { display: block; }
 </div>
 
 <script>
-// === Float Animation Engine ===
 class FloatAnimator {
   constructor(canvas, opts = {}) {
     this.canvas = canvas;
@@ -112,13 +111,10 @@ class FloatAnimator {
     this.bobTime = 0;
     this.bobSpeed = opts.bobSpeed || 0.02;
     this.paused = false;
-
-    // Bite animation state
-    this.bitePhase = 0; // 0=idle, 1=dip, 2=submerge, 3=rise, 4=wobble
+    this.bitePhase = 0;
     this.biteTime = 0;
     this.biteDipOffset = 0;
     this.biteTilt = 0;
-
     this.running = true;
     this.loop();
   }
@@ -142,25 +138,24 @@ class FloatAnimator {
   updateBite() {
     if (this.bitePhase === 0) return;
     this.biteTime += 0.025;
-
     switch (this.bitePhase) {
-      case 1: // Quick dip down
+      case 1:
         this.biteDipOffset = this.easeOutCubic(Math.min(this.biteTime / 0.3, 1)) * 30;
         this.biteTilt = this.easeOutCubic(Math.min(this.biteTime / 0.3, 1)) * 0.12;
         if (this.biteTime >= 0.3) { this.bitePhase = 2; this.biteTime = 0; }
         break;
-      case 2: // Submerge
+      case 2:
         this.biteDipOffset = 30 + this.easeInOutCubic(Math.min(this.biteTime / 0.5, 1)) * 25;
         this.biteTilt = 0.12 + this.easeInOutCubic(Math.min(this.biteTime / 0.5, 1)) * 0.08;
         if (this.biteTime >= 0.5) { this.bitePhase = 3; this.biteTime = 0; }
         break;
-      case 3: // Rise back
+      case 3:
         const riseT = this.easeOutBounce(Math.min(this.biteTime / 0.8, 1));
         this.biteDipOffset = 55 * (1 - riseT);
         this.biteTilt = 0.2 * (1 - riseT);
         if (this.biteTime >= 0.8) { this.bitePhase = 4; this.biteTime = 0; }
         break;
-      case 4: // Wobble settle
+      case 4:
         const wobbleT = Math.min(this.biteTime / 1.2, 1);
         this.biteDipOffset = Math.sin(this.biteTime * 12) * 3 * (1 - wobbleT);
         this.biteTilt = Math.sin(this.biteTime * 10) * 0.02 * (1 - wobbleT);
@@ -185,11 +180,11 @@ class FloatAnimator {
     const cx = w / 2;
     ctx.clearRect(0, 0, w, h);
 
-    const waterY = h * 0.6;
+    const waterY = h * 0.58;
     const bob = Math.sin(this.bobTime * Math.PI) * 5;
     const extraDip = this.biteDipOffset;
 
-    // Water — simple straight line
+    // Water
     ctx.fillStyle = 'rgba(42, 106, 126, 0.08)';
     ctx.fillRect(0, waterY, w, h - waterY);
     ctx.beginPath();
@@ -204,89 +199,124 @@ class FloatAnimator {
     ctx.translate(cx, waterY - 2 + bob + extraDip);
     ctx.rotate(this.biteTilt);
 
-    const fy = 0;
-
-    // --- Antenna: long thin red stick with ball on top ---
-    const antTop = fy - 65;
-    const antBot = fy - 14;
-    const stickW = 2.5;
-
-    // Red stick
+    // --- Keel (draw first, behind body) ---
     ctx.beginPath();
-    ctx.rect(-stickW / 2, antTop + 6, stickW, antBot - antTop - 6);
-    ctx.fillStyle = '#C9302C';
+    ctx.moveTo(0, 26);
+    ctx.lineTo(0, 42);
+    ctx.strokeStyle = '#6B5B3A';
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    // Keel weight — small tapered oval
+    ctx.beginPath();
+    ctx.ellipse(0, 44, 3, 5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#4A3D28';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(0, 44, 3, 5, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // --- Body: realistic pear shape using bezier curves ---
+    // The body is a classic "груша" (pear) shape — narrow at top, wide at bottom
+
+    // White bottom portion (below waterline)
+    ctx.beginPath();
+    ctx.moveTo(0, -6);          // top junction
+    ctx.bezierCurveTo(7, -2, 11, 10, 9, 22);   // right side
+    ctx.bezierCurveTo(7, 26, 3, 26, 0, 26);    // bottom right
+    ctx.bezierCurveTo(-3, 26, -7, 26, -9, 22); // bottom left
+    ctx.bezierCurveTo(-11, 10, -7, -2, 0, -6); // left side
+    ctx.closePath();
+    const whiteGrad = ctx.createLinearGradient(-10, 0, 10, 0);
+    whiteGrad.addColorStop(0, '#E8E0D0');
+    whiteGrad.addColorStop(0.3, '#FAF5EA');
+    whiteGrad.addColorStop(0.7, '#FAF5EA');
+    whiteGrad.addColorStop(1, '#D8D0C0');
+    ctx.fillStyle = whiteGrad;
+    ctx.fill();
+    // Outline
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+
+    // Red top portion (above waterline)
+    ctx.beginPath();
+    ctx.moveTo(0, -22);         // top point (narrow)
+    ctx.bezierCurveTo(5, -20, 8, -14, 7, -6);   // right side
+    ctx.lineTo(-7, -6);         // bottom edge (waterline)
+    ctx.bezierCurveTo(-8, -14, -5, -20, 0, -22); // left side
+    ctx.closePath();
+    const redGrad = ctx.createLinearGradient(-8, -14, 8, -14);
+    redGrad.addColorStop(0, '#A02020');
+    redGrad.addColorStop(0.3, '#D43838');
+    redGrad.addColorStop(0.6, '#E04040');
+    redGrad.addColorStop(1, '#A02020');
+    ctx.fillStyle = redGrad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+
+    // Glossy highlight on red
+    ctx.beginPath();
+    ctx.ellipse(-2, -14, 2, 6, -0.1, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.fill();
 
-    // White stripe across
-    const stripeY = antTop + (antBot - antTop) * 0.45;
+    // Waterline ring (thin band at junction)
     ctx.beginPath();
-    ctx.rect(-stickW / 2 - 0.5, stripeY, stickW + 1, 3);
+    ctx.ellipse(0, -6, 7.5, 1.5, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(100,80,50,0.25)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // --- Antenna ---
+    // Thin stick emerging from top of body
+    const stickW = 1.8;
+    const antTop = -70;
+    const antBase = -22;
+
+    // Stick — slight taper (thinner at top)
+    ctx.beginPath();
+    ctx.moveTo(-stickW/2 - 0.3, antBase);
+    ctx.lineTo(-stickW/2, antTop + 8);
+    ctx.lineTo(stickW/2, antTop + 8);
+    ctx.lineTo(stickW/2 + 0.3, antBase);
+    ctx.closePath();
+    ctx.fillStyle = '#E04040';
+    ctx.fill();
+
+    // White band on stick
+    const bandY = antTop + (antBase - antTop) * 0.5;
+    ctx.beginPath();
+    ctx.rect(-stickW/2 - 0.2, bandY, stickW + 0.4, 4);
     ctx.fillStyle = '#F5F0E3';
     ctx.fill();
 
-    // Red ball on top
+    // Ball on top
     ctx.beginPath();
-    ctx.arc(0, antTop + 6, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#C9302C';
+    ctx.arc(0, antTop + 8, 3.8, 0, Math.PI * 2);
+    const ballGrad = ctx.createRadialGradient(-1, antTop + 6.5, 0.5, 0, antTop + 8, 3.8);
+    ballGrad.addColorStop(0, '#FF6060');
+    ballGrad.addColorStop(0.5, '#D43838');
+    ballGrad.addColorStop(1, '#A02020');
+    ctx.fillStyle = ballGrad;
     ctx.fill();
     // Highlight
     ctx.beginPath();
-    ctx.arc(-1.5, antTop + 4.5, 1.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.arc(-1.2, antTop + 6.5, 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fill();
 
-    // --- Body: elongated teardrop ---
-    // Red top (elongated oval)
-    ctx.beginPath();
-    ctx.ellipse(0, fy - 8, 8, 14, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#C9302C';
-    ctx.fill();
-    // Glossy
-    ctx.beginPath();
-    ctx.ellipse(-2, fy - 12, 2.5, 5, -0.15, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fill();
-
-    // White bottom (slightly wider)
-    ctx.beginPath();
-    ctx.ellipse(0, fy + 8, 9, 13, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#F5F0E3';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(0, fy + 8, 9, 13, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // Dividing line
-    ctx.beginPath();
-    ctx.moveTo(-9, fy);
-    ctx.lineTo(9, fy);
-    ctx.strokeStyle = 'rgba(140,133,118,0.4)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // --- Keel ---
-    ctx.beginPath();
-    ctx.moveTo(0, fy + 21);
-    ctx.lineTo(0, fy + 32);
-    ctx.strokeStyle = '#5C4D2F';
-    ctx.lineWidth = 1.2;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.ellipse(0, fy + 33, 2.5, 1.8, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#3A3225';
-    ctx.fill();
-
-    // Fishing line (dashed)
+    // --- Fishing line (леска) ---
     ctx.beginPath();
     ctx.setLineDash([2, 3]);
-    ctx.moveTo(0, fy + 35);
-    ctx.lineTo(0, fy + 50);
-    ctx.strokeStyle = 'rgba(100,100,100,0.15)';
-    ctx.lineWidth = 0.6;
+    ctx.moveTo(0, 49);
+    ctx.lineTo(0, 65);
+    ctx.strokeStyle = 'rgba(100,100,100,0.12)';
+    ctx.lineWidth = 0.5;
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -307,7 +337,6 @@ function tick1() {
   requestAnimationFrame(tick1);
 }
 tick1();
-
 function triggerBite() { f1.triggerBite(); }
 function togglePause() { f1.paused = !f1.paused; }
 
@@ -315,7 +344,6 @@ function togglePause() { f1.paused = !f1.paused; }
 const f2 = new FloatAnimator(document.getElementById('c2'), { bobSpeed: 0.014 });
 const fill2 = document.getElementById('fill2');
 const label2 = document.getElementById('label2');
-
 function animateDet() {
   let p = 0;
   fill2.style.width = '0%';
