@@ -1044,7 +1044,19 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
     return CompositedTransformTarget(
       link: _layerLink,
       child: Stack(clipBehavior: Clip.none, children: [
-        // Кнопка — первый ребёнок → приоритет hit test.
+        // Прозрачный фон — заполняет родителя, чтобы Stack имел размер экрана.
+        const SizedBox.expand(),
+        // Тап-за-пределами — закрывает dropdown. Positioned.fill.
+        if (_isOpen)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _close,
+              child: const ColoredBox(color: Colors.transparent),
+            ),
+          ),
+        // Кнопка — ПОСЛЕДНИЙ ребёнок → Stack проверяет с конца →
+        // кнопка получает приоритет hit test над tap-to-close.
         GestureDetector(
           key: _buttonKey,
           onTap: _toggle,
@@ -1069,15 +1081,6 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
             ]),
           ),
         ),
-        // Тап-за-пределами — закрывает dropdown.
-        if (_isOpen)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _close,
-              child: const ColoredBox(color: Colors.transparent),
-            ),
-          ),
         // Dropdown — строго под кнопкой через CompositedTransformFollower.
         if (_isOpen)
           CompositedTransformFollower(

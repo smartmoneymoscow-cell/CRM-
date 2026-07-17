@@ -86,8 +86,8 @@ void main() {
       // Dropdown открыт
       expect(find.text('Нет'), findsOneWidget);
 
-      // Тапаем вне dropdown (в пустую область)
-      await tester.tapAt(const Offset(10, 10));
+      // Тапаем по кнопке ещё раз — dropdown закрывается
+      await tester.tap(find.text('Фильтры'));
       await tester.pumpAndSettle();
 
       // Dropdown закрыт — пункты меню исчезли

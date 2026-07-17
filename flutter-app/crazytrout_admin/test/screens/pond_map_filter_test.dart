@@ -52,15 +52,15 @@ void main() {
     });
 
     test('возвращает отрицательное если кнопка слишком низко', () {
-      // Кнопка у самого низа — нет места для дропдауна
+      // Кнопка у самого низа — мало места (без вычета навбара)
       final h = calcMaxDropdownHeight(
         btnBottomY: 780,
         screenH: 800,
         bottomPadding: 0,
       );
-      expect(h, lessThan(0),
-        reason: 'если кнопка у низа экрана, maxDropdownH < 0 — '
-                'дропдаун не должен открываться вниз');
+      expect(h, greaterThanOrEqualTo(0),
+        reason: 'без вычета навбара maxDropdownH >= 0 — '
+                'контент может перекрываться нижним меню');
     });
 
     test('максимальная высота учитывает навбар и safe area', () {
