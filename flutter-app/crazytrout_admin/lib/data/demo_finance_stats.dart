@@ -121,7 +121,7 @@ FinanceStats buildFinanceStats({DateTimeRange? dateRange}) {
     final minVal = sorted.first;
     final maxVal = sorted.last;
     final range = maxVal - minVal;
-    sparkline = dayMap.keys.toList()..sort();
+    sparkline = dayMap.keys.map((k) => dayMap[k]!).toList()..sort();
     sparkline = (dayMap.keys.toList()..sort())
         .map((k) => range > 0 ? (dayMap[k]! - minVal) / range : 0.5)
         .toList();

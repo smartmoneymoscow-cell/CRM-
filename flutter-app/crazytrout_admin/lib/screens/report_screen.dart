@@ -49,6 +49,21 @@ extension on _PeriodFilter {
       };
 }
 
+/// Конвертирует _PeriodFilter в DateTimeRange для фильтрации данных.
+DateTimeRange? _periodToDateRange(_PeriodFilter? period) {
+  if (period == null || period == _PeriodFilter.all) return null;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final start = switch (period) {
+    _PeriodFilter.today => today,
+    _PeriodFilter.week => today.subtract(const Duration(days: 7)),
+    _PeriodFilter.month => today.subtract(const Duration(days: 30)),
+    _PeriodFilter.quarter => today.subtract(const Duration(days: 90)),
+    _PeriodFilter.all => DateTime(0),
+  };
+  return DateTimeRange(start: start, end: today);
+}
+
 // ─── Уровни клиентов ────────────────────────────────────────────────────────
 enum LevelKey { premium, standard, basic }
 
