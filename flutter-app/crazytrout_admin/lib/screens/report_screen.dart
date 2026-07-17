@@ -17,34 +17,13 @@ import '../theme/app_theme.dart';
 import '../data/pond_stats.dart';
 import '../widgets/client_avatar.dart';
 import '../widgets/level_badge.dart';
+import '../data/filter_types.dart';
 import '../widgets/filter_dropdown.dart';
 import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
-enum _PeriodFilter { today, week, month, quarter, all }
-
-extension on _PeriodFilter {
-  String get label => switch (this) {
-        _PeriodFilter.today => 'Сегодня',
-        _PeriodFilter.week => 'Неделя',
-        _PeriodFilter.month => 'Месяц',
-        _PeriodFilter.quarter => 'Квартал',
-        _PeriodFilter.all => 'Все вр.',
-      };
-}
-
-/// Конвертирует _PeriodFilter в DateTimeRange для фильтрации данных.
-DateTimeRange? _periodToDateRange(_PeriodFilter? period) {
-  if (period == null || period == _PeriodFilter.all) return null;
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final start = switch (period) {
-    _PeriodFilter.today => today,
-    _PeriodFilter.week => today.subtract(const Duration(days: 7)),
-    _PeriodFilter.month => today.subtract(const Duration(days: 30)),
-    _PeriodFilter.quarter => today.subtract(const Duration(days: 90)),
-    _PeriodFilter.all => DateTime(0),
-  };
-  return DateTimeRange(start: start, end: today);
+/// Конвертирует PeriodFilter в DateTimeRange для фильтрации данных.
+DateTimeRange? _periodToDateRange(PeriodFilter? period) {
+  return periodToDateRange(period);
 }
 
 // ─── Уровни клиентов ────────────────────────────────────────────────────────
@@ -122,7 +101,7 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
-  _PeriodFilter? _period;
+  PeriodFilter? _period;
   DateTimeRange? _dateRange;
   int _selectedIcon = 0; // 0 = ruble, 1 = clients, 2 = fish
 
@@ -130,7 +109,7 @@ class _ReportScreenState extends State<ReportScreen> {
   String? _lastFilterSource;
 
   /// Effective period — calendar takes priority if it was set last.
-  _PeriodFilter? get _effectivePeriod {
+  PeriodFilter? get _effectivePeriod {
     if (_lastFilterSource == 'calendar') return null;
     return _period;
   }
@@ -194,18 +173,18 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: FilterDropdown<_PeriodFilter>(
+                  child: FilterDropdown<PeriodFilter>(
                     value: _period,
                     label: 'Период',
                     items: [
-                      FilterDropdownItem<_PeriodFilter>(
+                      FilterDropdownItem<PeriodFilter>(
                         value: null,
                         label: 'Нет',
                         isReset: true,
                         enabled: _period != null,
                       ),
-                      for (final p in _PeriodFilter.values)
-                        FilterDropdownItem<_PeriodFilter>(
+                      for (final p in PeriodFilter.values)
+                        FilterDropdownItem<PeriodFilter>(
                           value: p,
                           label: p.label,
                         ),
@@ -309,7 +288,7 @@ class _FinanceContent extends StatelessWidget {
 // _ClientStatsContent — лента оплат клиентов
 // ============================================================================
 class _ClientStatsContent extends StatelessWidget {
-  final _PeriodFilter? period;
+  final PeriodFilter? period;
   final DateTimeRange? dateRange;
 
   const _ClientStatsContent({required this.period, required this.dateRange});
@@ -317,7 +296,7 @@ class _ClientStatsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = _paymentFeed.where((e) {
-      if (period == null || period == _PeriodFilter.all) {
+      if (period == null || period == PeriodFilter.all) {
         // фильтр по календарю если есть
         if (dateRange != null) {
           final d = DateTime(e.date.year, e.date.month, e.date.day);
@@ -331,11 +310,11 @@ class _ClientStatsContent extends StatelessWidget {
       }
       final now = DateTime.now();
       final start = switch (period!) {
-        _PeriodFilter.today => DateTime(now.year, now.month, now.day),
-        _PeriodFilter.week => now.subtract(const Duration(days: 7)),
-        _PeriodFilter.month => now.subtract(const Duration(days: 30)),
-        _PeriodFilter.quarter => now.subtract(const Duration(days: 90)),
-        _PeriodFilter.all => DateTime(0),
+        PeriodFilter.today => DateTime(now.year, now.month, now.day),
+        PeriodFilter.week => now.subtract(const Duration(days: 7)),
+        PeriodFilter.month => now.subtract(const Duration(days: 30)),
+        PeriodFilter.quarter => now.subtract(const Duration(days: 90)),
+        PeriodFilter.all => DateTime(0),
       };
       final matchesPeriod =
           e.date.isAfter(start) || e.date.isAtSameMomentAs(start);
@@ -843,7 +822,7 @@ class _ScaledFishStats implements FishSpeciesStats {
 }
 
 class _FishStatsContent extends StatefulWidget {
-  final _PeriodFilter? period;
+  final PeriodFilter? period;
   final DateTimeRange? dateRange;
 
   const _FishStatsContent({this.period, this.dateRange});
@@ -880,13 +859,13 @@ class _FishStatsContentState extends State<_FishStatsContent> {
   Widget build(BuildContext context) {
     // ── Фильтрация данных по периоду / календарю ──
     List<FishSpeciesStats> stats = kDemoFishStats;
-    if (widget.period != null && widget.period != _PeriodFilter.all) {
+    if (widget.period != null && widget.period != PeriodFilter.all) {
       final daysBack = switch (widget.period!) {
-        _PeriodFilter.today => 1,
-        _PeriodFilter.week => 7,
-        _PeriodFilter.month => 30,
-        _PeriodFilter.quarter => 90,
-        _PeriodFilter.all => 99999,
+        PeriodFilter.today => 1,
+        PeriodFilter.week => 7,
+        PeriodFilter.month => 30,
+        PeriodFilter.quarter => 90,
+        PeriodFilter.all => 99999,
       };
       // Scale demo data proportionally to represent the period
       final factor = daysBack / 30.0;

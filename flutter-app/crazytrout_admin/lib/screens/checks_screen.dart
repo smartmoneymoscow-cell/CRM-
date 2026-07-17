@@ -5,6 +5,7 @@ import '../models/client.dart';
 import '../models/receipt_history.dart';
 import '../services/print_route.dart' deferred as print_route;
 import '../models/receipt.dart' as receipt_model;
+import '../data/filter_types.dart';
 import '../theme/app_theme.dart';
 import '../data/pond_stats.dart';
 import 'pond_map_filter_config.dart' show kBottomNavHeight;
@@ -20,8 +21,8 @@ class _ChecksScreenState extends State<ChecksScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
 
-  _PeriodFilter? _period;
-  _TypeFilter? _type;
+  PeriodFilter? _period;
+  TypeFilter? _type;
   DateTimeRange? _dateRange;
 
   // ── Расширенные фильтры (диалог) ──
@@ -60,14 +61,14 @@ class _ChecksScreenState extends State<ChecksScreen> {
   }
 
   bool _matchesPeriod(ReceiptHistoryItem r) {
-    if (_period == null || _period == _PeriodFilter.all) return true;
+    if (_period == null || _period == PeriodFilter.all) return true;
     final now = DateTime.now();
     final start = switch (_period!) {
-      _PeriodFilter.today => DateTime(now.year, now.month, now.day),
-      _PeriodFilter.week => now.subtract(const Duration(days: 7)),
-      _PeriodFilter.month => now.subtract(const Duration(days: 30)),
-      _PeriodFilter.quarter => now.subtract(const Duration(days: 90)),
-      _PeriodFilter.all => DateTime(0),
+      PeriodFilter.today => DateTime(now.year, now.month, now.day),
+      PeriodFilter.week => now.subtract(const Duration(days: 7)),
+      PeriodFilter.month => now.subtract(const Duration(days: 30)),
+      PeriodFilter.quarter => now.subtract(const Duration(days: 90)),
+      PeriodFilter.all => DateTime(0),
     };
     return r.date.isAfter(start) || r.date.isAtSameMomentAs(start);
   }
@@ -84,7 +85,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
 
   bool _matchesType(ReceiptHistoryItem r) {
     if (_type == null) return true;
-    return _type == _TypeFilter.fiscal ? r.fiscal : !r.fiscal;
+    return _type == TypeFilter.fiscal ? r.fiscal : !r.fiscal;
   }
 
   bool _matchesAdvancedFilters(ReceiptHistoryItem r) {
@@ -167,7 +168,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
     Set<String> tmpTariffs = Set.from(_filterTariffs);
     Set<String> tmpPayments = Set.from(_filterPayments);
     bool tmpFirstTime = _filterFirstTime;
-    _TypeFilter? tmpType = _type;
+    TypeFilter? tmpType = _type;
 
     showDialog(
       context: context,
@@ -191,11 +192,11 @@ class _ChecksScreenState extends State<ChecksScreen> {
                   _filterSectionTitle('Тип чека'),
                   const SizedBox(height: 8),
                   Wrap(spacing: 8, runSpacing: 8, children: [
-                    _filterChip('С ФН', tmpType == _TypeFilter.fiscal, () {
-                      setDialogState(() => tmpType = tmpType == _TypeFilter.fiscal ? null : _TypeFilter.fiscal);
+                    _filterChip('С ФН', tmpType == TypeFilter.fiscal, () {
+                      setDialogState(() => tmpType = tmpType == TypeFilter.fiscal ? null : TypeFilter.fiscal);
                     }),
-                    _filterChip('Без ФН', tmpType == _TypeFilter.nonfiscal, () {
-                      setDialogState(() => tmpType = tmpType == _TypeFilter.nonfiscal ? null : _TypeFilter.nonfiscal);
+                    _filterChip('Без ФН', tmpType == TypeFilter.nonfiscal, () {
+                      setDialogState(() => tmpType = tmpType == TypeFilter.nonfiscal ? null : TypeFilter.nonfiscal);
                     }),
                   ]),
                   const SizedBox(height: 16),
@@ -378,19 +379,19 @@ class _ChecksScreenState extends State<ChecksScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _FilterDropdown<_PeriodFilter>(
+                      child: _FilterDropdown<PeriodFilter>(
                         value: _period,
                         label: 'Период',
                         active: _period != null,
                         items: [
-                          _FilterDropdownItem<_PeriodFilter>(
+                          _FilterDropdownItem<PeriodFilter>(
                             value: null,
                             label: 'Нет',
                             isReset: true,
                             enabled: true,
                           ),
-                          for (final p in _PeriodFilter.values)
-                            _FilterDropdownItem<_PeriodFilter>(
+                          for (final p in PeriodFilter.values)
+                            _FilterDropdownItem<PeriodFilter>(
                               value: p,
                               label: p.label,
                             ),
@@ -849,7 +850,7 @@ class _CalendarChip extends StatelessWidget {
 }
 
 class _FiscalFilterChip extends StatelessWidget {
-  final _TypeFilter? type;
+  final TypeFilter? type;
   final bool hasAdvanced;
   final VoidCallback onTap;
   const _FiscalFilterChip({required this.type, required this.hasAdvanced, required this.onTap});
