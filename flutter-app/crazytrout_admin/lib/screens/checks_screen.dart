@@ -674,98 +674,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
   }
 
   // ---------- Dropdown сортировки ----------
-  void _showSortDropdown(BuildContext context) {
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final size = box.size;
-    final offset = box.localToGlobal(Offset.zero);
-
-    final sortLabels = {
-      'date': 'По дате',
-      'total': 'По сумме чека',
-      'visits': 'По числу посещений',
-      'ltv': 'По LTV',
-      'fish': 'По кол-ву пойманной рыбы',
-    };
-
-    showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        offset.dx + size.width - 200,
-        offset.dy + size.height + 4,
-        offset.dx + size.width,
-        0,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: _paper,
-      elevation: 8,
-      items: [
-        // ── Порядок ──
-        PopupMenuItem<String>(
-          enabled: false,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text('Порядок', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _muted)),
-        ),
-        _sortRadioItem('desc', 'По убыванию', _sortDesc),
-        _sortRadioItem('asc', 'По возрастанию', !_sortDesc),
-        const PopupMenuItem<String>(
-          enabled: false,
-          height: 8,
-          child: Divider(height: 1, color: _hairline2),
-        ),
-        // ── Поле ──
-        PopupMenuItem<String>(
-          enabled: false,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text('Сортировать по', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _muted)),
-        ),
-        for (final e in sortLabels.entries)
-          _sortFieldItem(e.key, e.value, _sortField == e.key),
-      ],
-    ).then((v) {
-      if (v == null) return;
-      setState(() {
-        if (v == 'desc' || v == 'asc') {
-          _sortDesc = v == 'desc';
-        } else {
-          _sortField = v;
-        }
-      });
-    });
-  }
-
-  PopupMenuItem<String> _sortRadioItem(String value, String label, bool selected) {
-    return PopupMenuItem<String>(
-      value: value,
-      height: 36,
-      child: Row(children: [
-        Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
-          size: 18, color: selected ? _orange : _muted2),
-        const SizedBox(width: 10),
-        Text(label, style: TextStyle(
-          fontSize: 13,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: selected ? _ink : _muted,
-        )),
-      ]),
-    );
-  }
-
-  PopupMenuItem<String> _sortFieldItem(String value, String label, bool selected) {
-    return PopupMenuItem<String>(
-      value: value,
-      height: 36,
-      child: Row(children: [
-        Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
-          size: 18, color: selected ? _orange : _muted2),
-        const SizedBox(width: 10),
-        Text(label, style: TextStyle(
-          fontSize: 13,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: selected ? _ink : _muted,
-        )),
-      ]),
-    );
-  }
+  // Sort is now handled by _SortChip widget (overlay-based)
 
   Future<void> _openCalendar() async {
     final res = await _showRangeCalendarPicker(context, _dateRange);
@@ -774,7 +683,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
     if (res.start.year == 2000 && res.end.year == 2000) {
       setState(() => _dateRange = null);
     } else {
-      setState(() => _dateRange = res);
+      setState(() { _dateRange = res; _period = null; });
     }
   }
 
@@ -830,6 +739,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
                       child: _FilterDropdown<_PeriodFilter>(
                         value: _period,
                         label: 'Период',
+                        active: _period != null,
                         items: [
                           _FilterDropdownItem<_PeriodFilter>(
                             value: null,
@@ -843,7 +753,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
                               label: p.label,
                             ),
                         ],
-                        onChanged: (v) => setState(() => _period = v),
+                        onChanged: (v) => setState(() { _period = v; _dateRange = null; }),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -859,12 +769,42 @@ class _ChecksScreenState extends State<ChecksScreen> {
                     ),
                     const SizedBox(width: 8),
                     _SortChip(
-                      onTap: () => _showSortDropdown(context),
+                      active: _sortField != 'date' || !_sortDesc,
+                      sortField: _sortField,
+                      sortDesc: _sortDesc,
+                      onFieldChanged: (v) => setState(() => _sortField = v),
+                      onDescChanged: (v) => setState(() => _sortDesc = v),
                     ),
                   ],
                 ),
               ],
-            ),
+              // Кнопка «Сбросить фильтры» — видна когда хотя бы один фильтр активен
+              if (_period != null || _dateRange != null || _type != null || _hasAdvancedFilters)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      _period = null;
+                      _dateRange = null;
+                      _type = null;
+                      _filterTariffs = {};
+                      _filterPayments = {};
+                      _filterFirstTime = false;
+                    }),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.filter_alt_off_outlined, size: 14, color: _muted2),
+                        const SizedBox(width: 4),
+                        Text('Сбросить фильтры',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                            color: _muted2, decoration: TextDecoration.underline)),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
           ),
           Expanded(
             child: items.isEmpty
@@ -905,6 +845,7 @@ class _FilterDropdown<T> extends StatefulWidget {
   final String label;
   final List<_FilterDropdownItem<T>> items;
   final ValueChanged<T?> onChanged;
+  final bool active;
 
   const _FilterDropdown({
     super.key,
@@ -912,6 +853,7 @@ class _FilterDropdown<T> extends StatefulWidget {
     required this.label,
     required this.items,
     required this.onChanged,
+    this.active = false,
   });
 
   @override
@@ -1090,12 +1032,30 @@ class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
                     ),
                   ),
                 ),
-                Icon(
-                  _open
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  size: 20,
-                  color: _muted2,
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      _open
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: _muted2,
+                    ),
+                    if (widget.active)
+                      const Positioned(
+                        top: 0,
+                        right: 0,
+                        child: SizedBox(
+                          width: 7,
+                          height: 7,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                                color: _orange, shape: BoxShape.circle),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -1289,21 +1249,226 @@ class _FiscalFilterChip extends StatelessWidget {
   }
 }
 
-class _SortChip extends StatelessWidget {
-  final VoidCallback onTap;
-  const _SortChip({required this.onTap});
+class _SortChip extends StatefulWidget {
+  final bool active;
+  final String sortField;
+  final bool sortDesc;
+  final ValueChanged<String> onFieldChanged;
+  final ValueChanged<bool> onDescChanged;
+  const _SortChip({
+    required this.active,
+    required this.sortField,
+    required this.sortDesc,
+    required this.onFieldChanged,
+    required this.onDescChanged,
+  });
+
+  @override
+  State<_SortChip> createState() => _SortChipState();
+}
+
+class _SortChipState extends State<_SortChip> {
+  final GlobalKey _fieldKey = GlobalKey();
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+  bool _open = false;
+  late String _tmpField;
+  late bool _tmpDesc;
+
+  static const _sortLabels = {
+    'date': 'По дате',
+    'total': 'По сумме чека',
+    'visits': 'По числу посещений',
+    'ltv': 'По LTV',
+    'fish': 'По кол-ву пойманной рыбы',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _tmpField = widget.sortField;
+    _tmpDesc = widget.sortDesc;
+  }
+
+  @override
+  void dispose() {
+    _entry = null;
+    super.dispose();
+  }
+
+  void _toggle() => _open ? _close() : _show();
+
+  void _show() {
+    _tmpField = widget.sortField;
+    _tmpDesc = widget.sortDesc;
+    final box = _fieldKey.currentContext!.findRenderObject() as RenderBox;
+    final size = box.size;
+
+    _entry = OverlayEntry(
+      builder: (ctx) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _close,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _link,
+            showWhenUnlinked: false,
+            offset: Offset(0, size.height + 4),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 220,
+                decoration: BoxDecoration(
+                  color: _paper,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x22000000), blurRadius: 10, offset: Offset(0, 6)),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: StatefulBuilder(
+                  builder: (ctx, setOverlayState) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Порядок', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _muted)),
+                        ),
+                      ),
+                      _radioTile('desc', 'По убыванию', _tmpDesc, setOverlayState),
+                      _radioTile('asc', 'По возрастанию', !_tmpDesc, setOverlayState),
+                      const Divider(height: 1, color: _hairline2),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('Сортировать по', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _muted)),
+                        ),
+                      ),
+                      for (final e in _sortLabels.entries)
+                        _fieldTile(e.key, e.value, _tmpField == e.key, setOverlayState),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              widget.onFieldChanged(_tmpField);
+                              widget.onDescChanged(_tmpDesc);
+                              _close();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _orange,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: const Text('Применить', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_entry!);
+    setState(() => _open = true);
+  }
+
+  void _close() {
+    final entry = _entry;
+    _entry = null;
+    if (mounted) setState(() => _open = false);
+    if (mounted) entry?.remove();
+  }
+
+  Widget _radioTile(String value, String label, bool selected, StateSetter setOverlayState) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setOverlayState(() => _tmpDesc = value == 'desc'),
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+            size: 18, color: selected ? _orange : _muted2),
+          const SizedBox(width: 10),
+          Text(label, style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? _ink : _muted,
+          )),
+        ]),
+      ),
+    );
+  }
+
+  Widget _fieldTile(String value, String label, bool selected, StateSetter setOverlayState) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setOverlayState(() => _tmpField = value),
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off,
+            size: 18, color: selected ? _orange : _muted2),
+          const SizedBox(width: 10),
+          Text(label, style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? _ink : _muted,
+          )),
+        ]),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-            color: _fill, borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.sort_rounded, size: 19, color: _ink),
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        key: _fieldKey,
+        onTap: _toggle,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+              color: _fill, borderRadius: BorderRadius.circular(12)),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(Icons.sort_rounded, size: 19, color: _ink),
+              if (widget.active)
+                const Positioned(
+                  top: 7,
+                  right: 7,
+                  child: SizedBox(
+                    width: 7,
+                    height: 7,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                          color: _orange, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1581,11 +1746,17 @@ class _ReceiptCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
                   color: _ink)),
-          const SizedBox(height: 3),
-          Text('Чек № ${r.number} · ${_fmtDateTime(r.date)}',
-              textAlign: TextAlign.center,
-              style:
-                  const TextStyle(fontSize: 11.5, color: _muted2)),
+          Text(
+            r.fiscal ? 'КАССОВЫЙ ЧЕК (Приход)' : 'ЧЕК (без ФН)',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: _muted2),
+          ),
+          const _CardDivider(),
+          _small('Продавец: ИП Сидоров А.В.'),
+          _small('ИНН: 770123456789'),
+          _small('Адрес: г. Москва, ул. Рыбацкая, д. 12'),
+          _small('Дата: ${_fmtDateTime(r.date)}  Чек №${r.number}  Смена №1'),
+          _small('СНО: УСН доходы'),
           const _CardDivider(),
           _row('Клиент', r.displayName),
           _row('Телефон', r.client?.phone ?? '—'),
@@ -1594,17 +1765,29 @@ class _ReceiptCard extends StatelessWidget {
               '${_money(r.tariffPrice)} ₽'),
           for (final it in r.rows)
             _row(
-                '${it.name} ${it.weight.toStringAsFixed(2)} кг × ${it.price.round()}',
+                '${it.name} ${it.weight.toStringAsFixed(2)}кг × ${it.price.round()}',
                 '${_money(it.sum)} ₽'),
           const _CardDivider(),
           _row('ИТОГО', '${_money(r.total)} ₽', bigTotal: true),
+          _small('НДС не облагается'),
           _row('Оплата', r.paymentLabel),
-          _row('Тип чека',
-              r.fiscal ? 'Фискальный ${r.fiscalDoc ?? ""}' : 'Без ФН'),
+          const _CardDivider(),
+          if (r.fiscal) ...[
+            _small('ККТ: 0001234567001234'),
+            _small('ФН: 9999078900001234'),
+            _small('ФД №: ${r.fiscalDoc?.replaceAll('#', '') ?? '—'}'),
+            _small('Проверка: nalog.ru'),
+          ] else
+            _small('Чек без фискального накопителя'),
         ],
       ),
     );
   }
+
+  Widget _small(String text) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Text(text, style: const TextStyle(fontSize: 11, color: _muted2)),
+      );
 
   Widget _row(String l, String v, {bool bigTotal = false}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
