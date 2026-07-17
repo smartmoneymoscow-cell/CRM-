@@ -911,11 +911,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
   }
 
   void _onScroll() {
-    if (_isFilterOpen) {
-      // Позиция кнопки изменилась — пересчитываем и обновляем UI.
-      _updateFilterBtnPosition();
-      setState(() {});
-    }
+    // Dropdown остаётся на месте — контент скроллится под ним.
   }
 
   List<List<Slot>> get schedules =>
