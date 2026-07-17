@@ -11,13 +11,16 @@ import '../theme/app_theme.dart';
 
 class LevelBadge extends StatelessWidget {
   final LevelKey level;
-  const LevelBadge({super.key, required this.level});
+  final bool compact;
+  final double? sizeOverride;
+  const LevelBadge({super.key, required this.level, this.compact = false, this.sizeOverride});
 
   @override
   Widget build(BuildContext context) {
     final l = kLevelStyles[level]!;
-    const size = 18.0;
+    final size = sizeOverride ?? (compact ? 16.0 : 18.0);
     final medal = Medal(style: l, size: size);
+    if (compact) return medal;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(

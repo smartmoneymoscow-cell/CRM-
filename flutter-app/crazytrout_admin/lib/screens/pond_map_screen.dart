@@ -633,34 +633,6 @@ class _PondMapViewState extends State<PondMapView> {
     });
   }
 }
-
-// ─────────────────────────── Медаль уровня (Правка 2.1) ───────────────────────────
-class LevelBadge extends StatelessWidget {
-  final LevelKey level;
-  final bool compact;
-  final double? sizeOverride;
-  const LevelBadge({super.key, required this.level, this.compact = false, this.sizeOverride});
-
-  @override
-  Widget build(BuildContext context) {
-    final l = kLevelStyles[level]!;
-    final size = sizeOverride ?? (compact ? 16.0 : 18.0);
-    final medal = Medal(style: l, size: size);
-    if (compact) return medal;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: l.color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        medal,
-        const SizedBox(width: 4),
-        Text(l.label, style: TextStyle(color: l.color, fontSize: 12, fontWeight: FontWeight.w700)),
-      ]),
-    );
-  }
-}
 // ─────────────────────────── Карточка клиента ───────────────────────────
 Future<void> showClientCard(BuildContext context, FullClient client) {
   return showDialog(context: context, barrierColor: Colors.black.withOpacity(0.5),
