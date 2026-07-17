@@ -958,6 +958,10 @@ class _PondMapScreenState extends State<PondMapScreen> {
     setState(() => _isFilterOpen = !_isFilterOpen);
   }
 
+  void _closeFilter() {
+    if (mounted) setState(() => _isFilterOpen = false);
+  }
+
   Widget _buildFilterRow(int free, int occupied) {
     return Stack(
       clipBehavior: Clip.none,
