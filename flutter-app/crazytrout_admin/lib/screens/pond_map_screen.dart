@@ -251,9 +251,6 @@ class _PondPainter extends CustomPainter {
     required this.grassTile,
   });
 
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   void paint(Canvas canvas, Size size) {
     final scale = size.width / _fullW;
@@ -552,9 +549,6 @@ class _PondPainter extends CustomPainter {
     return path..close();
   }
 
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   bool shouldRepaint(covariant _PondPainter old) =>
       old.statusByNumber != statusByNumber ||
@@ -569,9 +563,6 @@ class PondMapView extends StatefulWidget {
   final int? selected;
   final ValueChanged<int> onTap;
   const PondMapView({super.key, required this.sectorStatuses, required this.selected, required this.onTap});
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   State<PondMapView> createState() => _PondMapViewState();
 }
@@ -579,9 +570,6 @@ class PondMapView extends StatefulWidget {
 class _PondMapViewState extends State<PondMapView> {
   final List<ui.Image?> _trees = List<ui.Image?>.filled(4, null);
   ui.Image? _grassTile;
-
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
 
   @override
   void initState() {
@@ -613,9 +601,6 @@ class _PondMapViewState extends State<PondMapView> {
       _grassTile = results[4];
     });
   }
-
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
 
   @override
   Widget build(BuildContext context) {
@@ -657,9 +642,6 @@ Future<void> showClientCard(BuildContext context, FullClient client) {
 class _ClientCard extends StatelessWidget {
   final FullClient client;
   const _ClientCard({required this.client});
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   Widget build(BuildContext context) {
     final l = kLevelStyles[client.level]!;
@@ -846,9 +828,6 @@ class FiltersDropdown extends StatelessWidget {
     required this.onToggle,
   });
 
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   Widget build(BuildContext context) {
     // При открытии нижние углы кнопки выпрямляются (требование 6).
@@ -901,9 +880,6 @@ bool passesFilter(Slot s, FilterValue f) {
 // ─────────────────────────── Экран целиком ───────────────────────────
 class PondMapScreen extends StatefulWidget {
   const PondMapScreen({super.key});
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   State<PondMapScreen> createState() => _PondMapScreenState();
 }
@@ -914,6 +890,29 @@ class _PondMapScreenState extends State<PondMapScreen> {
   int? selected;
   FilterValue filter = FilterValue.none;
   bool _isFilterOpen = false;
+  final _scrollController = ScrollController();
+  final _filterBtnKey = GlobalKey();
+  final _stackKey = GlobalKey();
+  double _filterBtnTop = 0;
+  double _filterBtnLeft = 0;
+  double _filterBtnWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Dropdown остаётся на месте — контент скроллится под ним.
+  }
 
   List<List<Slot>> get schedules =>
       List.generate(16, (i) => _scheduleFor(date, i + 1));
@@ -930,7 +929,9 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
-      body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+      body: SafeArea(child: Stack(key: _stackKey, children: [
+        // Слой 1: вся страница единым скроллом.
+        ListView(controller: _scrollController, padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
             child: Center(child: Text('Карта пруда',
@@ -964,8 +965,6 @@ class _PondMapScreenState extends State<PondMapScreen> {
             onTap: (n) => setState(() => selected = selected == n ? null : n)),
           const SizedBox(height: 16),
           _buildFilterRow(free, occupied),
-          // Dropdown прикреплён к низу кнопки фильтров — скроллится вместе с ней.
-          if (_isFilterOpen) _buildDropdown(),
           const SizedBox(height: 8),
           Text(
             selected != null
@@ -976,17 +975,53 @@ class _PondMapScreenState extends State<PondMapScreen> {
           const SizedBox(height: 8),
           _buildFeed(scheds),
         ]),
+        // Слой 2: dropdown overlay — поверх всего контента, под нижним меню.
+        if (_isFilterOpen)
+          Positioned(
+            top: _filterBtnTop,
+            left: _filterBtnLeft,
+            child: _buildDropdown(),
+          ),
+      ])),
     );
   }
 
   void _toggleFilter() {
-    setState(() => _isFilterOpen = !_isFilterOpen);
+    if (_isFilterOpen) {
+      setState(() => _isFilterOpen = false);
+    } else {
+      setState(() => _isFilterOpen = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateFilterBtnPosition();
+        if (mounted) setState(() {});
+      });
+    }
   }
   void _closeFilter() { if (mounted && _isFilterOpen) setState(() => _isFilterOpen = false); }
+
+  /// Вычисляет глобальную позицию кнопки фильтров относительно Stack.
+  void _updateFilterBtnPosition() {
+    final btnCtx = _filterBtnKey.currentContext;
+    if (btnCtx == null) return;
+    final btnBox = btnCtx.findRenderObject() as RenderBox?;
+    if (btnBox == null || !btnBox.attached) return;
+    final btnPos = btnBox.localToGlobal(Offset.zero);
+    final btnSize = btnBox.size;
+    // Координаты Stack — контейнера для Positioned dropdown.
+    final stackCtx = _stackKey.currentContext;
+    if (stackCtx == null) return;
+    final stackBox = stackCtx.findRenderObject() as RenderBox?;
+    if (stackBox == null || !stackBox.attached) return;
+    final stackPos = stackBox.localToGlobal(Offset.zero);
+    _filterBtnTop = btnPos.dy - stackPos.dy + btnSize.height;
+    _filterBtnLeft = btnPos.dx - stackPos.dx;
+    _filterBtnWidth = btnSize.width;
+  }
 
   Widget _buildFilterRow(int free, int occupied) {
     return Row(children: [
       FiltersDropdown(
+        key: _filterBtnKey,
         value: filter,
         onChange: (v) => setState(() => filter = v),
         isOpen: _isFilterOpen,
@@ -1001,10 +1036,18 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
   /// Строит dropdown-меню фильтров. Рендерится в слое Stack (поверх feed, под нижним меню).
   Widget _buildDropdown() {
+    final mq = MediaQuery.of(context);
+    // Ограничение высоты: от кнопки фильтров до нижнего меню.
+    final stackH = mq.size.height - mq.padding.top - mq.padding.bottom;
+    final maxH = stackH - _filterBtnTop - kBottomNavHeight;
+
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 120,
+        width: _filterBtnWidth > 0 ? _filterBtnWidth : 120,
+        constraints: BoxConstraints(
+          maxHeight: maxH > 0 ? maxH : 0,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
@@ -1247,9 +1290,6 @@ Future<DateTime?> _showCalendarPicker(BuildContext context, DateTime date) {
 class _CalendarPicker extends StatefulWidget {
   final DateTime date;
   const _CalendarPicker({required this.date});
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   State<_CalendarPicker> createState() => _CalendarPickerState();
 }
@@ -1257,9 +1297,6 @@ class _CalendarPicker extends StatefulWidget {
 class _CalendarPickerState extends State<_CalendarPicker> {
   late DateTime cursor = DateTime(widget.date.year, widget.date.month, 1);
   late DateTime pending = widget.date;
-
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
 
   @override
   Widget build(BuildContext context) {
@@ -1356,18 +1393,12 @@ class _CalendarPickerState extends State<_CalendarPicker> {
 class _TimePicker extends StatefulWidget {
   final int hour;
   const _TimePicker({required this.hour});
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   State<_TimePicker> createState() => _TimePickerState();
 }
 
 class _TimePickerState extends State<_TimePicker> {
   late int pending = widget.hour;
-  List<List<Slot>> get schedules =>
-      List.generate(16, (i) => _scheduleFor(date, i + 1));
-
   @override
   Widget build(BuildContext context) {
     final hours = List.generate(17, (i) => 5 + i);
