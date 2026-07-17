@@ -824,13 +824,13 @@ class _FishStatsContentState extends State<_FishStatsContent> {
   // Размеры рыб в отчёте — пропорции из dropdown чека, уменьшены на 25%.
   // Каждая рыба имеет свой размер, не единый квадрат.
   static const Map<String, double> _imageHeight = {
-    'Осётр': 45,
-    'Амур': 30,
-    'Форель': 27,
-    'Карп': 27,
-    'Линь': 24,
+    'Осётр': 32,
+    'Амур': 28,
+    'Форель': 24,
+    'Карп': 24,
+    'Линь': 22,
   };
-  static const double _imageHeightDefault = 24;
+  static const double _imageHeightDefault = 22;
 
   static const _revenueMin = Color(0xFFFBE8D0);
   static const _revenueMax = Color(0xFFD4EDDA);
@@ -879,7 +879,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                // Шапка — нижние углы прямые
+                // Шапка — нижние углы прямые, разделитель снизу
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -889,6 +889,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
                     ),
+                    border: Border(bottom: BorderSide(color: Color(0xFFDDD3BC))),
                   ),
                   child: const Row(
                     children: [
@@ -1087,7 +1088,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
             clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                // Шапка таблицы 2 — нижние углы прямые
+                // Шапка таблицы 2 — нижние углы прямые, разделитель
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1097,6 +1098,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
                     ),
+                    border: Border(bottom: BorderSide(color: Color(0xFFDDD3BC))),
                   ),
                   child: const Row(
                     children: [
@@ -1255,7 +1257,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
             return Center(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
-                constraints: const BoxConstraints(maxWidth: 360),
+                constraints: const BoxConstraints(maxWidth: 320),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFBF6EC),
                   borderRadius: BorderRadius.circular(22),

@@ -38,12 +38,12 @@ const Map<String, String> kSpeciesImage = {
 /// для всех, но осётр и амур крупнее остальных, чтобы подчеркнуть их
 /// как самых заметных/крупных обитателей пруда. Ширина всегда считается
 /// автоматически по пропорциям картинки (см. AppDropdownField).
-const double kSpeciesImageHeightDefault = 32;
+const double kSpeciesImageHeightDefault = 24;
 const Map<String, double> kSpeciesImageHeight = {
-  'Осётр': 44,
-  'Амур': 40,
-  'Форель': 36,
-  'Карп': 36,
+  'Осётр': 32,
+  'Амур': 28,
+  'Форель': 24,
+  'Карп': 24,
 };
 
 /// Демо-клиенты для поиска (в реальном приложении — из backend).
