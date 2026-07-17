@@ -176,3 +176,24 @@ final List<FullClient> kFullClients = app_data.kDemoClients.map((c) {
     currentSector: s.currentSector,
   );
 }).toList();
+
+/// Поиск полного клиента по id.
+FullClient? findFullClient(int id) {
+  for (final c in kFullClients) {
+    if (c.id == id) return c;
+  }
+  return null;
+}
+
+/// Форматирование LTV для отображения.
+String formatLtv(int k) {
+  if (k >= 1000) {
+    final v = k / 1000.0;
+    final rounded = (v * 10).round() / 10.0;
+    final str = rounded == rounded.roundToDouble()
+        ? rounded.toStringAsFixed(0)
+        : rounded.toStringAsFixed(1);
+    return '${str.replaceAll('.', ',')} млн';
+  }
+  return '$k тыс.';
+}

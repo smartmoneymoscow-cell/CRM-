@@ -348,7 +348,7 @@ class _ClientStatsContent extends StatelessWidget {
       itemBuilder: (_, i) => _ClientPaymentRow(
         entry: items[i],
         onAvatarTap: () {
-          final full = _findFullClient(items[i].client.id);
+          final full = findFullClient(items[i].client.id);
           if (full != null) {
             showDialog(
               context: context,

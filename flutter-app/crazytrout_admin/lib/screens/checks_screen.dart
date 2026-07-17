@@ -1294,7 +1294,7 @@ class _ChecksDetailScreen extends StatelessWidget {
               onTap: () {
                 if (receipt.client != null) {
                   final fullClient =
-                      _findFullClient(receipt.client!.id);
+                      findFullClient(receipt.client!.id);
                   if (fullClient != null) {
                     // Полная карточка клиента из карты пруда
                     showDialog(

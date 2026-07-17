@@ -89,7 +89,7 @@ final List<Client> _clients = app_data.kDemoClients.map((c) {
       const PondStats(
         color: Color(0xFF8B94A0), level: LevelKey.basic,
         points: 0, pointsNext: 500, visits: 0, ltvK: 0, fish: 0, totalWeight: 0,
-        firstVisit: '—', email: '—',
+        firstVisit: '—', lastVisit: '—', email: '—',
         bestCatch: BestCatch(species: '—', weight: '—', sector: 0, date: '—'),
       );
   return Client(
