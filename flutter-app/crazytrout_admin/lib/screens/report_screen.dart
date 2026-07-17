@@ -1296,11 +1296,19 @@ class _ScaledFishStats implements FishSpeciesStats {
   @override double get avgWeight => count > 0 ? weightKg / count : 0;
 }
 
-class _FishStatsContent extends StatelessWidget {
+class _FishStatsContent extends StatefulWidget {
   final _PeriodFilter? period;
   final DateTimeRange? dateRange;
 
-  _FishStatsContent({this.period, this.dateRange});
+  const _FishStatsContent({this.period, this.dateRange});
+
+  @override
+  State<_FishStatsContent> createState() => _FishStatsContentState();
+}
+
+class _FishStatsContentState extends State<_FishStatsContent> {
+  // Счётчик добавленной рыбы (по породам).
+  final Map<String, int> _addedFish = {};
 
   static const double _imageSize = 48;
 
@@ -1317,8 +1325,8 @@ class _FishStatsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     // ── Фильтрация данных по периоду / календарю ──
     List<FishSpeciesStats> stats = kDemoFishStats;
-    if (period != null && period != _PeriodFilter.all) {
-      final daysBack = switch (period!) {
+    if (widget.period != null && widget.period != _PeriodFilter.all) {
+      final daysBack = switch (widget.period!) {
         _PeriodFilter.today => 1,
         _PeriodFilter.week => 7,
         _PeriodFilter.month => 30,
@@ -1329,8 +1337,8 @@ class _FishStatsContent extends StatelessWidget {
       final factor = daysBack / 30.0;
       stats = kDemoFishStats.map((s) => _ScaledFishStats(s, factor)).toList();
     }
-    if (dateRange != null) {
-      final days = dateRange!.end.difference(dateRange!.start).inDays + 1;
+    if (widget.dateRange != null) {
+      final days = widget.dateRange!.end.difference(widget.dateRange!.start).inDays + 1;
       final factor = days / 30.0;
       stats = kDemoFishStats.map((s) => _ScaledFishStats(s, factor)).toList();
     }
@@ -1438,17 +1446,22 @@ class _FishStatsContent extends StatelessWidget {
                   ),
                   Expanded(
                     flex: 2,
-                    child: Text(
-                      _formatNum(s.remaining),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: s.remaining < 50
-                            ? FontWeight.w700 : FontWeight.w400,
-                        color: s.remaining < 50
-                            ? const Color(0xFFC9302C)
-                            : const Color(0xFF14130F),
-                      ),
+                    child: Builder(
+                      builder: (_) {
+                        final remaining = s.remaining + (_addedFish[s.species] ?? 0);
+                        return Text(
+                          _formatNum(remaining),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: remaining < 50
+                                ? FontWeight.w700 : FontWeight.w400,
+                            color: remaining < 50
+                                ? const Color(0xFFC9302C)
+                                : const Color(0xFF14130F),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -1462,7 +1475,8 @@ class _FishStatsContent extends StatelessWidget {
               final totalCount = stats.fold<int>(0, (s, e) => s + e.count);
               final totalWeight = stats.fold<double>(0, (s, e) => s + e.weightKg);
               final totalRevenue = stats.fold<double>(0, (s, e) => s + e.revenue);
-              final totalRemaining = stats.fold<int>(0, (s, e) => s + e.remaining);
+              final totalRemaining = stats.fold<int>(0, (s, e) => s + e.remaining)
+                  + _addedFish.values.fold<int>(0, (a, b) => a + b);
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
@@ -1660,19 +1674,211 @@ class _FishStatsContent extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // ── Добавить рыбу в пруд ──
-          Container(
+          // ── Кнопка «Добавить рыбу» ──
+          SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFBF6EC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFEFE8D8)),
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => _showAddFishDialog(context),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF8A6D1E),
+                side: const BorderSide(color: Color(0xFFDDD3BC)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                backgroundColor: const Color(0xFFFBF6EC),
+              ),
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text('Добавить рыбу в пруд',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
             ),
-            child: _AddFishForm(),
           ),
         ],
       ),
+    );
+  }
+
+  void _showAddFishDialog(BuildContext context) {
+    String? selectedSpecies;
+    final qtyCtrl = TextEditingController();
+    final costCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                constraints: const BoxConstraints(maxWidth: 360),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBF6EC),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.35),
+                      blurRadius: 60,
+                      offset: const Offset(0, 24),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'ДОБАВИТЬ РЫБУ В ПРУД',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF8C8576),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Выбор рыбы
+                          Container(
+                            height: 44,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3EEE4),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFEFE8D8)),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: selectedSpecies,
+                                hint: const Text('Выберите рыбу',
+                                  style: TextStyle(fontSize: 14, color: Color(0xFF9C9484))),
+                                icon: const Icon(Icons.keyboard_arrow_down,
+                                  size: 20, color: Color(0xFF9C9484)),
+                                items: app_data.kSpecies.map((sp) => DropdownMenuItem(
+                                  value: sp,
+                                  child: Row(
+                                    children: [
+                                      Image.asset(
+                                        app_data.kSpeciesImage[sp]!,
+                                        height: app_data.kSpeciesImageHeight[sp]
+                                            ?? app_data.kSpeciesImageHeightDefault,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(sp, style: const TextStyle(
+                                        fontSize: 14, color: Color(0xFF14130F))),
+                                    ],
+                                  ),
+                                )).toList(),
+                                onChanged: (v) => setDialogState(() => selectedSpecies = v),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Количество + Затраты
+                          Row(children: [
+                            Expanded(child: TextField(
+                              controller: qtyCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: 'Количество (шт.)',
+                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9C9484)),
+                                filled: true,
+                                fillColor: const Color(0xFFF3EEE4),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                            )),
+                            const SizedBox(width: 10),
+                            Expanded(child: TextField(
+                              controller: costCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: 'Затраты',
+                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9C9484)),
+                                filled: true,
+                                fillColor: const Color(0xFFF3EEE4),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                            )),
+                          ]),
+                          const SizedBox(height: 16),
+                          // Кнопки
+                          Row(children: [
+                            Expanded(child: OutlinedButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF9C9484),
+                                side: const BorderSide(color: Color(0xFFDDD3BC)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: const Text('Отмена'),
+                            )),
+                            const SizedBox(width: 10),
+                            Expanded(child: ElevatedButton(
+                              onPressed: selectedSpecies != null ? () {
+                                final qty = int.tryParse(qtyCtrl.text) ?? 0;
+                                if (qty <= 0) return;
+                                setState(() {
+                                  _addedFish[selectedSpecies!] =
+                                      (_addedFish[selectedSpecies!] ?? 0) + qty;
+                                });
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.fromLTRB(16, 50, 16, 0),
+                                    backgroundColor: const Color(0xFF4A7C59),
+                                    duration: const Duration(seconds: 2),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                    content: Text(
+                                      '$selectedSpecies: $qty шт. добавлено',
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                );
+                              } : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE8912B),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: const Text('Добавить',
+                                style: TextStyle(fontWeight: FontWeight.w700)),
+                            )),
+                          ]),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1756,169 +1962,7 @@ class _PercentCell extends StatelessWidget {
 }
 
 // ============================================================================
-// _AddFishForm — форма добавления рыбы в пруд
-// ============================================================================
-class _AddFishForm extends StatefulWidget {
-  const _AddFishForm();
 
-  @override
-  State<_AddFishForm> createState() => _AddFishFormState();
-}
-
-class _AddFishFormState extends State<_AddFishForm> {
-  String? _selectedSpecies;
-  final _qtyController = TextEditingController();
-  final _costController = TextEditingController();
-
-  @override
-  void dispose() {
-    _qtyController.dispose();
-    _costController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'ДОБАВИТЬ РЫБУ В ПРУД',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF8C8576),
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Species dropdown
-        Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3EEE4),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEFE8D8)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: _selectedSpecies,
-              hint: const Text('Выберите рыбу',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF9C9484))),
-              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF9C9484)),
-              items: app_data.kSpecies.map((sp) => DropdownMenuItem(
-                value: sp,
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: Image.asset(app_data.kSpeciesImage[sp]!, fit: BoxFit.contain),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(sp, style: const TextStyle(fontSize: 14, color: Color(0xFF14130F))),
-                  ],
-                ),
-              )).toList(),
-              onChanged: (v) => setState(() => _selectedSpecies = v),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        // Quantity + Cost row
-        Row(
-          children: [
-            Expanded(
-              child: _NumberInput(
-                controller: _qtyController,
-                label: 'Количество (шт.)',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _NumberInput(
-                controller: _costController,
-                label: 'Затраты',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Submit button
-        SizedBox(
-          width: double.infinity,
-          height: 44,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE8912B),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            onPressed: _selectedSpecies != null ? () {
-              // Demo — just show a snackbar
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '${_selectedSpecies!}: ${_qtyController.text.isEmpty ? "0" : _qtyController.text} шт. добавлено',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  backgroundColor: const Color(0xFF4A7C59),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-              setState(() {
-                _selectedSpecies = null;
-                _qtyController.clear();
-                _costController.clear();
-              });
-            } : null,
-            child: const Text(
-              'Добавить',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _NumberInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-
-  const _NumberInput({required this.controller, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3EEE4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEFE8D8)),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF14130F)),
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: label,
-          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9C9484)),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
 // _IconSlot — иконка-кнопка 44×44
 // ============================================================================ 
 class _IconSlot extends StatelessWidget {
