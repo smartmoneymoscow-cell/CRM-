@@ -1136,7 +1136,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
             ]),
             const SizedBox(height: 12),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300),
+              constraints: const BoxConstraints(maxHeight: 280),
               child: PondMapView(sectorStatuses: statuses, selected: selected,
                 onTap: (n) => setState(() => selected = selected == n ? null : n)),
             ),
