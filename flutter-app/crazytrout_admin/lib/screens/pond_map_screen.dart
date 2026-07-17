@@ -891,7 +891,9 @@ class _PondMapScreenState extends State<PondMapScreen> {
   FilterValue filter = FilterValue.none;
   bool _isFilterOpen = false;
   final _filterLink = LayerLink();
+  final _filterBtnKey = GlobalKey();
   OverlayEntry? _filterEntry;
+  double _dropdownMaxH = 300;
 
   List<List<Slot>> get schedules =>
       List.generate(16, (i) => _scheduleFor(date, i + 1));
@@ -959,15 +961,23 @@ class _PondMapScreenState extends State<PondMapScreen> {
     if (_isFilterOpen) {
       _closeFilter();
     } else {
+      // Рассчитываем maxHeight чтобы dropdown не залезал за нижнее меню.
+      final btnCtx = _filterBtnKey.currentContext;
+      if (btnCtx != null) {
+        final btnBox = btnCtx.findRenderObject() as RenderBox?;
+        final mq = MediaQuery.of(context);
+        if (btnBox != null && btnBox.attached) {
+          final btnBottom = btnBox.localToGlobal(Offset(0, btnBox.size.height)).dy;
+          _dropdownMaxH = mq.size.height - btnBottom - mq.padding.bottom - kBottomNavHeight;
+        }
+      }
       _isFilterOpen = true;
       _filterEntry = OverlayEntry(
         builder: (ctx) => Stack(children: [
-          // Tap-to-close по пустому месту
           Positioned.fill(child: GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTap: _closeFilter,
           )),
-          // Dropdown следует за кнопкой через CompositedTransformFollower
           CompositedTransformFollower(
             link: _filterLink,
             showWhenUnlinked: false,
@@ -991,10 +1001,13 @@ class _PondMapScreenState extends State<PondMapScreen> {
       CompositedTransformTarget(
         link: _filterLink,
         child: FiltersDropdown(
+          key: _filterBtnKey,
           value: filter,
           onChange: (v) => setState(() => filter = v),
           isOpen: _isFilterOpen,
           onToggle: _toggleFilter,
+        ),
+      ),
         ),
       ),
       const Spacer(),
@@ -1006,15 +1019,12 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
   /// Строит dropdown-меню фильтров. Рендерится в слое Stack (поверх feed, под нижним меню).
   Widget _buildDropdown() {
-    final mq = MediaQuery.of(context);
-    final maxH = mq.size.height - mq.padding.top - mq.padding.bottom - kBottomNavHeight;
-
     return Material(
       color: Colors.transparent,
       child: Container(
         width: 120,
         constraints: BoxConstraints(
-          maxHeight: maxH > 0 ? maxH : 0,
+          maxHeight: _dropdownMaxH > 0 ? _dropdownMaxH : 0,
         ),
         decoration: const BoxDecoration(
           color: Colors.white,
