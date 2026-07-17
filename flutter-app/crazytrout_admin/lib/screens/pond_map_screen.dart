@@ -892,8 +892,36 @@ class _PondMapScreenState extends State<PondMapScreen> {
   bool _isFilterOpen = false;
   final _filterLink = LayerLink();
   final _filterBtnKey = GlobalKey();
+  final _scrollController = ScrollController();
   OverlayEntry? _filterEntry;
   double _dropdownMaxH = 300;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_isFilterOpen) return;
+    final btnCtx = _filterBtnKey.currentContext;
+    if (btnCtx == null) return;
+    final btnBox = btnCtx.findRenderObject() as RenderBox?;
+    if (btnBox == null || !btnBox.attached) return;
+    final mq = MediaQuery.of(context);
+    final btnBottom = btnBox.localToGlobal(Offset(0, btnBox.size.height)).dy;
+    final available = mq.size.height - btnBottom - mq.padding.bottom - kBottomNavHeight;
+    if (available < kDropdownItemHeight * 2 + kDropdownVPadding * 2) {
+      _closeFilter();
+    }
+  }
 
   List<List<Slot>> get schedules =>
       List.generate(16, (i) => _scheduleFor(date, i + 1));
@@ -910,7 +938,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
-      body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+      body: SafeArea(child: ListView(controller: _scrollController, padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
             child: Center(child: Text('Карта пруда',
@@ -961,7 +989,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
     if (_isFilterOpen) {
       _closeFilter();
     } else {
-      // Рассчитываем maxHeight чтобы dropdown не залезал за нижнее меню.
+      // Рассчитываем maxHeight. Если места меньше 2 пунктов — закрываем.
       final btnCtx = _filterBtnKey.currentContext;
       if (btnCtx != null) {
         final btnBox = btnCtx.findRenderObject() as RenderBox?;
@@ -969,6 +997,9 @@ class _PondMapScreenState extends State<PondMapScreen> {
         if (btnBox != null && btnBox.attached) {
           final btnBottom = btnBox.localToGlobal(Offset(0, btnBox.size.height)).dy;
           _dropdownMaxH = mq.size.height - btnBottom - mq.padding.bottom - kBottomNavHeight;
+          if (_dropdownMaxH < kDropdownItemHeight * 2 + kDropdownVPadding * 2) {
+            return; // Места нет — не открываем.
+          }
         }
       }
       _isFilterOpen = true;
