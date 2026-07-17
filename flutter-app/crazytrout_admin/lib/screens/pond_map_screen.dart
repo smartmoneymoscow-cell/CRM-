@@ -35,6 +35,7 @@ import 'pond_map_filter_config.dart';
 import '../theme/app_theme.dart';
 import '../widgets/level_badge.dart';
 import '../data/pond_stats.dart';
+import '../models/client.dart';
 
 // ─────────────────────────── Растровые ассеты (встроены base64, без pubspec) ───────────────────────────
 // Реальные фото-текстуры деревьев (вид сверху, прозрачный фон, без белой каймы —
