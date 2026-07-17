@@ -127,7 +127,16 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
     );
 
     // Строим список элементов dropdown
+    final mq = MediaQuery.of(context);
+    final screenHeight = mq.size.height;
+    final padding = mq.padding;
+    // Ограничиваем высоту dropdown — не больше чем есть места до низа экрана
+    // (нижнее меню перекроет часть — это ОК, dropdown уходит под него)
+    final availableH = screenHeight - padding.top - padding.bottom;
+    final dropdownMaxH = availableH * 0.6; // не больше 60% экрана
+
     final dropdownList = Container(
+      constraints: BoxConstraints(maxHeight: dropdownMaxH),
       decoration: BoxDecoration(
         color: kFill,
         boxShadow: const [
