@@ -1102,8 +1102,9 @@ class _PondMapScreenState extends State<PondMapScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
       body: SafeArea(child: Column(children: [
-        // Заголовок, чипы, стата, карта — фиксированная часть, не скроллится.
-        Padding(
+        // Заголовок, чипы, стата, карта — скроллится при нехватке места.
+        Flexible(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
           child: Column(children: [
             const Padding(
@@ -1139,6 +1140,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
               onTap: (n) => setState(() => selected = selected == n ? null : n)),
             const SizedBox(height: 16),
           ]),
+          ),
         ),
         // Строка фильтров + лента броней: Stack — dropdown поверх feed, под нижним меню.
         Expanded(child: Stack(children: [
