@@ -36,7 +36,6 @@ class FloatPreloader extends StatefulWidget {
 class FloatPreloaderState extends State<FloatPreloader>
     with TickerProviderStateMixin {
   late final AnimationController _bobController;
-  late final AnimationController _waveController;
   late final AnimationController _progressController;
   late final AnimationController _biteController;
 
@@ -47,11 +46,6 @@ class FloatPreloaderState extends State<FloatPreloader>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-
-    _waveController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    )..repeat();
 
     _progressController = AnimationController(
       vsync: this,
@@ -67,7 +61,6 @@ class FloatPreloaderState extends State<FloatPreloader>
   @override
   void dispose() {
     _bobController.dispose();
-    _waveController.dispose();
     _progressController.dispose();
     _biteController.dispose();
     super.dispose();
@@ -98,7 +91,6 @@ class FloatPreloaderState extends State<FloatPreloader>
             child: AnimatedBuilder(
               animation: Listenable.merge([
                 _bobController,
-                _waveController,
                 _biteController,
               ]),
               builder: (context, _) {
@@ -106,7 +98,6 @@ class FloatPreloaderState extends State<FloatPreloader>
                   size: const Size(width, 120),
                   painter: _FloatPainter(
                     bobPhase: _bobController.value,
-                    wavePhase: _waveController.value,
                     biteValue: _biteController.value,
                   ),
                 );
@@ -189,12 +180,10 @@ class FloatPreloaderState extends State<FloatPreloader>
 /// Painter: классический bobber + анимация поклёвки.
 class _FloatPainter extends CustomPainter {
   final double bobPhase;
-  final double wavePhase;
   final double biteValue; // 0=idle, 0..1=bite animation cycle
 
   _FloatPainter({
     required this.bobPhase,
-    required this.wavePhase,
     required this.biteValue,
   });
 
@@ -231,35 +220,17 @@ class _FloatPainter extends CustomPainter {
       }
     }
 
-    final waveOff = wavePhase * 2 * pi;
-
-    // === Water surface ===
-    final wavePath = Path();
-    for (double x = 0; x <= size.width; x += 1) {
-      final y = waterY +
-          sin((x / size.width) * 3 * pi + waveOff) * 3.0 +
-          sin((x / size.width) * 5.5 * pi - waveOff * 0.6) * 1.5;
-      if (x == 0) {
-        wavePath.moveTo(x, y);
-      } else {
-        wavePath.lineTo(x, y);
-      }
-    }
-    canvas.drawPath(
-      wavePath,
-      Paint()
-        ..color = const Color(0xFF2A6A7E).withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0,
-    );
-
-    final fillPath = Path.from(wavePath);
-    fillPath.lineTo(size.width, size.height);
-    fillPath.lineTo(0, size.height);
-    fillPath.close();
-    canvas.drawPath(
-      fillPath,
+    // === Water — simple straight line ===
+    canvas.drawRect(
+      Rect.fromLTWH(0, waterY, size.width, size.height - waterY),
       Paint()..color = const Color(0xFF2A6A7E).withOpacity(0.08),
+    );
+    canvas.drawLine(
+      Offset(0, waterY),
+      Offset(size.width, waterY),
+      Paint()
+        ..color = const Color(0xFF2A6A7E).withOpacity(0.25)
+        ..strokeWidth = 1.5,
     );
 
     // === Float ===
@@ -268,30 +239,35 @@ class _FloatPainter extends CustomPainter {
     canvas.rotate(tilt);
 
     // --- Antenna ---
-    // Orange tapered tip
-    final tipPath = Path()
-      ..moveTo(0, -60)
-      ..lineTo(-3, -48)
-      ..lineTo(3, -48)
-      ..close();
-    canvas.drawPath(tipPath, Paint()..color = const Color(0xFFE89829));
+    // Long red stick with red ball on top and white stripe across
+    const double stickW = 4;
+    const double antTop = -80;
+    const double antBot = -20;
 
-    // Orange cylinder
+    // Red stick (long)
     canvas.drawRect(
-      const Rect.fromLTWH(-3, -48, 6, 14),
-      Paint()..color = const Color(0xFFE89829),
+      Rect.fromLTWH(-stickW / 2, antTop + 10, stickW, antBot - antTop - 10),
+      Paint()..color = const Color(0xFFC9302C),
     );
 
-    // White cylinder
+    // White stripe across the stick
+    const double stripeY = antTop + (antBot - antTop) * 0.45;
     canvas.drawRect(
-      const Rect.fromLTWH(-3, -34, 6, 12),
+      Rect.fromLTWH(-stickW / 2 - 1, stripeY, stickW + 2, 5),
       Paint()..color = const Color(0xFFF5F0E3),
     );
 
-    // Black ring
-    canvas.drawRect(
-      const Rect.fromLTWH(-3, -22, 6, 3),
-      Paint()..color = const Color(0xFF14130F),
+    // Red ball on top
+    canvas.drawCircle(
+      const Offset(0, antTop + 10),
+      7,
+      Paint()..color = const Color(0xFFC9302C),
+    );
+    // Glossy highlight on ball
+    canvas.drawCircle(
+      const Offset(-2, antTop + 7),
+      2.5,
+      Paint()..color = Colors.white.withOpacity(0.4),
     );
 
     // --- Body ---
@@ -368,6 +344,5 @@ class _FloatPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _FloatPainter old) =>
       old.bobPhase != bobPhase ||
-      old.wavePhase != wavePhase ||
       old.biteValue != biteValue;
 }

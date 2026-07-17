@@ -110,9 +110,7 @@ class FloatAnimator {
     this.w = canvas.width;
     this.h = canvas.height;
     this.bobTime = 0;
-    this.waveTime = 0;
     this.bobSpeed = opts.bobSpeed || 0.02;
-    this.waveSpeed = opts.waveSpeed || 0.005;
     this.paused = false;
 
     // Bite animation state
@@ -129,7 +127,6 @@ class FloatAnimator {
     if (!this.running) return;
     if (!this.paused) {
       this.bobTime += this.bobSpeed;
-      this.waveTime += this.waveSpeed;
       this.updateBite();
     }
     this.draw();
@@ -191,39 +188,17 @@ class FloatAnimator {
     const waterY = h * 0.58;
     const bob = Math.sin(this.bobTime * Math.PI) * 8;
     const extraDip = this.biteDipOffset;
-    const waveOff = this.waveTime * 2 * Math.PI;
 
-    // Water fill
+    // Water — simple straight line
+    ctx.fillStyle = 'rgba(42, 106, 126, 0.08)';
+    ctx.fillRect(0, waterY, w, h - waterY);
+
     ctx.beginPath();
     ctx.moveTo(0, waterY);
-    for (let x = 0; x <= w; x += 2) {
-      const y = waterY + Math.sin((x/w)*3*Math.PI + waveOff)*3 + Math.sin((x/w)*5.5*Math.PI - waveOff*0.6)*1.5;
-      ctx.lineTo(x, y);
-    }
-    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-    ctx.fillStyle = 'rgba(42, 106, 126, 0.1)';
-    ctx.fill();
-
-    // Water line
-    ctx.beginPath();
-    for (let x = 0; x <= w; x += 2) {
-      const y = waterY + Math.sin((x/w)*3*Math.PI + waveOff)*3 + Math.sin((x/w)*5.5*Math.PI - waveOff*0.6)*1.5;
-      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = 'rgba(42, 106, 126, 0.3)';
-    ctx.lineWidth = 2;
+    ctx.lineTo(w, waterY);
+    ctx.strokeStyle = 'rgba(42, 106, 126, 0.25)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
-
-    // Ripple during bite
-    if (this.bitePhase === 1 || this.bitePhase === 2) {
-      const rippleR = 20 + this.biteTime * 60;
-      const rippleA = Math.max(0, 0.3 - this.biteTime * 0.2);
-      ctx.beginPath();
-      ctx.ellipse(cx, waterY, rippleR, rippleR * 0.25, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(42, 106, 126, ${rippleA})`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
 
     // === FLOAT ===
     ctx.save();
@@ -233,36 +208,33 @@ class FloatAnimator {
     const fy = 0; // local origin at waterline
 
     // --- Antenna ---
-    // Red pointed tip
-    const antTop = fy - 68;
-    const redEnd = fy - 40;
-    const whiteEnd = fy - 22;
+    // Long red stick with red ball on top and white stripe across
+    const antTop = fy - 80;
+    const antBot = fy - 20;
+    const stickW = 4;
 
-    // Red tip (tapered)
+    // Red stick (long)
     ctx.beginPath();
-    ctx.moveTo(0, antTop);
-    ctx.lineTo(-3, antTop + 14);
-    ctx.lineTo(3, antTop + 14);
-    ctx.closePath();
-    ctx.fillStyle = '#E89829';
+    ctx.rect(-stickW / 2, antTop + 10, stickW, antBot - antTop - 10);
+    ctx.fillStyle = '#C9302C';
     ctx.fill();
 
-    // Red cylinder
+    // White stripe across the stick
+    const stripeY = antTop + (antBot - antTop) * 0.45;
     ctx.beginPath();
-    ctx.rect(-3, antTop + 14, 6, redEnd - antTop - 14);
-    ctx.fillStyle = '#E89829';
-    ctx.fill();
-
-    // White cylinder
-    ctx.beginPath();
-    ctx.rect(-3, redEnd, 6, whiteEnd - redEnd);
+    ctx.rect(-stickW / 2 - 1, stripeY, stickW + 2, 5);
     ctx.fillStyle = '#F5F0E3';
     ctx.fill();
 
-    // Black ring at body junction
+    // Red ball on top
     ctx.beginPath();
-    ctx.rect(-3, whiteEnd, 6, 3);
-    ctx.fillStyle = '#14130F';
+    ctx.arc(0, antTop + 10, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#C9302C';
+    ctx.fill();
+    // Glossy highlight on ball
+    ctx.beginPath();
+    ctx.arc(-2, antTop + 7, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.fill();
 
     // --- Body: classic bobber (red sphere top + white sphere bottom) ---
@@ -353,7 +325,7 @@ function triggerBite() { f1.triggerBite(); }
 function togglePause() { f1.paused = !f1.paused; }
 
 // === Canvas 2: Determinate ===
-const f2 = new FloatAnimator(document.getElementById('c2'), { bobSpeed: 0.014, waveSpeed: 0.004 });
+const f2 = new FloatAnimator(document.getElementById('c2'), { bobSpeed: 0.014 });
 const fill2 = document.getElementById('fill2');
 const label2 = document.getElementById('label2');
 

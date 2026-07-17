@@ -69,7 +69,7 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
     final spaceBelow = screenH - btnBottomY - safeBottom;
 
     // Всегда открываем вниз, независимо от наличия места
-    final maxH = spaceBelow > 0 ? spaceBelow : 100; // fallback чтобы не было 0
+    final maxH = spaceBelow > 0 ? spaceBelow : 100.0; // fallback чтобы не было 0
 
     _entry = OverlayEntry(
       builder: (ctx) => Stack(
