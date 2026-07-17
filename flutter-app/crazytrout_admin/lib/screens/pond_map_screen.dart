@@ -1101,7 +1101,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
-      body: SafeArea(child: ListView(
+      body: SafeArea(child: ListView(clipBehavior: Clip.none,
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         children: [
