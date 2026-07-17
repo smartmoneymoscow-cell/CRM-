@@ -1833,10 +1833,10 @@ class _AddFishFormState extends State<_AddFishForm> {
                 value: sp,
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: Image.asset(app_data.kSpeciesImage[sp]!, fit: BoxFit.contain),
+                    Image.asset(
+                      app_data.kSpeciesImage[sp]!,
+                      height: app_data.kSpeciesImageHeight[sp] ?? app_data.kSpeciesImageHeightDefault,
+                      fit: BoxFit.contain,
                     ),
                     const SizedBox(width: 10),
                     Text(sp, style: const TextStyle(fontSize: 14, color: Color(0xFF14130F))),
