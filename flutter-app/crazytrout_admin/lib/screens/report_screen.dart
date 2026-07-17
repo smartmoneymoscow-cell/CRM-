@@ -15,6 +15,9 @@ import '../data/demo_data.dart' as app_data show kDemoClients, kSpecies, kSpecie
 import '../models/client.dart';
 import '../theme/app_theme.dart';
 import '../data/pond_stats.dart';
+import '../widgets/client_avatar.dart';
+import '../widgets/level_badge.dart';
+import '../widgets/filter_dropdown.dart';
 import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
 enum _PeriodFilter { today, week, month, quarter, all }
@@ -191,18 +194,18 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: _FilterDropdown<_PeriodFilter>(
+                  child: FilterDropdown<_PeriodFilter>(
                     value: _period,
                     label: 'Период',
                     items: [
-                      _FilterDropdownItem<_PeriodFilter>(
+                      FilterDropdownItem<_PeriodFilter>(
                         value: null,
                         label: 'Нет',
                         isReset: true,
                         enabled: _period != null,
                       ),
                       for (final p in _PeriodFilter.values)
-                        _FilterDropdownItem<_PeriodFilter>(
+                        FilterDropdownItem<_PeriodFilter>(
                           value: p,
                           label: p.label,
                         ),
@@ -404,7 +407,7 @@ class _ClientPaymentRow extends StatelessWidget {
           // Аватар (кликабельный)
           GestureDetector(
             onTap: onAvatarTap,
-            child: _Avatar(client: entry.client, size: 44),
+            child: ClientAvatar(client: entry.client, size: 44),
           ),
           const SizedBox(width: 12),
           // Имя + дата оплаты
@@ -458,57 +461,6 @@ class _ClientPaymentRow extends StatelessWidget {
     );
   }
 }
-
-// ============================================================================
-// _Avatar — аватар клиента (как в чеках)
-// ============================================================================
-class _Avatar extends StatelessWidget {
-  final Client? client;
-  final bool guest;
-  final double size;
-  const _Avatar({this.client, this.guest = false, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    if (guest || client == null) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: const BoxDecoration(
-            color: Color(0xFFF1ECE0), shape: BoxShape.circle),
-        child: const Icon(Icons.person_outline, color: kMuted2, size: 22),
-      );
-    }
-    final c = client!;
-    if (c.avatarAsset != null) {
-      return ClipOval(
-        child: Image.asset(c.avatarAsset!,
-            width: size, height: size, fit: BoxFit.cover),
-      );
-    }
-    final colors = [
-      const Color(0xFFE8912B),
-      const Color(0xFF6A8CBB),
-      const Color(0xFF7BAE7F),
-      const Color(0xFFC97A7A),
-    ];
-    final color = colors[c.id % colors.length];
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: Text(
-        c.initials.toUpperCase(),
-        style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: size * 0.36),
-      ),
-    );
-  }
-}
-
 // ============================================================================
 // _ClientCard — полная карточка клиента (из чеков)
 // ============================================================================
@@ -620,7 +572,7 @@ class _ClientCard extends StatelessWidget {
                                       fontSize: 17,
                                       fontWeight: FontWeight.w800)),
                               const SizedBox(height: 6),
-                              _LevelBadge(level: client.level),
+                              LevelBadge(level: client.level),
                             ],
                           ),
                         ],
@@ -870,91 +822,6 @@ class _ClientCard extends StatelessWidget {
         ),
       );
 }
-
-// ── LevelBadge ──────────────────────────────────────────────────────────────
-class _LevelBadge extends StatelessWidget {
-  final LevelKey level;
-  const _LevelBadge({required this.level});
-
-  @override
-  Widget build(BuildContext context) {
-    final l = kLevelStyles[level]!;
-    const size = 18.0;
-    final medal = _Medal(style: l, size: size);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: l.color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        medal,
-        const SizedBox(width: 4),
-        Text(l.label,
-            style: TextStyle(
-                color: l.color,
-                fontSize: 12,
-                fontWeight: FontWeight.w700)),
-      ]),
-    );
-  }
-}
-
-class _Medal extends StatelessWidget {
-  final LevelStyle style;
-  final double size;
-  const _Medal({required this.style, required this.size});
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(painter: _MedalPainter(style: style)),
-    );
-  }
-}
-
-class _MedalPainter extends CustomPainter {
-  final LevelStyle style;
-  _MedalPainter({required this.style});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final r = size.width / 2;
-    final rect = Rect.fromCircle(center: center, radius: r);
-    canvas.drawCircle(
-        center,
-        r,
-        Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.3, -0.4),
-            radius: 0.75,
-            colors: [
-              style.medalTop,
-              style.medalMid,
-              style.medalBottom
-            ],
-            stops: const [0, 0.55, 1],
-          ).createShader(rect));
-    final tp = TextPainter(
-      text: TextSpan(
-          text: style.letter,
-          style: TextStyle(
-            color: style.letterColor,
-            fontWeight: FontWeight.w800,
-            fontSize: size.width * 0.52,
-          )),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas,
-        Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
-  }
-
-  @override
-  bool shouldRepaint(covariant _MedalPainter old) =>
-      old.style != style;
-}
-
 // ============================================================================
 // _FishStatsContent — контент вкладки «Статистика улова рыбы»
 // ============================================================================
@@ -1691,231 +1558,6 @@ class _IconSlot extends StatelessWidget {
     );
   }
 }
-
-// ============================================================================
-// _FilterDropdown — OverlayEntry-based dropdown
-// ============================================================================
-class _FilterDropdownItem<T> {
-  final T? value;
-  final String label;
-  final bool isReset;
-  final bool enabled;
-  const _FilterDropdownItem({
-    required this.value,
-    required this.label,
-    this.isReset = false,
-    this.enabled = true,
-  });
-}
-
-class _FilterDropdown<T> extends StatefulWidget {
-  final T? value;
-  final String label;
-  final List<_FilterDropdownItem<T>> items;
-  final ValueChanged<T?> onChanged;
-
-  const _FilterDropdown({
-    super.key,
-    required this.value,
-    required this.label,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  State<_FilterDropdown<T>> createState() => _FilterDropdownState<T>();
-}
-
-class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
-  final GlobalKey _fieldKey = GlobalKey();
-  final LayerLink _link = LayerLink();
-  OverlayEntry? _entry;
-  bool _open = false;
-
-  static const double _borderRadius = 12;
-  static const double _itemHeight = 42;
-
-  @override
-  void dispose() {
-    _entry = null;
-    super.dispose();
-  }
-
-  void _toggle() => _open ? _close() : _show();
-
-  void _show() {
-    final box = _fieldKey.currentContext!.findRenderObject() as RenderBox;
-    final size = box.size;
-    // Глобальная Y нижнего края кнопки — для ограничения высоты dropdown.
-    final btnBottomY = box.localToGlobal(Offset(0, size.height)).dy;
-    final mq = MediaQuery.of(context);
-    // Dropdown НЕ перекрывает нижнее меню.
-    final maxH = mq.size.height - btnBottomY - kBottomNavHeight - mq.padding.bottom - 8;
-
-    _entry = OverlayEntry(
-      builder: (ctx) => Stack(
-        children: [
-          Positioned.fill(
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: (_) => _close(),
-            ),
-          ),
-          CompositedTransformFollower(
-            link: _link,
-            showWhenUnlinked: false,
-            offset: Offset(0, size.height),
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                width: size.width,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(_borderRadius),
-                  border: Border.all(color: kOutline),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(_borderRadius),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: maxH > 0 ? maxH : 0),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      shrinkWrap: true,
-                      itemCount: widget.items.length,
-                      itemBuilder: (_, i) {
-                        final item = widget.items[i];
-                        final isSelected = item.value == widget.value;
-                        return InkWell(
-                          onTap: item.enabled
-                              ? () {
-                                  widget.onChanged(item.value);
-                                  _close();
-                                }
-                              : null,
-                          child: Container(
-                            height: _itemHeight,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 14),
-                            alignment: Alignment.centerLeft,
-                            color: isSelected
-                                ? kSelected.withOpacity(0.4)
-                                : null,
-                            child: Text(
-                              item.label,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                                color: item.enabled
-                                    ? kInk
-                                    : kMuted2,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    Overlay.of(context).insert(_entry!);
-    setState(() => _open = true);
-  }
-
-  void _close() {
-    _entry?.remove();
-    _entry = null;
-    setState(() => _open = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _link,
-      child: GestureDetector(
-        key: _fieldKey,
-        onTap: _toggle,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: kFill,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(_open ? 0 : _borderRadius),
-              topRight: Radius.circular(_open ? 0 : _borderRadius),
-              bottomLeft: Radius.circular(_open ? 0 : _borderRadius),
-              bottomRight: Radius.circular(_open ? 0 : _borderRadius),
-            ),
-            border: Border.all(
-                color: _open ? kOrange : kHairline),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                  widget.value != null
-                      ? widget.items
-                          .firstWhere((i) => i.value == widget.value)
-                          .label
-                      : widget.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: widget.value != null
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                    color: widget.value != null ? kInk : kMuted2,
-                  ),
-                ),
-              ),
-              Icon(
-                _open
-                    ? Icons.keyboard_arrow_up
-                    : Icons.keyboard_arrow_down,
-                size: 20,
-                color: kMuted2,
-              ),
-              ],
-              ),
-              // Оранжевая точка-индикатор — поверх карточки (требование 8)
-              if (widget.value != null)
-                Positioned(
-                  top: -3,
-                  right: -3,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: kOrange,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ============================================================================
 // _CalendarChip — кнопка календаря 44×44
 // ============================================================================

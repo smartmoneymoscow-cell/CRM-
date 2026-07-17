@@ -33,6 +33,7 @@ import 'package:flutter/material.dart';
 import '../data/demo_data.dart' as app_data show kDemoClients;
 import 'pond_map_filter_config.dart';
 import '../theme/app_theme.dart';
+import '../widgets/level_badge.dart';
 import '../data/pond_stats.dart';
 
 // ─────────────────────────── Растровые ассеты (встроены base64, без pubspec) ───────────────────────────
@@ -643,7 +644,7 @@ class LevelBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = kLevelStyles[level]!;
     final size = sizeOverride ?? (compact ? 16.0 : 18.0);
-    final medal = _Medal(style: l, size: size);
+    final medal = Medal(style: l, size: size);
     if (compact) return medal;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -659,51 +660,6 @@ class LevelBadge extends StatelessWidget {
     );
   }
 }
-
-class _Medal extends StatelessWidget {
-  final LevelStyle style;
-  final double size;
-  const _Medal({required this.style, required this.size});
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size, height: size,
-      child: CustomPaint(painter: _MedalPainter(style: style)),
-    );
-  }
-}
-
-class _MedalPainter extends CustomPainter {
-  final LevelStyle style;
-  _MedalPainter({required this.style});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final r = size.width / 2;
-
-    // тело медали — плоский радиальный градиент (как в pond-map-preview-2: cx 35%, cy 30%, r 75%)
-    final rect = Rect.fromCircle(center: center, radius: r);
-    canvas.drawCircle(center, r, Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.3, -0.4),
-        radius: 0.75,
-        colors: [style.medalTop, style.medalMid, style.medalBottom],
-        stops: const [0, 0.55, 1],
-      ).createShader(rect));
-
-    // буква
-    final tp = TextPainter(
-      text: TextSpan(text: style.letter, style: TextStyle(
-        color: style.letterColor, fontWeight: FontWeight.w800, fontSize: size.width * 0.52,
-      )),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
-  }
-  @override
-  bool shouldRepaint(covariant _MedalPainter old) => old.style != style;
-}
-
 // ─────────────────────────── Карточка клиента ───────────────────────────
 Future<void> showClientCard(BuildContext context, Client client) {
   return showDialog(context: context, barrierColor: Colors.black.withOpacity(0.5),

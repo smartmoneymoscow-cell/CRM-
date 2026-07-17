@@ -7,6 +7,9 @@ import '../services/print_route.dart' deferred as print_route;
 import '../models/receipt.dart' as receipt_model;
 import '../theme/app_theme.dart';
 import '../data/pond_stats.dart';
+import '../widgets/client_avatar.dart';
+import '../widgets/level_badge.dart';
+import '../widgets/filter_dropdown.dart';
 import 'pond_map_filter_config.dart' show kBottomNavHeight;
 
 class ChecksScreen extends StatefulWidget {
@@ -378,19 +381,19 @@ class _ChecksScreenState extends State<ChecksScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _FilterDropdown<_PeriodFilter>(
+                      child: FilterDropdown<_PeriodFilter>(
                         value: _period,
                         label: 'Период',
                         active: _period != null,
                         items: [
-                          _FilterDropdownItem<_PeriodFilter>(
+                          FilterDropdownItem<_PeriodFilter>(
                             value: null,
                             label: 'Нет',
                             isReset: true,
                             enabled: true,
                           ),
                           for (final p in _PeriodFilter.values)
-                            _FilterDropdownItem<_PeriodFilter>(
+                            FilterDropdownItem<_PeriodFilter>(
                               value: p,
                               label: p.label,
                             ),
@@ -463,249 +466,6 @@ class _ChecksScreenState extends State<ChecksScreen> {
     );
   }
 }
-
-// ============================================================================
-// _FilterDropdown — OverlayEntry-based dropdown (как AppDropdownField)
-// ============================================================================
-class _FilterDropdownItem<T> {
-  final T? value;
-  final String label;
-  final bool isReset;
-  final bool enabled;
-  const _FilterDropdownItem({
-    required this.value,
-    required this.label,
-    this.isReset = false,
-    this.enabled = true,
-  });
-}
-
-class _FilterDropdown<T> extends StatefulWidget {
-  final T? value;
-  final String label;
-  final List<_FilterDropdownItem<T>> items;
-  final ValueChanged<T?> onChanged;
-  final bool active;
-
-  const _FilterDropdown({
-    super.key,
-    required this.value,
-    required this.label,
-    required this.items,
-    required this.onChanged,
-    this.active = false,
-  });
-
-  @override
-  State<_FilterDropdown<T>> createState() => _FilterDropdownState<T>();
-}
-
-class _FilterDropdownState<T> extends State<_FilterDropdown<T>> {
-  final GlobalKey _fieldKey = GlobalKey();
-  final LayerLink _link = LayerLink();
-  OverlayEntry? _entry;
-  bool _open = false;
-
-  static const double _borderRadius = 12;
-  static const double _itemHeight = 42;
-
-  @override
-  void dispose() {
-    _entry = null;
-    super.dispose();
-  }
-
-  void _toggle() => _open ? _close() : _show();
-
-  void _show() {
-    final box = _fieldKey.currentContext!.findRenderObject() as RenderBox;
-    final size = box.size;
-    // Глобальная Y нижнего края кнопки — для ограничения высоты dropdown.
-    final btnBottomY = box.localToGlobal(Offset(0, size.height)).dy;
-    final mq = MediaQuery.of(context);
-    // Dropdown НЕ перекрывает нижнее меню.
-    final maxH = mq.size.height - btnBottomY - kBottomNavHeight - mq.padding.bottom - 8;
-
-    _entry = OverlayEntry(
-      builder: (ctx) => Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: _close,
-            ),
-          ),
-          CompositedTransformFollower(
-            link: _link,
-            showWhenUnlinked: false,
-            // Ноль зазора — список приклеен к полю
-            offset: Offset(0, size.height),
-            child: Material(
-              color: Colors.transparent,
-              child: SizedBox(
-                width: size.width,
-                child: Container(
-                  constraints: BoxConstraints(maxHeight: maxH > 0 ? maxH : 0),
-                  decoration: BoxDecoration(
-                    color: kFill,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(_borderRadius),
-                      bottomRight: Radius.circular(_borderRadius),
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x22000000),
-                          blurRadius: 10,
-                          offset: Offset(0, 6)),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: ListView(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    children: widget.items.map((item) {
-                      final selected = item.value == widget.value &&
-                          item.value != null;
-                      final enabled = item.enabled;
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: enabled
-                            ? () {
-                                widget.onChanged(item.value);
-                                _close();
-                              }
-                            : null,
-                        child: Container(
-                          width: double.infinity,
-                          height: _itemHeight,
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 12),
-                          color: selected
-                              ? kSelected
-                              : Colors.transparent,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              item.label,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: item.isReset
-                                    ? FontWeight.w400
-                                    : selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w400,
-                                color: enabled
-                                    ? (item.isReset ? kMuted2 : kInk)
-                                    : kHairline,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    Overlay.of(context).insert(_entry!);
-    setState(() => _open = true);
-  }
-
-  void _close() {
-    final entry = _entry;
-    _entry = null;
-    if (mounted) setState(() => _open = false);
-    if (mounted) entry?.remove();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Когда меню открыто — срезаем нижние углы поля
-    final radius = BorderRadius.only(
-      topLeft: const Radius.circular(_borderRadius),
-      topRight: const Radius.circular(_borderRadius),
-      bottomLeft: Radius.circular(_open ? 0 : _borderRadius),
-      bottomRight: Radius.circular(_open ? 0 : _borderRadius),
-    );
-
-    // Определяем текущий лейбл
-    String displayLabel = widget.label;
-    if (widget.value != null) {
-      for (final item in widget.items) {
-        if (item.value == widget.value && !item.isReset) {
-          displayLabel = item.label;
-          break;
-        }
-      }
-    }
-    final active = widget.value != null;
-
-    return CompositedTransformTarget(
-      link: _link,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: radius,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: _fieldKey,
-          onTap: _toggle,
-          child: Ink(
-            decoration: BoxDecoration(color: kFill, borderRadius: radius),
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    displayLabel,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w400,
-                      color: active ? kInk : kMuted2,
-                    ),
-                  ),
-                ),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(
-                      _open
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      size: 20,
-                      color: kMuted2,
-                    ),
-                    if (widget.active)
-                      const Positioned(
-                        top: 0,
-                        right: 0,
-                        child: SizedBox(
-                          width: 7,
-                          height: 7,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                                color: kOrange, shape: BoxShape.circle),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ============================================================================
 // Widgets — список
 // ============================================================================
@@ -776,7 +536,7 @@ class _ClientSuggestions extends StatelessWidget {
                     horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
-                    _Avatar(client: clients[i], size: 34),
+                    ClientAvatar(client: clients[i], size: 34),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -1131,7 +891,7 @@ class _ReceiptRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            _Avatar(
+            ClientAvatar(
                 client: item.client, guest: item.isGuest, size: 44),
             const SizedBox(width: 12),
             Expanded(
@@ -1205,54 +965,6 @@ class _EmptyState extends StatelessWidget {
         ),
       );
 }
-
-class _Avatar extends StatelessWidget {
-  final Client? client;
-  final bool guest;
-  final double size;
-  const _Avatar({this.client, this.guest = false, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    if (guest || client == null) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: const BoxDecoration(
-            color: Color(0xFFF1ECE0), shape: BoxShape.circle),
-        child: const Icon(Icons.person_outline, color: kMuted2, size: 22),
-      );
-    }
-    final c = client!;
-    if (c.avatarAsset != null) {
-      return ClipOval(
-        child: Image.asset(c.avatarAsset!,
-            width: size, height: size, fit: BoxFit.cover),
-      );
-    }
-    final colors = [
-      const Color(0xFFE8912B),
-      const Color(0xFF6A8CBB),
-      const Color(0xFF7BAE7F),
-      const Color(0xFFC97A7A),
-    ];
-    final color = colors[c.id % colors.length];
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: Text(
-        c.initials.toUpperCase(),
-        style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: size * 0.36),
-      ),
-    );
-  }
-}
-
 // ============================================================================
 // Экран деталей чека
 // ============================================================================
@@ -1502,7 +1214,7 @@ class _ClientPill extends StatelessWidget {
             borderRadius: BorderRadius.circular(14)),
         child: Row(
           children: [
-            _Avatar(client: client, size: 40),
+            ClientAvatar(client: client, size: 40),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1646,7 +1358,7 @@ class _ClientCard extends StatelessWidget {
                                       fontSize: 17,
                                       fontWeight: FontWeight.w800)),
                               const SizedBox(height: 6),
-                              _LevelBadge(level: client.level),
+                              LevelBadge(level: client.level),
                             ],
                           ),
                         ],
@@ -1896,91 +1608,6 @@ class _ClientCard extends StatelessWidget {
         ),
       );
 }
-
-// ── LevelBadge (перенесено из карты пруда) ──────────────────────────────────
-class _LevelBadge extends StatelessWidget {
-  final LevelKey level;
-  const _LevelBadge({required this.level});
-
-  @override
-  Widget build(BuildContext context) {
-    final l = kLevelStyles[level]!;
-    const size = 18.0;
-    final medal = _Medal(style: l, size: size);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: l.color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        medal,
-        const SizedBox(width: 4),
-        Text(l.label,
-            style: TextStyle(
-                color: l.color,
-                fontSize: 12,
-                fontWeight: FontWeight.w700)),
-      ]),
-    );
-  }
-}
-
-class _Medal extends StatelessWidget {
-  final LevelStyle style;
-  final double size;
-  const _Medal({required this.style, required this.size});
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(painter: _MedalPainter(style: style)),
-    );
-  }
-}
-
-class _MedalPainter extends CustomPainter {
-  final LevelStyle style;
-  _MedalPainter({required this.style});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final r = size.width / 2;
-    final rect = Rect.fromCircle(center: center, radius: r);
-    canvas.drawCircle(
-        center,
-        r,
-        Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.3, -0.4),
-            radius: 0.75,
-            colors: [
-              style.medalTop,
-              style.medalMid,
-              style.medalBottom
-            ],
-            stops: const [0, 0.55, 1],
-          ).createShader(rect));
-    final tp = TextPainter(
-      text: TextSpan(
-          text: style.letter,
-          style: TextStyle(
-            color: style.letterColor,
-            fontWeight: FontWeight.w800,
-            fontSize: size.width * 0.52,
-          )),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas,
-        Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
-  }
-
-  @override
-  bool shouldRepaint(covariant _MedalPainter old) =>
-      old.style != style;
-}
-
 // ============================================================================
 // Упрощённая карточка клиента (фолбэк, если нет данных карты пруда)
 // ============================================================================
@@ -2027,7 +1654,7 @@ class _ClientProfileFallback extends StatelessWidget {
                               width: 3),
                         ),
                         child: ClipOval(
-                            child: _Avatar(
+                            child: ClientAvatar(
                                 client: client, size: 54)),
                       ),
                       const SizedBox(width: 14),
