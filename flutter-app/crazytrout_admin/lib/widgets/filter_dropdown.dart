@@ -190,10 +190,12 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
     // Оборачиваем в Stack: кнопка + dropdown под ней
     // Dropdown рендерится в дереве виджетов → нижнее меню Scaffold
     // естественно перекрывает его (z-order: body < bottomNavigationBar)
-    return GestureDetector(
-      onTap: _toggle,
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
+    return SizedBox(
+      height: 44,
+      child: GestureDetector(
+        onTap: _toggle,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
         children: [
           // Кнопка фильтра
           Material(
@@ -215,6 +217,7 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
             ),
         ],
       ),
+    ),
     );
   }
 }
