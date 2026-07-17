@@ -1134,11 +1134,6 @@ class _FiltersDropdownState extends State<FiltersDropdown> {
       ]),
     );
   }
-          ),
-        ],
-      ]),
-    );
-  }
 }
 
 bool passesFilter(Slot s, FilterValue f) {
