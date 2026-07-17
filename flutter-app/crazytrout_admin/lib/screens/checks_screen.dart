@@ -461,6 +461,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 }

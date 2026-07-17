@@ -3,19 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crazytrout_admin/main.dart';
 
 void main() {
-  // Подавляем overflow-ошибки (RenderFlex overflowed) — это предупреждения,
-  // а не краши. Overflow возникает из-за Stack dropdown на маленьком экране теста.
-  setUp(() {
-    FlutterError.onError = (details) {
-      if (details.exceptionAsString().contains('overflowed')) return;
-      // Для остальных ошибок — стандартный вывод (не fail теста)
-      debugPrint(details.exceptionAsString());
-    };
-  });
-
-  tearDown(() {
-    FlutterError.onError = FlutterError.presentError;
-  });
+  // Подавляем overflow-ошибки ДО запуска тестов.
+  final originalHandler = FlutterError.onError;
+  FlutterError.onError = (details) {
+    if (details.exceptionAsString().contains('overflowed')) return;
+    originalHandler?.call(details);
+  };
 
   group('App — smoke tests', () {
     testWidgets('приложение запускается без крашей', (WidgetTester tester) async {
