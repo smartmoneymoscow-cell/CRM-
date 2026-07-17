@@ -342,6 +342,7 @@ class _ChecksScreenState extends State<ChecksScreen> {
 
     return Container(
       color: kPaper,
+      clipBehavior: Clip.hardEdge,
       child: Column(
         children: [
           const Padding(
