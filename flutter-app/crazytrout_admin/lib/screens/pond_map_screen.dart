@@ -995,8 +995,6 @@ class _PondMapScreenState extends State<PondMapScreen> {
           onToggle: _toggleFilter,
         ),
       ),
-        ),
-      ),
       const Spacer(),
       _legend(_green, 'Свободно $free'),
       const SizedBox(width: 12),
