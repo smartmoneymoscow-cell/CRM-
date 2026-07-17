@@ -51,5 +51,5 @@ double calcMaxDropdownHeight({
   required double screenH,
   required double bottomPadding,
 }) {
-  return screenH - btnBottomY - bottomPadding;
+  return screenH - btnBottomY - bottomPadding - kBottomNavHeight;
 }
