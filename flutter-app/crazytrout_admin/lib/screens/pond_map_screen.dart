@@ -1101,12 +1101,11 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
-      body: SafeArea(child: Stack(children: [
-        // Слой 1: единый скролл страницы.
-        ListView(
-          controller: _scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          children: [
+      body: SafeArea(child: Column(children: [
+        // ── Заголовок, чипы, стата, карта — фиксированная часть ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          child: Column(children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
               child: Center(child: Text('Карта пруда',
@@ -1139,9 +1138,13 @@ class _PondMapScreenState extends State<PondMapScreen> {
             PondMapView(sectorStatuses: statuses, selected: selected,
               onTap: (n) => setState(() => selected = selected == n ? null : n)),
             const SizedBox(height: 16),
-            // Кнопка фильтров — скроллится со страницей.
-            _buildFilterRow(free, occupied),
-            const SizedBox(height: 8),
+          ]),
+        ),
+        // ── Строка фильтров + dropdown + feed: Stack — dropdown поверх feed, под нижним меню ──
+        Expanded(child: Stack(children: [
+          // Слой 1: feed (скроллится)
+          ListView(controller: _scrollController, padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+            const SizedBox(height: 52), // отступ под строку фильтров
             Text(
               selected != null
                   ? 'РАСПИСАНИЕ · СЕКТОР № ${selected!.toString().padLeft(2, '0')}'
@@ -1150,14 +1153,31 @@ class _PondMapScreenState extends State<PondMapScreen> {
             ),
             const SizedBox(height: 8),
             _buildFeed(scheds),
-          ],
-        ),
-        // Слой 2: dropdown overlay — поверх всего контента, под нижним меню.
-        if (_isFilterOpen)
+          ]),
+          // Слой 2: tap-to-close (ловит тап вне кнопки и dropdown)
+          if (_isFilterOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _closeFilter,
+              ),
+            ),
+          // Слой 3: строка фильтров (поверх close-слоя, кнопка кликабельна)
           Positioned(
-            top: 36, left: 20,
-            child: _buildDropdown(),
+            top: 0, left: 20, right: 20,
+            child: _buildFilterRow(free, occupied),
           ),
+          // Слой 4: dropdown (поверх всего, под нижним меню)
+          if (_isFilterOpen)
+            Positioned(
+              top: 36, left: 20,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                child: _buildDropdown(),
+              ),
+            ),
+        ])),
       ])),
     );
   }
