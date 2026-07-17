@@ -1383,15 +1383,21 @@ class _FishStatsContent extends StatelessWidget {
           ),
           const SizedBox(height: 6),
 
-          // ── Строки ──
-          for (final s in stats) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          // ── Таблица: единый блок, верхние углы первой строки, нижние — ИТОГО ──
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFFBF6EC),
-                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFEFE8D8)),
               ),
+              child: Column(children: [
+                for (final s in stats)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFBF6EC),
+                      border: Border(bottom: BorderSide(color: Color(0xFFEFE8D8))),
+                    ),
               child: Row(
                 children: [
                   Expanded(
@@ -1466,22 +1472,18 @@ class _FishStatsContent extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-
-          // ── ИТОГО строка таблицы 1 ──
-          Builder(
-            builder: (context) {
-              final totalCount = stats.fold<int>(0, (s, e) => s + e.count);
-              final totalWeight = stats.fold<double>(0, (s, e) => s + e.weightKg);
-              final totalRevenue = stats.fold<double>(0, (s, e) => s + e.revenue);
-              final totalRemaining = stats.fold<int>(0, (s, e) => s + e.remaining);
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3EEE4),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFDDD3BC)),
-                ),
+                // ── ИТОГО строка ──
+                Builder(
+                  builder: (context) {
+                    final totalCount = stats.fold<int>(0, (s, e) => s + e.count);
+                    final totalWeight = stats.fold<double>(0, (s, e) => s + e.weightKg);
+                    final totalRevenue = stats.fold<double>(0, (s, e) => s + e.revenue);
+                    final totalRemaining = stats.fold<int>(0, (s, e) => s + e.remaining);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF3EEE4),
+                      ),
                 child: Row(
                   children: [
                     const Expanded(
@@ -1539,6 +1541,9 @@ class _FishStatsContent extends StatelessWidget {
               );
             },
           ),
+              ]),
+            ),
+          ),
 
           const SizedBox(height: 18),
 
@@ -1570,18 +1575,22 @@ class _FishStatsContent extends StatelessWidget {
             builder: (context) {
               final totalRev = stats.fold<double>(0, (s, e) => s + e.revenue);
 
-              return Column(
-                children: [
-                  for (final s in stats) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFBF6EC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: const Color(0xFFEFE8D8)),
-                      ),
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFEFE8D8)),
+                  ),
+                  child: Column(
+                    children: [
+                      for (final s in stats)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFBF6EC),
+                            border: Border(bottom: BorderSide(color: Color(0xFFEFE8D8))),
+                          ),
                       child: Row(
                         children: [
                           Expanded(
@@ -1632,10 +1641,8 @@ class _FishStatsContent extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3EEE4),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFDDD3BC)),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF3EEE4),
                     ),
                     child: Row(
                       children: [
@@ -1665,7 +1672,9 @@ class _FishStatsContent extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
+                    ],
+                  ),
+                ),
               );
             },
           ),
