@@ -74,6 +74,20 @@ void main() {
     });
   });
 
+  group('hasEnoughSpaceForDropdown()', () {
+    test('true если места хватает на 2+ пункта', () {
+      // 2 пункта * 44 + 2 * 8 padding = 104
+      expect(hasEnoughSpaceForDropdown(104), isTrue);
+      expect(hasEnoughSpaceForDropdown(200), isTrue);
+    });
+
+    test('false если места не хватает на 2 пункта', () {
+      expect(hasEnoughSpaceForDropdown(50), isFalse);
+      expect(hasEnoughSpaceForDropdown(0), isFalse);
+      expect(hasEnoughSpaceForDropdown(-40), isFalse);
+    });
+  });
+
   group('filterOptions — все варианты', () {
     test('ровно 5 вариантов', () {
       expect(filterOptions.length, 5);
