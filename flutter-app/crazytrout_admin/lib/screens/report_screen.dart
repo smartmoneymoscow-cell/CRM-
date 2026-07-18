@@ -76,6 +76,30 @@ String _money(double v) {
   return buf.toString();
 }
 
+// ─── Унифицированная фильтрация чеков по периоду и дате ──────────────────────
+/// Общая логика фильтрации для всех вкладок экрана «Отчёт».
+/// Календарь и период применяются совместно (AND), если оба заданы.
+bool _receiptInPeriod(_ClientPaymentEntry e, PeriodFilter? period) {
+  if (period == null || period == PeriodFilter.all) return true;
+  final now = DateTime.now();
+  final start = switch (period) {
+    PeriodFilter.today => DateTime(now.year, now.month, now.day),
+    PeriodFilter.week => now.subtract(const Duration(days: 7)),
+    PeriodFilter.month => now.subtract(const Duration(days: 30)),
+    PeriodFilter.quarter => now.subtract(const Duration(days: 90)),
+    PeriodFilter.all => DateTime(0),
+  };
+  return e.date.isAfter(start) || e.date.isAtSameMomentAs(start);
+}
+
+bool _dateInRange(DateTime date, DateTimeRange? range) {
+  if (range == null) return true;
+  final d = DateTime(date.year, date.month, date.day);
+  final s = DateTime(range.start.year, range.start.month, range.start.day);
+  final e = DateTime(range.end.year, range.end.month, range.end.day);
+  return !d.isBefore(s) && !d.isAfter(e);
+}
+
 // ============================================================================
 // ReportScreen
 // ============================================================================
@@ -107,7 +131,9 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   /// DateTimeRange для вкладки «Финансы».
+  /// Календарь имеет приоритет, если был выбран последним.
   DateTimeRange? get _effectiveDateForFinance {
+    if (_lastFilterSource == 'calendar' && _dateRange != null) return _dateRange;
     if (_period != null) return _periodToDateRange(_period);
     return _dateRange;
   }
@@ -245,6 +271,20 @@ class _FinanceContent extends StatelessWidget {
   final DateTimeRange? dateRange;
   const _FinanceContent({this.periodKey, this.dateRange});
 
+  /// Виртуальный periodKey для автопереключения графиком «мецы/недели».
+  /// Если periodKey задан из дропдауна — используем его.
+  /// Если фильтр через календарь — определяем по длительности диапазона.
+  String? get _effectivePeriodKey {
+    if (periodKey != null) return periodKey;
+    if (dateRange != null) {
+      final days = dateRange!.end.difference(dateRange!.start).inDays;
+      if (days <= 7) return 'week';
+      if (days <= 31) return 'month';
+      return 'quarter';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final salesData = buildSalesDecomposition(dateRange: dateRange);
@@ -263,7 +303,7 @@ class _FinanceContent extends StatelessWidget {
           const SizedBox(height: 14),
           PaymentTariffCard(stats: paymentData),
           const SizedBox(height: 14),
-          RevenueDynamicsChart(data: dynamicsData, periodKey: periodKey),
+          RevenueDynamicsChart(data: dynamicsData, periodKey: _effectivePeriodKey),
         ],
       ),
     );
@@ -282,37 +322,7 @@ class _ClientStatsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = _paymentFeed.where((e) {
-      if (period == null || period == PeriodFilter.all) {
-        // фильтр по календарю если есть
-        if (dateRange != null) {
-          final d = DateTime(e.date.year, e.date.month, e.date.day);
-          final s = DateTime(dateRange!.start.year, dateRange!.start.month,
-              dateRange!.start.day);
-          final en = DateTime(
-              dateRange!.end.year, dateRange!.end.month, dateRange!.end.day);
-          return !d.isBefore(s) && !d.isAfter(en);
-        }
-        return true;
-      }
-      final now = DateTime.now();
-      final start = switch (period!) {
-        PeriodFilter.today => DateTime(now.year, now.month, now.day),
-        PeriodFilter.week => now.subtract(const Duration(days: 7)),
-        PeriodFilter.month => now.subtract(const Duration(days: 30)),
-        PeriodFilter.quarter => now.subtract(const Duration(days: 90)),
-        PeriodFilter.all => DateTime(0),
-      };
-      final matchesPeriod =
-          e.date.isAfter(start) || e.date.isAtSameMomentAs(start);
-      if (dateRange != null) {
-        final d = DateTime(e.date.year, e.date.month, e.date.day);
-        final s = DateTime(dateRange!.start.year, dateRange!.start.month,
-            dateRange!.start.day);
-        final en = DateTime(
-            dateRange!.end.year, dateRange!.end.month, dateRange!.end.day);
-        return matchesPeriod && !d.isBefore(s) && !d.isAfter(en);
-      }
-      return matchesPeriod;
+      return _receiptInPeriod(e, period) && _dateInRange(e.date, dateRange);
     }).toList();
 
     if (items.isEmpty) {
