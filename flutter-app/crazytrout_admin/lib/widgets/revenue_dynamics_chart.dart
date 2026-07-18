@@ -58,7 +58,7 @@ class _RevenueDynamicsChartState extends State<RevenueDynamicsChart> {
         const SizedBox(height: 16),
         SizedBox(height: 180, child: ClipRect(
           child: CustomPaint(
-            size: const Size(double.infinity, 180),
+            size: Size(MediaQuery.of(context).size.width - 36, 180),
             painter: _ChartPainter(data: _points),
           ),
         )),

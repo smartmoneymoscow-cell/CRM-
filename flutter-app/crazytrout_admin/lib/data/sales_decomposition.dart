@@ -62,7 +62,7 @@ SalesDecomposition buildSalesDecomposition({DateTimeRange? dateRange}) {
     for (final e in fishEntries)
       SalesSegment(label: e.key, amount: e.value),
     if (entryTotal > 0)
-      SalesSegment(label: 'Вход на пруд', amount: entryTotal),
+      SalesSegment(label: 'Вход', amount: entryTotal),
   ];
 
   final total = segments.fold<double>(0, (s, e) => s + e.amount);
@@ -75,7 +75,7 @@ SalesDecomposition buildSalesDecomposition({DateTimeRange? dateRange}) {
         SalesSegment(label: 'Карп', amount: 95000),
         SalesSegment(label: 'Форель', amount: 52000),
         SalesSegment(label: 'Амур', amount: 47000),
-        SalesSegment(label: 'Вход на пруд', amount: 50800),
+        SalesSegment(label: 'Вход', amount: 50800),
       ],
       total: 412800,
     );
