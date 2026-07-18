@@ -86,7 +86,7 @@ class FinanceDashboardCard extends StatelessWidget {
                         labelSub: 'расходы',
                         value: money(stats.variableExpenses),
                         pctLabel:
-                            '${_fmtPct(stats.expensesPct)}% от выручки',
+                            '${_fmtPct(stats.expensesPct)}%\nот выручки',
                         dark: true,
                         progress: stats.expensesPct / 100,
                         progressColor: const [
