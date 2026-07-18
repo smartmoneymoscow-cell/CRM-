@@ -31,7 +31,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../data/demo_data.dart' as app_data show kDemoClients;
-import 'pond_map_filter_config.dart' show FilterValue, filterOptions, filterButtonLabels, kDropdownVPadding;
+import 'pond_map_filter_config.dart' show FilterValue, filterOptions, filterButtonLabels, kDropdownVPadding, kDropdownWidth, kDropdownGap;
 import '../theme/app_theme.dart';
 import '../widgets/level_badge.dart';
 import '../data/pond_stats.dart';
@@ -845,7 +845,7 @@ class FiltersDropdown extends StatelessWidget {
     return GestureDetector(
       onTap: onToggle,
       child: Container(
-        width: 120,
+        width: kDropdownWidth,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -992,10 +992,11 @@ class _PondMapScreenState extends State<PondMapScreen> {
   /// Строит dropdown-меню фильтров. Inline в ListView — скроллится со страницей,
   /// прячется под нижнее меню естественно.
   Widget _buildDropdown() {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: 120,
+    return SizedBox(
+      width: kDropdownWidth,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
@@ -1041,6 +1042,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
             }).toList(),
           ),
         ),
+      ),
       ),
     );
   }
