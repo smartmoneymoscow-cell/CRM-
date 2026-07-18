@@ -1286,7 +1286,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                   child: Material(
                     color: Colors.transparent,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1331,39 +1331,57 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                           ),
                           const SizedBox(height: 12),
                           // Количество + Затраты
-                          Row(children: [
-                            Expanded(child: TextField(
-                              controller: qtyCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Количество (шт.)',
-                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9C9484)),
-                                filled: true,
-                                fillColor: const Color(0xFFF3EEE4),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Expanded(child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 2, bottom: 4),
+                                  child: Text('Количество (шт.)',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF9C9484))),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
-                              ),
+                                TextField(
+                                  controller: qtyCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xFFF3EEE4),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 12),
+                                  ),
+                                ),
+                              ],
                             )),
                             const SizedBox(width: 10),
-                            Expanded(child: TextField(
-                              controller: costCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Затраты',
-                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9C9484)),
-                                filled: true,
-                                fillColor: const Color(0xFFF3EEE4),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                            Expanded(child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 2, bottom: 4),
+                                  child: Text('Затраты',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF9C9484))),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
-                              ),
+                                TextField(
+                                  controller: costCtrl,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: const Color(0xFFF3EEE4),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 12),
+                                  ),
+                                ),
+                              ],
                             )),
                           ]),
                           const SizedBox(height: 16),
