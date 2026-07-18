@@ -941,6 +941,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                                 borderRadius: BorderRadius.circular(6),
                                 child: Image.asset(
                                   s.imageAsset,
+                                  width: 50,
                                   height: _imageHeight[s.species] ?? _imageHeightDefault,
                                   fit: BoxFit.contain,
                                 ),
