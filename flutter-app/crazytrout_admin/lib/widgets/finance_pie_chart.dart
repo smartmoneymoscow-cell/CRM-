@@ -88,7 +88,7 @@ class FinancePieChart extends StatelessWidget {
             color: _segColors[i % _segColors.length],
             label: data.segments[i].label,
             pct: '${_fmtPct(data.pct(data.segments[i]))}%',
-            amount: '${_fmtAmount(data.segments[i].amount)} ₽',
+            amount: _fmtAmount(data.segments[i].amount),
             labelFlex: labelFlex,
             pctFlex: pctFlex,
             amtFlex: amtFlex,
@@ -105,11 +105,14 @@ String _fmtPct(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
 String _fmtAmount(double v) {
   if (v >= 1000000) {
     final k = v / 1000000;
-    return '${k.toStringAsFixed(1).replaceAll('.', ',')} млн';
+    final s = k.toStringAsFixed(1).replaceAll('.', ',');
+    return '$s млн';
   }
   if (v >= 1000) {
     final k = v / 1000;
-    return '${k.toStringAsFixed(1).replaceAll('.', ',')} тыс.';
+    final s = k.toStringAsFixed(1).replaceAll('.', ',');
+    // 168,0 → 168 (убираем .0 для круглых)
+    return '${s.endsWith(',0') ? s.substring(0, s.length - 2) : s} тыс.';
   }
   return v.round().toString();
 }
