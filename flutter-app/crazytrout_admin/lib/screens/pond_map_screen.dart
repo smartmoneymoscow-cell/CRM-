@@ -1092,13 +1092,14 @@ class _PondMapScreenState extends State<PondMapScreen> {
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
     color: const Color(0xFFF5EEDC),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text('${_fmt(block[0])}–${_fmt(block[1])}',
-        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: kInk)),
-      Text.rich(TextSpan(children: [
+      Flexible(child: Text('${_fmt(block[0])}–${_fmt(block[1])}',
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: kInk))),
+      Flexible(child: Text.rich(TextSpan(children: [
         TextSpan(text: '${total - occ} своб.', style: const TextStyle(color: _green, fontSize: 11, fontWeight: FontWeight.w600)),
         const TextSpan(text: ' · ', style: TextStyle(color: Colors.black45, fontSize: 11)),
         TextSpan(text: '$occ занято', style: const TextStyle(color: kOrange, fontSize: 11, fontWeight: FontWeight.w600)),
-      ])),
+      ]))),
     ]),
   );
 
@@ -1228,7 +1229,7 @@ class _PondMapScreenState extends State<PondMapScreen> {
   Widget _legend(Color color, String text) => Row(mainAxisSize: MainAxisSize.min, children: [
     Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
     const SizedBox(width: 6),
-    Text(text, style: const TextStyle(fontSize: 13, color: kInk)),
+    Flexible(child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: kInk))),
   ]);
 }
 
