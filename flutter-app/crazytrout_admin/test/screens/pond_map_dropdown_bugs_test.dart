@@ -226,6 +226,17 @@ void main() {
                 isOpen: isOpen,
                 onToggle: () => setState(() => isOpen = !isOpen),
               ),
+              // Пункты меню — рендерятся как в _buildDropdown() (PondMapScreen)
+              if (isOpen)
+                ...filterOptions.entries.where((e) => e.key != FilterValue.none).map((e) =>
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      selected = e.key;
+                      isOpen = false;
+                    }),
+                    child: Text(e.value),
+                  ),
+                ),
             ]),
           ),
         ),

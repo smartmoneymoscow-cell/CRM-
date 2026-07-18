@@ -19,6 +19,7 @@ import '../widgets/client_avatar.dart';
 import '../widgets/level_badge.dart';
 import '../data/filter_types.dart';
 import '../widgets/filter_dropdown.dart';
+import '../widgets/app_dropdown_field.dart';
 
 /// Конвертирует PeriodFilter в DateTimeRange для фильтрации данных.
 DateTimeRange? _periodToDateRange(PeriodFilter? period) {
@@ -1254,7 +1255,7 @@ class _FishStatsContentState extends State<_FishStatsContent> {
   }
 
   void _showAddFishDialog(BuildContext context) {
-    String? selectedSpecies;
+    String selectedSpecies = app_data.kSpecies.first;
     final qtyCtrl = TextEditingController();
     final costCtrl = TextEditingController();
 
@@ -1300,41 +1301,32 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                           ),
                           const SizedBox(height: 16),
                           // Выбор рыбы
-                          Container(
-                            height: 44,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3EEE4),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFEFE8D8)),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                isExpanded: true,
-                                value: selectedSpecies,
-                                hint: const Text('Выберите рыбу',
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF9C9484))),
-                                icon: const Icon(Icons.keyboard_arrow_down,
-                                  size: 20, color: Color(0xFF9C9484)),
-                                items: app_data.kSpecies.map((sp) => DropdownMenuItem(
-                                  value: sp,
-                                  child: Row(
-                                    children: [
-                                      Image.asset(
-                                        app_data.kSpeciesImage[sp]!,
-                                        height: app_data.kSpeciesImageHeight[sp]
-                                            ?? app_data.kSpeciesImageHeightDefault,
-                                        fit: BoxFit.contain,
+                          AppDropdownField<String>(
+                              value: selectedSpecies,
+                              items: app_data.kSpecies.map((sp) => AppDropdownItem(
+                                value: sp,
+                                child: Row(
+                                  children: [
+                                    Text(sp, overflow: TextOverflow.ellipsis),
+                                    Expanded(
+                                      child: Center(
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(6),
+                                          child: Image.asset(
+                                            app_data.kSpeciesImage[sp]!,
+                                            height: app_data.kSpeciesImageHeight[sp]
+                                                ?? app_data.kSpeciesImageHeightDefault,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
                                       ),
-                                      const SizedBox(width: 10),
-                                      Text(sp, style: const TextStyle(
-                                        fontSize: 14, color: Color(0xFF14130F))),
-                                    ],
-                                  ),
-                                )).toList(),
-                                onChanged: (v) => setDialogState(() => selectedSpecies = v),
-                              ),
-                            ),
+                                    ),
+                                  ],
+                                ),
+                              )).toList(),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              onChanged: (v) => setDialogState(() => selectedSpecies = v),
                           ),
                           const SizedBox(height: 12),
                           // Количество + Затраты
@@ -1389,12 +1381,12 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                             )),
                             const SizedBox(width: 10),
                             Expanded(child: ElevatedButton(
-                              onPressed: selectedSpecies != null ? () {
+                              onPressed: () {
                                 final qty = int.tryParse(qtyCtrl.text) ?? 0;
                                 if (qty <= 0) return;
                                 setState(() {
-                                  _addedFish[selectedSpecies!] =
-                                      (_addedFish[selectedSpecies!] ?? 0) + qty;
+                                  _addedFish[selectedSpecies] =
+                                      (_addedFish[selectedSpecies] ?? 0) + qty;
                                 });
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1406,12 +1398,12 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12)),
                                     content: Text(
-                                      '$selectedSpecies: $qty шт. добавлено',
+                                      '${selectedSpecies}: $qty шт. добавлено',
                                       style: const TextStyle(fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 );
-                              } : null,
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE8912B),
                                 foregroundColor: Colors.white,
