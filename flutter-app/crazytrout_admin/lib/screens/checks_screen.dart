@@ -249,8 +249,8 @@ class _ChecksScreenState extends State<ChecksScreen> {
                     Expanded(child: OutlinedButton(
                       onPressed: () {
                         setDialogState(() {
-                          tmpTariffs.clear();
-                          tmpPayments.clear();
+                          tmpTariffs = {};
+                          tmpPayments = {};
                           tmpFirstTime = false;
                           tmpType = null;
                         });
@@ -259,8 +259,6 @@ class _ChecksScreenState extends State<ChecksScreen> {
                           _filterPayments = {};
                           _filterFirstTime = false;
                           _type = null;
-                          _period = null;
-                          _dateRange = null;
                         });
                       },
                       style: OutlinedButton.styleFrom(
