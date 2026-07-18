@@ -183,7 +183,7 @@ void main() {
 
     // ─── Правило 5: Углы при раскрытии ───
     testWidgets('ПРАВИЛО 5: верхние углы карточки НЕ меняются при раскрытии', (tester) async {
-      // Закрытое состояние
+      // Закрытое состояние — все углы pill (999)
       await tester.pumpWidget(buildApp(isOpen: false));
       final containerClosed = tester.widget<Container>(
         find.descendant(
@@ -191,9 +191,11 @@ void main() {
           matching: find.byType(Container).last,
         ),
       );
-      final radiusClosed = (containerClosed.decoration as BoxDecoration).borderRadius;
+      final radiusClosed = containerClosed.decoration as BoxDecoration;
+      expect(radiusClosed.borderRadius, const BorderRadius.all(Radius.circular(999)),
+        reason: 'Закрытое состояние: все углы должны быть 999 (pill)');
 
-      // Открытое состояние
+      // Открытое состояние — верхние 999, нижние 0
       await tester.pumpWidget(buildApp(isOpen: true));
       final containerOpen = tester.widget<Container>(
         find.descendant(
@@ -201,11 +203,13 @@ void main() {
           matching: find.byType(Container).last,
         ),
       );
-      final radiusOpen = (containerOpen.decoration as BoxDecoration).borderRadius;
-
-      // Оба состояния существуют
-      expect(radiusClosed, isNotNull);
-      expect(radiusOpen, isNotNull);
+      final radiusOpen = containerOpen.decoration as BoxDecoration;
+      expect(radiusOpen.borderRadius, const BorderRadius.only(
+        topLeft: Radius.circular(999),
+        topRight: Radius.circular(999),
+        bottomLeft: Radius.circular(0),
+        bottomRight: Radius.circular(0),
+      ), reason: 'Открытое состояние: верхние углы 999, нижние 0');
     });
 
     // ─── Правило 6: Сворачивание при выборе опции ───
