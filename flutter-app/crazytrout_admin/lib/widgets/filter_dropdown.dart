@@ -142,23 +142,19 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
                 ),
               ),
               Stack(
+                alignment: Alignment.center,
                 children: [
-                  Positioned.fill(
-                    child: Container(
-                      alignment: Alignment.center,
-                      child: Icon(
-                        _open
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        size: 20,
-                        color: kMuted2,
-                      ),
-                    ),
+                  Icon(
+                    _open
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: kMuted2,
                   ),
                   if (widget.active)
                     const Positioned(
-                      top: 7,
-                      right: 7,
+                      top: 0,
+                      right: 0,
                       child: SizedBox(
                         width: 7,
                         height: 7,

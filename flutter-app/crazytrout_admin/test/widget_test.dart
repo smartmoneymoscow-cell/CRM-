@@ -102,14 +102,8 @@ void main() {
       // Заголовок вкладки по умолчанию
       expect(find.text('Финансы и метрики'), findsOneWidget);
 
-      // Все карточки/графики из _FinanceContent должны быть в дереве —
-      // если какая-то пропала (например, из-за упавшего layout выше по
-      // дереву), findsOneWidget здесь не пройдёт.
-      expect(find.text('Структура выручки'), findsOneWidget);
-      expect(find.text('По способам оплаты'), findsOneWidget);
-      expect(find.text('По тарифам (в шт.)'), findsOneWidget);
-      expect(find.text('Динамика показателей'), findsOneWidget);
-      expect(find.text('Всего клиентов'), findsOneWidget);
+      // PR #22: финансовый раздел — заглушка «Раздел в разработке»
+      expect(find.text('Раздел в разработке'), findsOneWidget);
 
       // Проверяем, что нет RenderFlex overflow (реальных багов вёрстки).
       // Другие FlutterError (анимации, transition'ы) игнорируются.
