@@ -63,9 +63,12 @@ class FinancePieChart extends StatelessWidget {
           painter: _DonutPainter(segments: data.segments, colors: _segColors, total: data.total)),
       ),
       Column(mainAxisSize: MainAxisSize.min, children: [
-        Text('${_fmtAmount(data.total)} ₽',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: size < 110 ? 11 : 13, fontWeight: FontWeight.w800, color: kInk, letterSpacing: -0.3)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text('${_fmtAmount(data.total)} ₽',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: size < 110 ? 11 : 13, fontWeight: FontWeight.w800, color: kInk, letterSpacing: -0.3)),
+        ),
         Text('всего', style: TextStyle(fontSize: size < 110 ? 8 : 9, fontWeight: FontWeight.w500, color: kMuted2)),
       ]),
     ],

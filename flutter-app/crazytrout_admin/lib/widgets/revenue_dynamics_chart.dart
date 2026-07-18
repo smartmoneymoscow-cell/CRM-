@@ -116,7 +116,7 @@ class _ChartPainter extends CustomPainter {
     final maxVal = allValues.reduce(math.max);
     if (maxVal <= 0) return;
 
-    final cl = 40.0, cr = size.width - 8, ct = 8.0, cb = size.height - 8;
+    final cl = 50.0, cr = size.width - 8, ct = 8.0, cb = size.height - 8;
     final cw = cr - cl, ch = cb - ct;
     final gridPaint = Paint()..color = const Color(0xFFEFE8D8)..strokeWidth = 0.5;
 

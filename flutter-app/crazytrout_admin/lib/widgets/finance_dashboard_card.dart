@@ -164,15 +164,22 @@ class _RevenueCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      money(stats.revenue),
-                      style: const TextStyle(
-                        color: kOrange,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
+                    LayoutBuilder(builder: (context, constraints) {
+                      final revText = money(stats.revenue);
+                      final revLen = revText.length;
+                      final fs = revLen > 10 ? 17.0 : 21.0;
+                      return Text(
+                        revText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: kOrange,
+                          fontSize: fs,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 10),
                     Text(
                       '${isUp ? '+' : ''}${_fmtPct(stats.revenueDeltaPct)}%',
@@ -185,6 +192,8 @@ class _RevenueCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     const Text(
                       'к прошлому периоду',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: kDeltaLabel, fontSize: 10.5),
                     ),
                   ],
