@@ -102,8 +102,7 @@ void main() {
       // Заголовок вкладки по умолчанию
       expect(find.text('Финансы и метрики'), findsOneWidget);
 
-      // PR #22: финансовый раздел — заглушка «Раздел в разработке»
-      expect(find.text('Раздел в разработке'), findsOneWidget);
+      // Полный dashboard: финансы + клиенты + рыба (revert к v1.4.2)
 
       // Проверяем, что нет RenderFlex overflow (реальных багов вёрстки).
       // Другие FlutterError (анимации, transition'ы) игнорируются.
