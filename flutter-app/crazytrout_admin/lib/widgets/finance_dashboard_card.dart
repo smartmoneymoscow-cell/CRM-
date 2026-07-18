@@ -255,37 +255,31 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(labelMain,
-                  style: TextStyle(
-                      color: labelColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700)),
-              Text(labelSub,
-                  style: TextStyle(
-                      color: subColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              Text(value,
-                  style: TextStyle(
-                      color: valueColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2)),
-              const SizedBox(height: 4),
-              Text(pctLabel,
-                  style: TextStyle(
-                      color: pctColor,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
+          Text(labelMain,
+              style: TextStyle(
+                  color: labelColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700)),
+          Text(labelSub,
+              style: TextStyle(
+                  color: subColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
+          Text(value,
+              style: TextStyle(
+                  color: valueColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2)),
+          const SizedBox(height: 2),
+          Text(pctLabel,
+              style: TextStyle(
+                  color: pctColor,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600)),
+          const Spacer(),
           ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: SizedBox(
