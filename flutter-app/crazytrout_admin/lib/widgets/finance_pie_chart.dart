@@ -145,13 +145,20 @@ class _LegendRow extends StatelessWidget {
       Container(width: 10, height: 10,
         decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
       const SizedBox(width: 8),
-      Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false,
+      Expanded(flex: 3, child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, softWrap: false,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: kInk))),
-      Text(pct, textAlign: TextAlign.right,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kMuted)),
-      const SizedBox(width: 8),
-      Text(amount, textAlign: TextAlign.right, maxLines: 1, softWrap: false,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kInk)),
+      const SizedBox(width: 4),
+      Flexible(
+        flex: 2,
+        child: Text(pct, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kMuted)),
+      ),
+      const SizedBox(width: 6),
+      Flexible(
+        flex: 3,
+        child: Text(amount, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kInk)),
+      ),
     ]);
   }
 }
