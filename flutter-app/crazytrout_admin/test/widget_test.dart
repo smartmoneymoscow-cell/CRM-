@@ -94,10 +94,10 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle(const Duration(seconds: 10));
+      await tester.pump(const Duration(seconds: 5));
 
       await tester.tap(find.text('Отчёты'));
-      await tester.pumpAndSettle(const Duration(seconds: 10));
+      await tester.pump(const Duration(seconds: 5));
 
       // Заголовок вкладки по умолчанию
       expect(find.text('Финансы и метрики'), findsOneWidget);
