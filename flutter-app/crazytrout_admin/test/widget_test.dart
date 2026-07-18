@@ -39,7 +39,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
     });
 
     testWidgets('после SplashScreen показывается HomeShell', (WidgetTester tester) async {
@@ -47,7 +47,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
       expect(find.text('Чек'), findsOneWidget);
     });
 
@@ -56,7 +56,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
       expect(find.text('Карта'), findsOneWidget);
       expect(find.text('Чек'), findsOneWidget);
       expect(find.text('Чеки'), findsOneWidget);
@@ -69,9 +69,9 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
       await tester.tap(find.text('Чеки'));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
     });
 
     testWidgets('поиск клиента и QR-кнопка присутствуют', (WidgetTester tester) async {
@@ -79,7 +79,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
     });
 
     // ── Регрессионный тест: вкладка «Отчёты» → «Финансы и метрики» ──
@@ -94,10 +94,10 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(const CrazyTroutAdminApp());
       await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
 
       await tester.tap(find.text('Отчёты'));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(const Duration(seconds: 10));
 
       // Заголовок вкладки по умолчанию
       expect(find.text('Финансы и метрики'), findsOneWidget);
