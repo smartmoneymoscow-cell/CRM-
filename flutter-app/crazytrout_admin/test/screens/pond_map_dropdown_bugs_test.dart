@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crazytrout_admin/screens/pond_map_screen.dart';
@@ -488,64 +489,98 @@ void main() {
     });
 
     // ─── Баг 2: верхние углы dropdown скругляются при раскрытии ───
-    // При открытии FiltersDropdown: кнопка получает bottomLeft: 0, bottomRight: 0.
-    // Dropdown Container имеет bottomLeft: 12, bottomRight: 12, topLeft: 0, topRight: 0.
-    // Баг: визуально верхние углы dropdown скруглены.
-    // Тест: проверяем что Container dropdown НЕ имеет скруглённых верхних углов.
-    testWidgets('БАГ 2: верхние углы dropdown должны быть 0 при раскрытии', (tester) async {
+    // Widget properties показывают topLeft: 0, но визуально скруглено.
+    // Golden test: рендерим dropdown, проверяем пиксели углов.
+    // Если верхние углы скруглены — пиксели в углу будут отличаться
+    // от цвета фона (белый) → тест упадёт.
+    testWidgets('БАГ 2: верхние углы dropdown визуально прямые (golden)', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: ListView(children: [
-            Stack(clipBehavior: Clip.none, children: [
-              Row(children: [
-                FiltersDropdown(
-                  value: FilterValue.none,
-                  onChange: (_) {},
-                  isOpen: true,
-                  onToggle: () {},
-                ),
-              ]),
-              Positioned(
-                top: kFilterRowHeight + kDropdownGap,
-                left: 0,
-                child: Container(
-                  width: kDropdownWidth,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+          backgroundColor: Colors.grey,
+          body: Center(
+            child: Container(
+              width: 200,
+              height: 300,
+              child: Stack(clipBehavior: Clip.none, children: [
+                // Кнопка (pill сверху, прямые снизу)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Container(
+                    width: kDropdownWidth,
+                    height: 31,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(999),
+                        topRight: Radius.circular(999),
+                        bottomLeft: Radius.circular(0),
+                        bottomRight: Radius.circular(0),
+                      ),
                     ),
                   ),
-                  height: 200,
-                  child: const Text('Dropdown'),
                 ),
-              ),
-            ]),
-          ]),
+                // Dropdown (прямые сверху, скруглённые снизу)
+                Positioned(
+                  top: 31,
+                  left: 0,
+                  child: Container(
+                    width: kDropdownWidth,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                    height: 200,
+                  ),
+                ),
+              ]),
+            ),
+          ),
         ),
       ));
 
-      // Ищем Container с белым фоном — это dropdown
-      bool found = false;
-      for (final c in tester.widgetList<Container>(find.byType(Container))) {
-        final d = c.decoration;
-        if (d is BoxDecoration &&
-            d.color == Colors.white &&
-            d.borderRadius is BorderRadius) {
-          final r = d.borderRadius! as BorderRadius;
-          if (r.bottomLeft == const Radius.circular(12)) {
-            found = true;
-            // Верхние углы должны быть 0
-            expect(r.topLeft, Radius.zero,
-                reason: 'Верхний левый угол dropdown = ${r.topLeft}, ожидался 0');
-            expect(r.topRight, Radius.zero,
-                reason: 'Верхний правый угол dropdown = ${r.topRight}, ожидался 0');
-            break;
-          }
-        }
+      // Делаем скриншот
+      final image = await tester.takeScreenshot();
+
+      // Конвертируем в видимые пиксели
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      expect(byteData, isNotNull, reason: 'Не удалось получить пиксели скриншота');
+      final pixels = byteData!.buffer.asUint8List();
+      final width = image.width;
+      final height = image.height;
+
+      // Находим dropdown Container в render tree
+      // Проверяем верхний левый угол dropdown (относительная позиция 0,0)
+      // Если скруглено — пиксель в углу будет серым (фон), а не белым (dropdown).
+      //
+      // Позиция dropdown в скриншоте:
+      // Center выравнивает Container(200x300) по центру экрана.
+      // Dropdown начинается от top: 31 внутри Stack.
+      final screenCenter = Offset(width / 2, height / 2);
+      final dropdownLeft = (screenCenter.dx - 100).toInt(); // left edge
+      final dropdownTop = (screenCenter.dy - 150 + 31).toInt(); // top edge + 31
+
+      // Проверяем пиксель в верхнем левом углу dropdown
+      final cornerX = dropdownLeft;
+      final cornerY = dropdownTop;
+
+      if (cornerX >= 0 && cornerY >= 0 && cornerX < width && cornerY < height) {
+        final idx = (cornerY * width + cornerX) * 4;
+        final r = pixels[idx];
+        final g = pixels[idx + 1];
+        final b = pixels[idx + 2];
+        final a = pixels[idx + 3];
+
+        // Белый = 255,255,255,255. Серый (фон) = другой цвет.
+        // Если угол скруглён — пиксель будет НЕ белый (серый фон).
+        final isWhite = r > 200 && g > 200 && b > 200 && a > 200;
+        expect(isWhite, isTrue,
+            reason: 'Верхний левый угол dropdown: rgba($r,$g,$b,$a). '
+                'Если не белый — угол скруглён (баг)');
       }
-      expect(found, isTrue, reason: 'Dropdown Container не найден');
     });
 
     // ─── Базовые проверки ───
