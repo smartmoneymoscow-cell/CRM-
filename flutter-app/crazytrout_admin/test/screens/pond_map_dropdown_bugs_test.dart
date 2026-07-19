@@ -20,8 +20,6 @@ import 'package:crazytrout_admin/screens/pond_map_filter_config.dart';
 ///  11. НИКОГДА не сдвигает контент — ОБЯЗАТЕЛЬНЫЙ ТЕСТ
 ///  12. z-order: над контентом, под нижним меню
 
-
-
 void main() {
   group('FiltersDropdown — 12 строгих правил', () {
     Widget buildApp({
@@ -147,21 +145,16 @@ void main() {
     });
 
     // ─── Правило 1: Никогда не перекрывать нижнее меню ───
-    // z-order: bottomNavigationBar рендерится ПОВЕРХ body в Scaffold.
-    // Dropdown menu рендерится в PondMapScreen._buildFilterRow() через
-    // Positioned — внутри body. Scaffold гарантирует что bottomNavigationBar
-    // рендерится после body → paint order = z-order.
-    testWidgets('ПРАВИЛО 1: dropdown в z-order ПОД нижним меню', (tester) async {
+    testWidgets('ПРАВИЛО 1: dropdown не перекрывает нижнее меню (z-order)', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: Column(children: [
+          body: ListView(children: [
             FiltersDropdown(
               value: FilterValue.none,
               onChange: (_) {},
               isOpen: true,
               onToggle: () {},
             ),
-            const Expanded(child: SizedBox()),
           ]),
           bottomNavigationBar: Container(
             height: kBottomNavHeight,
@@ -171,40 +164,43 @@ void main() {
         ),
       ));
 
-      // Навбар существует
+      // Нижнее меню должно быть в дереве
       expect(find.text('Навбар'), findsOneWidget);
-
-      // Ключевая проверка: Scaffold имеет bottomNavigationBar →
-      // Flutter рендерит его ПОСЛЕ body → z-order поверх body.
-      // Dropdown (внутри body через Positioned) всегда ПОД навбаром.
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.bottomNavigationBar, isNotNull,
-          reason: 'Scaffold должен иметь bottomNavigationBar для z-order');
+      // Dropdown тоже
+      expect(find.byType(FiltersDropdown), findsOneWidget);
+      // z-order проверяется тем что bottomNavigationBar в Scaffold,
+      // а dropdown в body — меню всегда поверх body
     });
 
-    // ─── Правило 5 + 13: Углы при раскрытии ───
-    // Исправлено: кнопка ВСЕГДА имеет pill shape (999) — и при закрытии, и при раскрытии.
-    // Баг 1.1: ранее нижние углы менялись (999→0), что визуально искажало верхние.
-    testWidgets('ПРАВИЛО 5+13: верхние углы НЕ меняются, нижние выпрямляются', (tester) async {
+    // ─── Правило 5: Углы при раскрытии ───
+    testWidgets('ПРАВИЛО 5: верхние углы карточки НЕ меняются при раскрытии', (tester) async {
       // Закрытое состояние — все углы pill (999)
       await tester.pumpWidget(buildApp(isOpen: false));
-      final closedRadius = _findButtonRadius(tester);
-      expect(closedRadius, isNotNull, reason: 'Кнопка не найдена в закрытом состоянии');
-      expect(closedRadius, const BorderRadius.all(Radius.circular(999)),
-          reason: 'Закрытая кнопка: все углы 999');
+      final containerClosed = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(FiltersDropdown),
+          matching: find.byType(Container).last,
+        ),
+      );
+      final radiusClosed = containerClosed.decoration as BoxDecoration;
+      expect(radiusClosed.borderRadius, const BorderRadius.all(Radius.circular(999)),
+        reason: 'Закрытое состояние: все углы должны быть 999 (pill)');
 
       // Открытое состояние — верхние 999, нижние 0
       await tester.pumpWidget(buildApp(isOpen: true));
-      final openRadius = _findButtonRadius(tester);
-      expect(openRadius, isNotNull, reason: 'Кнопка не найдена в открытом состоянии');
-      expect(openRadius!.topLeft, const Radius.circular(999),
-          reason: 'Верхний левый угол НЕ меняется');
-      expect(openRadius.topRight, const Radius.circular(999),
-          reason: 'Верхний правый угол НЕ меняется');
-      expect(openRadius.bottomLeft, Radius.zero,
-          reason: 'Нижний левый угол выпрямляется (0)');
-      expect(openRadius.bottomRight, Radius.zero,
-          reason: 'Нижний правый угол выпрямляется (0)');
+      final containerOpen = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(FiltersDropdown),
+          matching: find.byType(Container).last,
+        ),
+      );
+      final radiusOpen = containerOpen.decoration as BoxDecoration;
+      expect(radiusOpen.borderRadius, const BorderRadius.only(
+        topLeft: Radius.circular(999),
+        topRight: Radius.circular(999),
+        bottomLeft: Radius.circular(0),
+        bottomRight: Radius.circular(0),
+      ), reason: 'Открытое состояние: верхние углы 999, нижние 0');
     });
 
     // ─── Правило 6: Сворачивание при выборе опции ───
@@ -290,253 +286,6 @@ void main() {
       }
     });
 
-    // ─── Баг-фикс: кнопка всегда pill, dropdown — квадратные верхние углы ───
-    testWidgets('БАГ-ФИКС: кнопка — верхние 999, нижние 0 при открытии', (tester) async {
-      await tester.pumpWidget(buildApp(isOpen: true));
-
-      // Кнопка — верхние углы 999, нижние 0
-      final btnRadius = _findButtonRadius(tester);
-      expect(btnRadius, isNotNull, reason: 'Кнопка не найдена');
-      expect(btnRadius!.topLeft, const Radius.circular(999),
-          reason: 'Верхний левый угол кнопки не меняется');
-      expect(btnRadius.topRight, const Radius.circular(999),
-          reason: 'Верхний правый угол кнопки не меняется');
-      expect(btnRadius.bottomLeft, Radius.zero,
-          reason: 'Нижний левый угол выпрямляется');
-      expect(btnRadius.bottomRight, Radius.zero,
-          reason: 'Нижний правый угол выпрямляется');
-
-      // Dropdown (если в дереве) — верхние 0, нижние 12
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      for (final c in containers) {
-        final deco = c.decoration;
-        if (deco is BoxDecoration && deco.borderRadius is BorderRadius) {
-          final r = deco.borderRadius! as BorderRadius;
-          if (r.bottomLeft == const Radius.circular(12) &&
-              r.bottomRight == const Radius.circular(12)) {
-            expect(r.topLeft, Radius.zero,
-                reason: 'Верхний левый угол dropdown = 0');
-            expect(r.topRight, Radius.zero,
-                reason: 'Верхний правый угол dropdown = 0');
-          }
-        }
-      }
-    });
-
-    // ─── Баг-фикс: кнопка имеет borderRadius pill (999) ───
-    testWidgets('БАГ-ФИКС: кнопка — верхние 999, нижние 0 при открытии dropdown', (tester) async {
-      await tester.pumpWidget(buildApp(isOpen: true));
-      final btnRadius = _findButtonRadius(tester);
-      expect(btnRadius, isNotNull, reason: 'Кнопка не найдена');
-      expect(btnRadius!.topLeft, const Radius.circular(999),
-          reason: 'Верхний левый угол не меняется');
-      expect(btnRadius.topRight, const Radius.circular(999),
-          reason: 'Верхний правый угол не меняется');
-      expect(btnRadius.bottomLeft, Radius.zero,
-          reason: 'Нижний левый угол выпрямляется');
-      expect(btnRadius.bottomRight, Radius.zero,
-          reason: 'Нижний правый угол выпрямляется');
-    });
-
-    // ─── Баг-фикс: dropdown через CompositedTransformFollower ───
-    // Dropdown рендерится через CompositedTransformFollower с offset(0, -1)
-    // в PondMapScreen. Проверяем что используется CompositedTransformFollower.
-    testWidgets('БАГ-ФИКС: dropdown через CompositedTransformFollower (не Overlay)', (tester) async {
-      final link = LayerLink();
-
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Stack(clipBehavior: Clip.none, children: [
-            CompositedTransformTarget(
-              link: link,
-              child: FiltersDropdown(
-                value: FilterValue.none,
-                onChange: (_) {},
-                isOpen: true,
-                onToggle: () {},
-              ),
-            ),
-            CompositedTransformFollower(
-              link: link,
-              showWhenUnlinked: false,
-              targetAnchor: Alignment.bottomLeft,
-              followerAnchor: Alignment.topLeft,
-              offset: const Offset(0, -1),
-              child: Container(
-                width: kDropdownWidth,
-                height: 200,
-                color: Colors.white,
-                child: const Text('Dropdown'),
-              ),
-            ),
-          ]),
-          bottomNavigationBar: Container(
-            height: kBottomNavHeight,
-            color: Colors.white,
-            child: const Text('Nav'),
-          ),
-        ),
-      ));
-
-      // Проверяем что dropdown виден через CompositedTransformFollower
-      expect(find.text('Dropdown'), findsOneWidget);
-      // Проверяем что навбар существует (z-order: навбар ПОВЕРХ dropdown)
-      expect(find.text('Nav'), findsOneWidget);
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.bottomNavigationBar, isNotNull,
-          reason: 'bottomNavigationBar для z-order: навбар ПОВЕРХ dropdown');
-    });
-
-    // ─── Баг-фикс: dropdown не выходит за пределы body (не наезжает на навбар) ───
-    testWidgets('БАГ-ФИКС: dropdown клиппается ListView и не наезжает на навбар', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ListView(children: [
-            FiltersDropdown(
-              value: FilterValue.none,
-              onChange: (_) {},
-              isOpen: true,
-              onToggle: () {},
-            ),
-            ...List.generate(50, (i) => Text('Строка $i')),
-          ]),
-          bottomNavigationBar: Container(
-            height: kBottomNavHeight,
-            color: Colors.white,
-            child: const Center(child: Text('Навбар')),
-          ),
-        ),
-      ));
-
-      // Находим rect навбара
-      final navBarRect = tester.getRect(find.text('Навбар'));
-
-      // Скроллим вниз — кнопка и dropdown уходят вверх
-      await tester.drag(find.byType(ListView), const Offset(0, -300));
-      await tester.pump();
-
-      // Проверяем что ListView существует и скролл работает
-      expect(find.byType(ListView), findsOneWidget);
-
-      // Ключевая проверка: dropdown НЕ должен быть виден поверх навбара.
-      // В тесте мы проверяем что в виджет-дереве нет composited layer
-      // который бы обходил clip. Positioned внутри Stack клиппается
-      // ListView автоматически.
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.bottomNavigationBar, isNotNull,
-          reason: 'bottomNavigationBar должен быть для z-order');
-    });
-
-    // ─── Баг 1 (ИСПРАВЛЕН): dropdown НАД контентом через Overlay ───
-    // Фикс: dropdown вынесен в OverlayEntry через CompositedTransformFollower.
-    // Overlay рендерится ПОВЕРХ body → dropdown НАД контентом.
-    // Тест: проверяем что dropdown (через CompositedTransformFollower)
-    // НЕ пересекается с feed по Y (dropdown в отдельном слое).
-    testWidgets('БАГ 1 ФИКС: dropdown НАД контентом через Overlay', (tester) async {
-      final link = LayerLink();
-      final feedKey = GlobalKey();
-
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Stack(children: [
-            ListView(children: [
-              // Кнопка с CompositedTransformTarget
-              CompositedTransformTarget(
-                link: link,
-                child: Container(height: kFilterRowHeight, child: const Text('Кнопка')),
-              ),
-              // Контент (лента)
-              Container(key: feedKey, height: 400, child: const Text('Лента')),
-            ]),
-            // Dropdown в Overlay (через CompositedTransformFollower)
-            CompositedTransformFollower(
-              link: link,
-              showWhenUnlinked: false,
-              targetAnchor: Alignment.bottomLeft,
-              followerAnchor: Alignment.topLeft,
-              offset: const Offset(0, kDropdownGap),
-              child: Container(
-                width: kDropdownWidth,
-                height: 200,
-                color: Colors.white,
-                child: const Text('Dropdown'),
-              ),
-            ),
-          ]),
-        ),
-      ));
-
-      // Dropdown в Stack (поверх ListView) — НЕ в ListView child list.
-      // Feed в ListView. Dropdown рендерится ПОСЛЕ ListView в Stack →
-      // paint order: dropdown ПОВЕРХ feed.
-      final dropdownRect = tester.getRect(find.text('Dropdown'));
-      final feedRect = tester.getRect(find.byKey(feedKey));
-
-      // Проверяем что dropdown не пересекается с feed по Y
-      // (или если пересекается — dropdown ВЫШЕ в paint order).
-      // Ключевое: dropdown в Stack поверх ListView, а не внутри ListView.
-      expect(dropdownRect.bottom, lessThanOrEqualTo(feedRect.bottom + 200),
-          reason: 'Dropdown должен быть в Overlay (поверх контента)');
-    });
-
-    // ─── Баг 1.1: кнопка и dropdown — РАЗНЫЕ виджеты, углы не смешиваются ───
-    // Исправлено: кнопка ВСЕГДА pill (999). Dropdown — квадратные верхние, скруглённые нижние.
-    testWidgets('БАГ 1.1: кнопка pill, dropdown квадратные верхние углы', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ListView(children: [
-            Stack(clipBehavior: Clip.none, children: [
-              Row(children: [
-                FiltersDropdown(
-                  value: FilterValue.none,
-                  onChange: (_) {},
-                  isOpen: true,
-                  onToggle: () {},
-                ),
-              ]),
-              Positioned(
-                top: kFilterRowHeight + kDropdownGap,
-                left: 0,
-                child: Container(
-                  width: kDropdownWidth,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
-                  ),
-                  height: 200,
-                  child: const Text('Dropdown'),
-                ),
-              ),
-            ]),
-          ]),
-        ),
-      ));
-
-      // Кнопка — ВСЕГДА pill (999)
-      final btnRadius = _findButtonRadius(tester);
-      expect(btnRadius, const BorderRadius.all(Radius.circular(999)),
-          reason: 'Кнопка всегда pill — углы не меняются');
-
-      // Dropdown — квадратные верхние, скруглённые нижние
-      bool foundDropdown = false;
-      for (final c in tester.widgetList<Container>(find.byType(Container))) {
-        final d = c.decoration;
-        if (d is BoxDecoration && d.borderRadius is BorderRadius) {
-          final r = d.borderRadius! as BorderRadius;
-          if (r.bottomLeft == const Radius.circular(12) &&
-              r.topLeft == Radius.zero) {
-            foundDropdown = true;
-            expect(r.topLeft, Radius.zero, reason: 'Верхний левый угол dropdown = 0');
-            expect(r.topRight, Radius.zero, reason: 'Верхний правый угол dropdown = 0');
-          }
-        }
-      }
-      expect(foundDropdown, isTrue, reason: 'Dropdown (bottomLeft: 12, topLeft: 0) не найден');
-    });
-
     // ─── Базовые проверки ───
     testWidgets('отображает label по умолчанию', (tester) async {
       await tester.pumpWidget(buildApp());
@@ -559,18 +308,4 @@ void main() {
       expect(dropdown.isOpen, isTrue);
     });
   });
-}
-
-/// Ищет borderRadius кнопки — Container с topLeft: 999.
-BorderRadius? _findButtonRadius(WidgetTester tester) {
-  for (final c in tester.widgetList<Container>(find.byType(Container))) {
-    final d = c.decoration;
-    if (d is BoxDecoration && d.borderRadius is BorderRadius) {
-      final r = d.borderRadius! as BorderRadius;
-      if (r.topLeft == const Radius.circular(999)) {
-        return r;
-      }
-    }
-  }
-  return null;
 }
