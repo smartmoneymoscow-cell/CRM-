@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crazytrout_admin/screens/pond_map_screen.dart';
 import 'package:crazytrout_admin/screens/pond_map_filter_config.dart';
@@ -21,24 +20,7 @@ import 'package:crazytrout_admin/screens/pond_map_filter_config.dart';
 ///  11. НИКОГДА не сдвигает контент — ОБЯЗАТЕЛЬНЫЙ ТЕСТ
 ///  12. z-order: над контентом, под нижним меню
 
-/// Hit test helper — возвращает результат hit test в заданной позиции
-HitTestResult hitTestOnScreen(WidgetTester tester, Offset position) {
-  return tester.hitTestOnBinding(position);
-}
 
-/// Извлекает имя виджета из HitTestResult
-String _getHitWidget(HitTestResult result) {
-  for (final entry in result.path) {
-    final target = entry.target;
-    if (target is RenderBox) {
-      final widget = target.debugCreator;
-      if (widget != null) {
-        return widget.toString();
-      }
-    }
-  }
-  return 'unknown';
-}
 
 void main() {
   group('FiltersDropdown — 12 строгих правил', () {
@@ -453,20 +435,21 @@ void main() {
           reason: 'bottomNavigationBar должен быть для z-order');
     });
 
-    // ─── Баг: dropdown ПОД контентом (лента бронирований) ───
-    // В реальном PondMapScreen dropdown рендерится через Positioned в Stack
-    // внутри _buildFilterRow(). Лента (_buildFeed) рендерится ПОСЛЕ в ListView
-    // → paint order: лента ПОВЕРХ dropdown. Это БАГ.
-    // Тест проверяет: при тапе в область dropdown — hit test попадает
-    // в контент ПОД ним (ленту), а НЕ в dropdown.
-    testWidgets('БАГ: dropdown ПОД лентой — hit test попадает в контент, не в dropdown', (tester) async {
-      // Строим дерево как в реальном PondMapScreen:
-      // Stack(dropdown) → потом контент (лента) в ListView
+    // ─── Баг 1: dropdown ПОД контентом (лента бронирований) ───
+    // В ListView дети рендерятся по порядку. _buildFilterRow (с dropdown)
+    // идёт ПЕРЕД _buildFeed → лента рендерится ПОСЛЕ dropdown →
+    // paint order: лента ПОВЕРХ dropdown. Это БАГ.
+    // Тест: проверяем render tree order — feed RenderBox идёт ПОСЛЕ
+    // filter row RenderBox в child list ListView → рендерится поверх.
+    testWidgets('БАГ 1: dropdown контент рендерится ПОСЛЕ filter row в ListView', (tester) async {
+      final filterKey = GlobalKey();
+      final feedKey = GlobalKey();
+
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: ListView(children: [
             // _buildFilterRow — Stack с dropdown
-            Stack(clipBehavior: Clip.none, children: [
+            Stack(key: filterKey, clipBehavior: Clip.none, children: [
               Row(children: [
                 FiltersDropdown(
                   value: FilterValue.none,
@@ -475,7 +458,6 @@ void main() {
                   onToggle: () {},
                 ),
               ]),
-              // Dropdown через Positioned (как в реальном коде)
               Positioned(
                 top: kFilterRowHeight + kDropdownGap,
                 left: 0,
@@ -483,36 +465,54 @@ void main() {
                   width: kDropdownWidth,
                   height: 200,
                   color: Colors.white,
-                  child: const Text('Dropdown контент'),
+                  child: const Text('Dropdown'),
                 ),
               ),
             ]),
-            // Лента бронирований ПОСЛЕ filter row
-            Container(
-              height: 400,
-              color: Colors.blue,
-              child: const Text('Лента бронирований'),
-            ),
+            // Лента ПОСЛЕ filter row — рендерится поверх dropdown
+            Container(key: feedKey, height: 400, color: Colors.blue,
+              child: const Text('Лента')),
           ]),
         ),
       ));
 
-      // Проверяем hit test: тап в позицию dropdown
-      final dropdownCenter = tester.getCenter(find.text('Dropdown контент'));
-      final hitResult = hitTestOnScreen(tester, dropdownCenter);
+      // Получаем render objects
+      final filterRO = filterKey.currentContext!.findRenderObject()!;
+      final feedRO = feedKey.currentContext!.findRenderObject()!;
 
-      // Если БАГ: hit test попадает в ленту (Container blue), НЕ в dropdown.
-      // Dropdown НАД контентом → hit test должен попасть в dropdown.
-      final hitWidget = _getHitWidget(hitResult);
-      expect(hitWidget, isNot(equals('Лента бронирований')),
-          reason: 'Dropdown должен быть НАД лентой, а не ПОД ней');
+      // Находим parent (RenderAbstractViewport / RenderSliver)
+      final filterParent = filterRO.parent;
+      final feedParent = feedRO.parent;
+
+      // Оба в одном parent (ListView)
+      // В render tree: child, который ПОСЛЕ в списке, рендерится ПОВЕРХ.
+      // Проверяем через paint order — feed рендерится после filter row.
+      //
+      // Простой способ: проверяем что dropdown и feed пересекаются по Y,
+      // но feed paint order выше (рисуется позже).
+      final filterRect = tester.getRect(find.byKey(filterKey));
+      final feedRect = tester.getRect(find.byKey(feedKey));
+
+      // Dropdown (200px высота) начинается от filterRect.top + kFilterRowHeight
+      final dropdownBottom = filterRect.top + kFilterRowHeight + 200;
+      final feedTop = feedRect.top;
+
+      // Если dropdown пересекается с feed по Y — значит feed рендерится
+      // ПОВЕРХ dropdown (т.к. feed идёт после в ListView child list).
+      // Это БАГ: dropdown должен быть НАД контентом.
+      if (dropdownBottom > feedTop) {
+        // Пересекаются — feed поверх dropdown = БАГ
+        fail('Dropdown (bottom=$dropdownBottom) пересекается с feed (top=$feedTop). '
+            'Лента рендерится ПОВЕРХ dropdown — это БАГ z-order.');
+      }
     });
 
-    // ─── Баг: верхние углы dropdown скругляются при раскрытии ───
-    // В реальном коде dropdown Container имеет topLeft: 0, topRight: 0.
-    // Но визуально верхние углы скруглены. Тест проверяет что
-    // при открытии dropdown его верхние углы РОВНО 0.
-    testWidgets('БАГ: верхние углы dropdown должны быть 0 при раскрытии', (tester) async {
+    // ─── Баг 2: верхние углы dropdown скругляются при раскрытии ───
+    // При открытии FiltersDropdown: кнопка получает bottomLeft: 0, bottomRight: 0.
+    // Dropdown Container имеет bottomLeft: 12, bottomRight: 12, topLeft: 0, topRight: 0.
+    // Баг: визуально верхние углы dropdown скруглены.
+    // Тест: проверяем что Container dropdown НЕ имеет скруглённых верхних углов.
+    testWidgets('БАГ 2: верхние углы dropdown должны быть 0 при раскрытии', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: ListView(children: [
@@ -535,11 +535,10 @@ void main() {
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(12),
                       bottomRight: Radius.circular(12),
-                      // topLeft и topRight НЕ указаны = 0
                     ),
                   ),
                   height: 200,
-                  child: const Text('Dropdown контент'),
+                  child: const Text('Dropdown'),
                 ),
               ),
             ]),
@@ -547,21 +546,26 @@ void main() {
         ),
       ));
 
-      // Ищем Container dropdown — с borderRadius bottomLeft: 12
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      for (final c in containers) {
+      // Ищем Container с белым фоном — это dropdown
+      bool found = false;
+      for (final c in tester.widgetList<Container>(find.byType(Container))) {
         final d = c.decoration;
-        if (d is BoxDecoration && d.borderRadius is BorderRadius) {
+        if (d is BoxDecoration &&
+            d.color == Colors.white &&
+            d.borderRadius is BorderRadius) {
           final r = d.borderRadius! as BorderRadius;
           if (r.bottomLeft == const Radius.circular(12)) {
-            // Нашли dropdown — верхние углы должны быть 0
+            found = true;
+            // Верхние углы должны быть 0
             expect(r.topLeft, Radius.zero,
-                reason: 'Верхний левый угол dropdown = 0, а не ${r.topLeft}');
+                reason: 'Верхний левый угол dropdown = ${r.topLeft}, ожидался 0');
             expect(r.topRight, Radius.zero,
-                reason: 'Верхний правый угол dropdown = 0, а не ${r.topRight}');
+                reason: 'Верхний правый угол dropdown = ${r.topRight}, ожидался 0');
+            break;
           }
         }
       }
+      expect(found, isTrue, reason: 'Dropdown Container не найден');
     });
 
     // ─── Базовые проверки ───
