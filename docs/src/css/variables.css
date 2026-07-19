@@ -19,6 +19,11 @@
   --kGreen:      #3FA66B;
   --kRed:        #B4483A;
 
+  /* ─── Уровни: ring (совпадает с color) ─── */
+  --level-premium-ring:  #B8862E;
+  --level-std-ring:      #8B94A0;
+  --level-basic-ring:    #8C5C34;
+
   /* ─── Уровни клиентов (из kLevelStyles) ─── */
   --level-premium-color:  #B8862E;
   --level-premium-top:    #FFE18A;

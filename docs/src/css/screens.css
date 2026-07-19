@@ -158,8 +158,6 @@
 .screen-receipt .catch-row {
   margin-bottom: 12px;
   padding: 10px;
-  background: #F9F6EF;
-  border: 1px solid #ECE5D4;
   border-radius: var(--r-lg);
 }
 .screen-receipt .catch-row .catch-breed-row {

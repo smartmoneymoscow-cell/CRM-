@@ -12,6 +12,7 @@ let currentCatches = [];
 let paymentMethod = 'card';
 let isFiscal = true;
 let catchSeq = 1;
+let receiptSeq = 1247;
 
 export function renderReceipt() {
   const el = document.createElement('div');
@@ -243,8 +244,8 @@ function attachGuestHandler() {
       <div class="guest-card">
         <div class="guest-icon"><img src="src/assets/avatars/incognito.png" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
         <div>
-          <div class="guest-label">Гость</div>
-          <div class="guest-meta">Без анкеты · Гостевой тариф</div>
+          <div class="guest-label">Гость · без анкеты</div>
+          <div class="guest-meta">Без регистрации</div>
         </div>
         <button class="clear-btn" id="clear-guest">✕</button>
       </div>
@@ -373,8 +374,11 @@ function buildReceiptData() {
   let total = currentTariff.price;
   catches.forEach(c => total += c.sum);
 
+  receiptSeq += 1;
+  const fdNum = 10000 + receiptSeq;
   return {
-    id: String(Date.now()).slice(-6),
+    id: String(receiptSeq).padStart(3, '0'),
+    number: receiptSeq,
     clientId: currentClient?.id || null,
     clientName: isGuest ? 'Гость' : (currentClient?.name || 'Неизвестен'),
     date: new Date().toLocaleString('ru-RU'),
@@ -386,6 +390,10 @@ function buildReceiptData() {
     paymentMethod,
     paymentLabel: paymentMethod === 'cash' ? 'Наличными' : paymentMethod === 'card' ? 'Картой' : 'Счет заведения',
     fiscal: isFiscal,
+    fdNumber: fdNum,
+    fiscalDoc: `#${fdNum}`,
+    fpd: String(fdNum * 31 % 10000000000).padStart(10, '0'),
+    buyerEmail: currentClient?.phone || null,
   };
 }
 
@@ -429,9 +437,14 @@ function showReceiptResult(receipt) {
       </div>
       ${receipt.fiscal ? `
         <div style="margin-top:12px;font-size:11px;color:var(--kMuted2);text-align:center;">
-          ФН: 8710000100412345 · ФД: ${receipt.id}<br>Сайт ФНС: nalog.gov.ru
+          ККТ: 0001234567001234 · ФН: 9999078900001234<br>
+          ФД №: ${receipt.fdNumber} · Проверка: nalog.ru
         </div>
-      ` : ''}
+      ` : `
+        <div style="margin-top:12px;font-size:11px;color:var(--kMuted2);text-align:center;">
+          Чек без фискального накопителя
+        </div>
+      `}
       <div style="display:flex;gap:12px;margin-top:20px;">
         <button class="btn btn-outline" id="receipt-print" style="flex:1;">🖨️ Печать</button>
         <button class="btn btn-primary" id="receipt-send" style="flex:1;">💬 В чат</button>
