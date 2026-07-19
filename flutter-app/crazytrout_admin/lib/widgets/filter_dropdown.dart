@@ -45,9 +45,7 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
   final GlobalKey _fieldKey = GlobalKey();
   final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
-  bool _open;
-
-  _FilterDropdownState() : _open = false;
+  late bool _open;
 
   @override
   void initState() {
