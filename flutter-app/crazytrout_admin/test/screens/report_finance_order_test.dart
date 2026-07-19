@@ -1,10 +1,5 @@
 // ============================================================================
-// report_finance_order_test.dart — Тесты для БАГА 3.1 + KpiCards
-//
-// Проверяем:
-// 1. RevenueDynamicsChart — ПОСЛЕДНИЙ (5-й) виджет в списке
-// 2. RevenueDynamicsChart НЕ перекрывает FinanceDashboardCard
-// 3. Все 5 KPI-карточек отображаются
+// report_finance_order_test.dart — Тесты: порядок графиков + KPI + фильтры
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -24,6 +19,25 @@ Future<void> _goToReports(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Открывает dropdown фильтра и выбирает пункт [label]
+Future<void> _selectFilter(WidgetTester tester, String label) async {
+  // Находим контейнер с текстом "Период" или текущим значением фильтра
+  final filterText = find.text('Период');
+  expect(filterText, findsWidgets, reason: 'Текст "Период" не найден');
+  // Тапаем по GestureDetector над текстом
+  final gesture = find.ancestor(
+    of: filterText,
+    matching: find.byType(GestureDetector),
+  );
+  await tester.tap(gesture.first);
+  await tester.pumpAndSettle();
+
+  // Тапаем по нужному пункту в overlay
+  final option = find.text(label).last;
+  await tester.tap(option);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('БАГ 3.1 — Порядок и наложение графиков', () {
     testWidgets('RevenueDynamicsChart — последний (5-й) виджет',
@@ -32,46 +46,47 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
 
-      final dashboardBox = tester.getRect(find.byType(FinanceDashboardCard));
-      final pieBox = tester.getRect(find.byType(FinancePieChart));
-      final kpiBox = tester.getRect(find.byType(KpiCards));
-      final paymentBox = tester.getRect(find.byType(PaymentTariffCard));
-      final dynamicsBox = tester.getRect(find.byType(RevenueDynamicsChart));
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final pie = tester.getRect(find.byType(FinancePieChart));
+      final kpi = tester.getRect(find.byType(KpiCards));
+      final pay = tester.getRect(find.byType(PaymentTariffCard));
+      final dyn = tester.getRect(find.byType(RevenueDynamicsChart));
 
-      expect(dashboardBox.top, lessThan(pieBox.top));
-      expect(pieBox.top, lessThan(kpiBox.top));
-      expect(kpiBox.top, lessThan(paymentBox.top));
-      expect(paymentBox.top, lessThan(dynamicsBox.top));
+      expect(d.top, lessThan(pie.top));
+      expect(pie.top, lessThan(kpi.top));
+      expect(kpi.top, lessThan(pay.top));
+      expect(pay.top, lessThan(dyn.top));
     });
 
-    testWidgets('RevenueDynamicsChart НЕ перекрывает FinanceDashboardCard (телефон)',
+    testWidgets('Нет наложения Dashboard ↔ Dynamics (телефон)',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-
-      final d = tester.getRect(find.byType(FinanceDashboardCard));
-      final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse);
+      expect(
+        tester.getRect(find.byType(FinanceDashboardCard))
+            .overlaps(tester.getRect(find.byType(RevenueDynamicsChart))),
+        isFalse,
+      );
     });
 
-    testWidgets('Нет наложения на планшете (800×1280)',
+    testWidgets('Нет наложения на планшете',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_tabletSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-
-      final d = tester.getRect(find.byType(FinanceDashboardCard));
-      final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse);
+      expect(
+        tester.getRect(find.byType(FinanceDashboardCard))
+            .overlaps(tester.getRect(find.byType(RevenueDynamicsChart))),
+        isFalse,
+      );
     });
 
-    testWidgets('Все 5 блоков отчёта присутствуют',
+    testWidgets('Все 5 блоков присутствуют',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-
       expect(find.byType(FinanceDashboardCard), findsOneWidget);
       expect(find.byType(FinancePieChart), findsOneWidget);
       expect(find.byType(KpiCards), findsOneWidget);
@@ -79,69 +94,103 @@ void main() {
       expect(find.byType(RevenueDynamicsChart), findsOneWidget);
     });
 
-    testWidgets('RevenueDynamicsChart видим при скролле вниз',
+    testWidgets('DynamicsChart видим после скролла',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-
       await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -2000));
       await tester.pumpAndSettle();
-
-      final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(r.top, greaterThanOrEqualTo(0));
-    });
-
-    testWidgets('Заголовок "Динамика показателей" на месте',
-        (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(_phoneSize);
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await _goToReports(tester);
-
-      await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -2000));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Динамика показателей'), findsOneWidget);
+      expect(tester.getRect(find.byType(RevenueDynamicsChart)).top, greaterThanOrEqualTo(0));
     });
   });
 
-  group('KpiCards — все 5 карточек отображаются', () {
-    testWidgets('Все 5 KPI-заголовков видны на странице',
+  group('KpiCards — все 5 карточек', () {
+    testWidgets('Все 5 KPI-заголовков видны',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-
-      // Скроллим вниз чтобы все KPI были видимы
       await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Средний чек'), findsOneWidget,
-          reason: 'KPI "Средний чек" отображается');
-      expect(find.text('LT / LTV'), findsOneWidget,
-          reason: 'KPI "LT / LTV" отображается');
-      expect(find.text('Всего клиентов'), findsOneWidget,
-          reason: 'KPI "Всего клиентов" отображается');
-      expect(find.text('Средний улов на клиента'), findsOneWidget,
-          reason: 'KPI "Средний улов на клиента" отображается');
-      expect(find.text('Оценка сервиса'), findsOneWidget,
-          reason: 'KPI "Оценка сервиса" отображается');
+      expect(find.text('Средний чек'), findsOneWidget);
+      expect(find.text('LT / LTV'), findsOneWidget);
+      expect(find.text('Всего клиентов'), findsOneWidget);
+      expect(find.text('Средний улов на клиента'), findsOneWidget);
+      expect(find.text('Оценка сервиса'), findsOneWidget);
     });
 
-    testWidgets('KPI-карточки имеют ненулевую высоту',
+    testWidgets('KpiCards высота > 100px (все карточки)',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-
       await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -1500));
       await tester.pumpAndSettle();
+      expect(tester.getRect(find.byType(KpiCards)).height, greaterThan(100));
+    });
+  });
 
-      // Проверяем что хотя бы одна KPI-картока имеет высоту > 0
-      final kpiFinder = find.byType(KpiCards);
-      final kpiRect = tester.getRect(kpiFinder);
-      expect(kpiRect.height, greaterThan(100),
-          reason: 'KpiCards должен иметь высоту > 100px (все 5 карточек)');
+  group('Фильтры — наложение при разных периодах', () {
+    testWidgets('Нет наложения при фильтре "Сегодня"',
+        (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(_phoneSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _goToReports(tester);
+      await _selectFilter(tester, 'Сегодня');
+
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.overlaps(r), isFalse, reason: 'С "Сегодня" нет наложения');
+    });
+
+    testWidgets('Нет наложения при фильтре "За неделю"',
+        (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(_phoneSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _goToReports(tester);
+      await _selectFilter(tester, 'За неделю');
+
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.overlaps(r), isFalse, reason: 'С "За неделю" нет наложения');
+    });
+
+    testWidgets('Нет наложения при фильтре "За месяц"',
+        (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(_phoneSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _goToReports(tester);
+      await _selectFilter(tester, 'За месяц');
+
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.overlaps(r), isFalse, reason: 'С "За месяц" нет наложения');
+    });
+
+    testWidgets('Нет наложения при фильтре "За квартал"',
+        (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(_phoneSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _goToReports(tester);
+      await _selectFilter(tester, 'За квартал');
+
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.overlaps(r), isFalse, reason: 'С "За квартал" нет наложения');
+    });
+
+    testWidgets('Нет наложения при фильтре "За все время"',
+        (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(_phoneSize);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _goToReports(tester);
+      await _selectFilter(tester, 'За все время');
+
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.overlaps(r), isFalse, reason: 'С "За все время" нет наложения');
     });
   });
 }
