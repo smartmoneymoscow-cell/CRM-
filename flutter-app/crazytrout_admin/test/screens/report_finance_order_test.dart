@@ -145,52 +145,52 @@ void main() {
       expect(d.overlaps(r), isFalse, reason: 'С "Сегодня" нет наложения');
     });
 
-    testWidgets('Нет наложения при фильтре "За неделю"',
+    testWidgets('Нет наложения при фильтре "Неделя"',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-      await _selectFilter(tester, 'За неделю');
+      await _selectFilter(tester, 'Неделя');
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "За неделю" нет наложения');
+      expect(d.overlaps(r), isFalse, reason: 'С "Неделя" нет наложения');
     });
 
-    testWidgets('Нет наложения при фильтре "За месяц"',
+    testWidgets('Нет наложения при фильтре "Месяц"',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-      await _selectFilter(tester, 'За месяц');
+      await _selectFilter(tester, 'Месяц');
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "За месяц" нет наложения');
+      expect(d.overlaps(r), isFalse, reason: 'С "Месяц" нет наложения');
     });
 
-    testWidgets('Нет наложения при фильтре "За квартал"',
+    testWidgets('Нет наложения при фильтре "Квартал"',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-      await _selectFilter(tester, 'За квартал');
+      await _selectFilter(tester, 'Квартал');
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "За квартал" нет наложения');
+      expect(d.overlaps(r), isFalse, reason: 'С "Квартал" нет наложения');
     });
 
-    testWidgets('Нет наложения при фильтре "За все время"',
+    testWidgets('Нет наложения при фильтре "Все вр."',
         (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-      await _selectFilter(tester, 'За все время');
+      await _selectFilter(tester, 'Все вр.');
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "За все время" нет наложения');
+      expect(d.overlaps(r), isFalse, reason: 'С "Все вр." нет наложения');
     });
   });
 }
