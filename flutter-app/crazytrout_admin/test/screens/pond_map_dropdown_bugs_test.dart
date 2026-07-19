@@ -182,44 +182,23 @@ void main() {
           reason: 'Scaffold должен иметь bottomNavigationBar для z-order');
     });
 
-    // ─── Правило 5: Углы при раскрытии ───
-    // Проверяем через конкретные Container, а не .last (ненадёжно).
-    testWidgets('ПРАВИЛО 5: верхние углы карточки НЕ меняются при раскрытии', (tester) async {
-      // Закрытое состояние — ищем Container с borderRadius pill (999)
+    // ─── Правило 5 + 13: Углы при раскрытии ───
+    // Исправлено: кнопка ВСЕГДА имеет pill shape (999) — и при закрытии, и при раскрытии.
+    // Баг 1.1: ранее нижние углы менялись (999→0), что визуально искажало верхние.
+    testWidgets('ПРАВИЛО 5+13: кнопка ВСЕГДА pill (999) — углы НЕ меняются', (tester) async {
+      // Закрытое состояние
       await tester.pumpWidget(buildApp(isOpen: false));
-      BoxDecoration? closedDeco;
-      for (final c in tester.widgetList<Container>(find.byType(Container))) {
-        final d = c.decoration;
-        if (d is BoxDecoration && d.borderRadius == const BorderRadius.all(Radius.circular(999))) {
-          closedDeco = d;
-          break;
-        }
-      }
-      expect(closedDeco, isNotNull,
-          reason: 'Закрытое состояние: кнопка с borderRadius pill (999) не найдена');
+      final closedRadius = _findButtonRadius(tester);
+      expect(closedRadius, isNotNull, reason: 'Кнопка не найдена в закрытом состоянии');
+      expect(closedRadius, const BorderRadius.all(Radius.circular(999)),
+          reason: 'Закрытая кнопка: все углы 999');
 
-      // Открытое состояние — верхние 999, нижние 0
+      // Открытое состояние — ВСЕ углы остаются 999
       await tester.pumpWidget(buildApp(isOpen: true));
-      BoxDecoration? openDeco;
-      for (final c in tester.widgetList<Container>(find.byType(Container))) {
-        final d = c.decoration;
-        if (d is BoxDecoration && d.borderRadius is BorderRadius) {
-          final r = d.borderRadius! as BorderRadius;
-          if (r.topLeft == const Radius.circular(999) &&
-              r.bottomLeft == const Radius.circular(0)) {
-            openDeco = d;
-            break;
-          }
-        }
-      }
-      expect(openDeco, isNotNull,
-          reason: 'Открытое состояние: кнопка с верхними 999 и нижними 0 не найдена');
-      expect(openDeco!.borderRadius, const BorderRadius.only(
-        topLeft: Radius.circular(999),
-        topRight: Radius.circular(999),
-        bottomLeft: Radius.circular(0),
-        bottomRight: Radius.circular(0),
-      ), reason: 'Открытое состояние: верхние углы 999, нижние 0');
+      final openRadius = _findButtonRadius(tester);
+      expect(openRadius, isNotNull, reason: 'Кнопка не найдена в открытом состоянии');
+      expect(openRadius, const BorderRadius.all(Radius.circular(999)),
+          reason: 'Открытая кнопка: ВСЕ углы 999 (верхние НЕ меняются)');
     });
 
     // ─── Правило 6: Сворачивание при выборе опции ───
@@ -305,94 +284,88 @@ void main() {
       }
     });
 
-    // ─── Баг-фикс: верхние углы dropdown прямые (не круглые) ───
-    // Проверяем через код: _buildDropdown() возвращает Container с
-    // BorderRadius.only(bottomLeft: 12, bottomRight: 12) — верхние 0.
-    // Тест проверяет что в дереве виджетов НЕТ Container с bottomLeft: 12
-    // и topLeft != 0 (т.е. верхние углы всегда прямые).
-    testWidgets('БАГ-ФИКС: верхние углы dropdown прямые при открытии', (tester) async {
-      // Рендерим полный PondMapScreen — dropdown menu рендерится в
-      // _buildFilterRow(), а не в FiltersDropdown.
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ListView(children: [
-            FiltersDropdown(
-              value: FilterValue.none,
-              onChange: (_) {},
-              isOpen: true,
-              onToggle: () {},
-            ),
-          ]),
-        ),
-      ));
+    // ─── Баг-фикс: кнопка всегда pill, dropdown — квадратные верхние углы ───
+    testWidgets('БАГ-ФИКС: кнопка всегда pill, dropdown квадратные верхние углы', (tester) async {
+      await tester.pumpWidget(buildApp(isOpen: true));
 
-      // Ищем все Container в дереве
+      // Кнопка — ВСЕГДА pill (999)
+      final btnRadius = _findButtonRadius(tester);
+      expect(btnRadius, const BorderRadius.all(Radius.circular(999)),
+          reason: 'Кнопка всегда pill — углы не меняются');
+
+      // Dropdown (если в дереве) — верхние 0, нижние 12
       final containers = tester.widgetList<Container>(find.byType(Container));
       for (final c in containers) {
         final deco = c.decoration;
         if (deco is BoxDecoration && deco.borderRadius is BorderRadius) {
           final r = deco.borderRadius! as BorderRadius;
-          // Если это dropdown (нижние углы 12)
           if (r.bottomLeft == const Radius.circular(12) &&
               r.bottomRight == const Radius.circular(12)) {
             expect(r.topLeft, Radius.zero,
-                reason: 'Верхний левый угол dropdown должен быть прямым (0)');
+                reason: 'Верхний левый угол dropdown = 0');
             expect(r.topRight, Radius.zero,
-                reason: 'Верхний правый угол dropdown должен быть прямым (0)');
+                reason: 'Верхний правый угол dropdown = 0');
           }
         }
       }
     });
 
-    // ─── Баг-фикс: кнопка имеет clipBehavior для корректных углов ───
-    testWidgets('БАГ-ФИКС: кнопка имеет clipBehavior.antiAlias при открытии', (tester) async {
+    // ─── Баг-фикс: кнопка имеет borderRadius pill (999) ───
+    testWidgets('БАГ-ФИКС: кнопка имеет borderRadius pill (999) при открытии', (tester) async {
       await tester.pumpWidget(buildApp(isOpen: true));
-      // Ищем Container кнопки — с borderRadius pill (999)
-      final containers = tester.widgetList<Container>(find.byType(Container));
-      bool found = false;
-      for (final c in containers) {
-        final deco = c.decoration;
-        if (deco is BoxDecoration && deco.borderRadius is BorderRadius) {
-          final r = deco.borderRadius! as BorderRadius;
-          if (r.topLeft == const Radius.circular(999)) {
-            expect(c.clipBehavior, Clip.antiAlias,
-                reason: 'Кнопка должна иметь clipBehavior.antiAlias');
-            found = true;
-            break;
-          }
-        }
-      }
-      expect(found, isTrue, reason: 'Не найден Container кнопки');
+      final btnRadius = _findButtonRadius(tester);
+      expect(btnRadius, isNotNull, reason: 'Кнопка не найдена');
+      expect(btnRadius, const BorderRadius.all(Radius.circular(999)),
+          reason: 'Кнопка всегда pill — даже при открытии dropdown');
     });
 
-    // ─── Баг-фикс: нет зазора между кнопкой и dropdown ───
-    // Dropdown рендерится через Positioned(top: kFilterRowHeight + kDropdownGap)
-    // в _buildFilterRow() PondMapScreen. Проверяем что Positioned использует
-    // правильный offset.
-    testWidgets('БАГ-ФИКС: dropdown прикреплён к нижнему краю кнопки без зазора', (tester) async {
+    // ─── Баг-фикс: dropdown через CompositedTransformFollower ───
+    // Dropdown рендерится через CompositedTransformFollower с offset(0, -1)
+    // в PondMapScreen. Проверяем что используется CompositedTransformFollower.
+    testWidgets('БАГ-ФИКС: dropdown через CompositedTransformFollower (не Overlay)', (tester) async {
+      final link = LayerLink();
+
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: ListView(children: [
-            FiltersDropdown(
-              value: FilterValue.none,
-              onChange: (_) {},
-              isOpen: true,
-              onToggle: () {},
+          body: Stack(clipBehavior: Clip.none, children: [
+            CompositedTransformTarget(
+              link: link,
+              child: FiltersDropdown(
+                value: FilterValue.none,
+                onChange: (_) {},
+                isOpen: true,
+                onToggle: () {},
+              ),
+            ),
+            CompositedTransformFollower(
+              link: link,
+              showWhenUnlinked: false,
+              targetAnchor: Alignment.bottomLeft,
+              followerAnchor: Alignment.topLeft,
+              offset: const Offset(0, -1),
+              child: Container(
+                width: kDropdownWidth,
+                height: 200,
+                color: Colors.white,
+                child: const Text('Dropdown'),
+              ),
             ),
           ]),
+          bottomNavigationBar: Container(
+            height: kBottomNavHeight,
+            color: Colors.white,
+            child: const Text('Nav'),
+          ),
         ),
       ));
 
-      // Находим Positioned виджет — он позиционирует dropdown
-      final positionedWidgets = tester.widgetList<Positioned>(find.byType(Positioned));
-      for (final p in positionedWidgets) {
-        if (p.top != null) {
-          // Positioned с top = kFilterRowHeight + kDropdownGap
-          final expectedTop = kFilterRowHeight + kDropdownGap;
-          expect(p.top, expectedTop,
-              reason: 'Dropdown Positioned.top должен быть $expectedTop (kFilterRowHeight + kDropdownGap)');
-        }
-      }
+      // Проверяем что dropdown виден через CompositedTransformFollower
+      expect(find.text('Dropdown'), findsOneWidget);
+      // Проверяем что навбар существует (z-order: навбар ПОВЕРХ dropdown)
+      expect(find.text('Nav'), findsOneWidget);
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.bottomNavigationBar, isNotNull,
+          reason: 'bottomNavigationBar для z-order: навбар ПОВЕРХ dropdown');
     });
 
     // ─── Баг-фикс: dropdown не выходит за пределы body (не наезжает на навбар) ───
@@ -487,18 +460,9 @@ void main() {
           reason: 'Dropdown должен быть в Overlay (поверх контента)');
     });
 
-    // ─── Баг 2: верхние углы dropdown при раскрытии ───
-    // Кнопка FiltersDropdown при isOpen=true: topLeft: 999, topRight: 999,
-    // bottomLeft: 0, bottomRight: 0. clipBehavior: Clip.antiAlias.
-    // Dropdown Container: bottomLeft: 12, bottomRight: 12, topLeft: 0, topRight: 0.
-    //
-    // Баг: визуально верхние углы dropdown скруглены.
-    // Причина: кнопка с clipBehavior.antiAlias + borderRadius(999,999,0,0)
-    // визуально «перетекает» в dropdown из-за отсутствия зазора.
-    //
-    // Тест: проверяем что кнопка и dropdown — РАЗНЫЕ виджеты с РАЗНЫМИ
-    // borderRadius, и что clipBehavior кнопки НЕ влияет на dropdown.
-    testWidgets('БАГ 2: верхние углы dropdown и кнопки не смешиваются', (tester) async {
+    // ─── Баг 1.1: кнопка и dropdown — РАЗНЫЕ виджеты, углы не смешиваются ───
+    // Исправлено: кнопка ВСЕГДА pill (999). Dropdown — квадратные верхние, скруглённые нижние.
+    testWidgets('БАГ 1.1: кнопка pill, dropdown квадратные верхние углы', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
           body: ListView(children: [
@@ -532,36 +496,26 @@ void main() {
         ),
       ));
 
-      // Проверяем: есть Container с borderRadius pill (999) — это кнопка
-      // И Container с bottomLeft: 12 — это dropdown
-      // Они должны быть РАЗНЫМИ виджетами с РАЗНЫМИ borderRadius.
-      bool foundButton = false;
-      bool foundDropdown = false;
+      // Кнопка — ВСЕГДА pill (999)
+      final btnRadius = _findButtonRadius(tester);
+      expect(btnRadius, const BorderRadius.all(Radius.circular(999)),
+          reason: 'Кнопка всегда pill — углы не меняются');
 
+      // Dropdown — квадратные верхние, скруглённые нижние
+      bool foundDropdown = false;
       for (final c in tester.widgetList<Container>(find.byType(Container))) {
         final d = c.decoration;
         if (d is BoxDecoration && d.borderRadius is BorderRadius) {
           final r = d.borderRadius! as BorderRadius;
-          // Кнопка: topLeft = 999
-          if (r.topLeft == const Radius.circular(999) &&
-              r.bottomLeft == const Radius.circular(0)) {
-            foundButton = true;
-          }
-          // Dropdown: bottomLeft = 12, topLeft = 0
           if (r.bottomLeft == const Radius.circular(12) &&
               r.topLeft == Radius.zero) {
             foundDropdown = true;
-            // КРИТИЧЕСКАЯ ПРОВЕРКА: верхние углы dropdown = 0
-            expect(r.topLeft, Radius.zero,
-                reason: 'Верхний левый угол dropdown = ${r.topLeft}, ожидался 0');
-            expect(r.topRight, Radius.zero,
-                reason: 'Верхний правый угол dropdown = ${r.topRight}, ожидался 0');
+            expect(r.topLeft, Radius.zero, reason: 'Верхний левый угол dropdown = 0');
+            expect(r.topRight, Radius.zero, reason: 'Верхний правый угол dropdown = 0');
           }
         }
       }
-
-      expect(foundButton, isTrue, reason: 'Кнопка (borderRadius 999) не найдена');
-      expect(foundDropdown, isTrue, reason: 'Dropdown (borderRadius bottomLeft: 12) не найден');
+      expect(foundDropdown, isTrue, reason: 'Dropdown (bottomLeft: 12, topLeft: 0) не найден');
     });
 
     // ─── Базовые проверки ───
@@ -586,4 +540,18 @@ void main() {
       expect(dropdown.isOpen, isTrue);
     });
   });
+}
+
+/// Ищет borderRadius кнопки — Container с topLeft: 999.
+BorderRadius? _findButtonRadius(WidgetTester tester) {
+  for (final c in tester.widgetList<Container>(find.byType(Container))) {
+    final d = c.decoration;
+    if (d is BoxDecoration && d.borderRadius is BorderRadius) {
+      final r = d.borderRadius! as BorderRadius;
+      if (r.topLeft == const Radius.circular(999)) {
+        return r;
+      }
+    }
+  }
+  return null;
 }

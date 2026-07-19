@@ -157,6 +157,16 @@ class _ChecksScreenState extends State<ChecksScreen> {
         res.add(c);
       }
     }
+    // Сортировка: имя начинается с запроса → выше, потом по алфавиту.
+    // Перенесено из receipt_screen.dart (правильная логика).
+    res.sort((a, b) {
+      final an = a.name.toLowerCase();
+      final bn = b.name.toLowerCase();
+      final aStarts = an.startsWith(q) ? 0 : 1;
+      final bStarts = bn.startsWith(q) ? 0 : 1;
+      if (aStarts != bStarts) return aStarts - bStarts;
+      return an.compareTo(bn);
+    });
     return res.take(4).toList();
   }
 

@@ -815,6 +815,8 @@ class _ClientCard extends StatelessWidget {
 ///   6. При раскрытии нижние углы кнопки выпрямляются, верхние НЕ меняются.
 ///   7. Dropdown строго под кнопкой (top: 36 в Stack).
 ///   8. Контент под dropdown НЕ двигается (Stack-слои, не inline).
+///  13. Верхние углы кнопки НИКОГДА не меняются — всегда pill (999).
+///  14. Dropdown в Stack внутри body (НЕ в Overlay) — под нижним меню.
 ///
 class FiltersDropdown extends StatelessWidget {
   final FilterValue value;
@@ -831,61 +833,46 @@ class FiltersDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // При открытии нижние углы кнопки выпрямляются (требование 6).
-    // Верхние углы НЕ меняются — всегда pill (999).
+    // Углы кнопки НИКОГДА не меняются — всегда pill (999).
+    // Это правило 13: верхние углы НИКОГДА не меняются при раскрытии.
+    // Баг 1.1: ранее нижние углы выпрямлялись (999→0), что визуально
+    // искажало восприятие верхних углов.
     const pill = BorderRadius.all(Radius.circular(999));
-    final radius = isOpen
-        ? const BorderRadius.only(
-            topLeft: Radius.circular(999),
-            topRight: Radius.circular(999),
-            bottomLeft: Radius.circular(0),
-            bottomRight: Radius.circular(0),
-          )
-        : pill;
 
     final active = value != FilterValue.none;
 
     return SizedBox(
       width: kDropdownWidth,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          GestureDetector(
-            onTap: onToggle,
-            child: Container(
-              clipBehavior: Clip.antiAlias,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: radius,
-                border: Border.all(color: const Color(0xFFEFE8D8), width: 0.5),
-              ),
-              child: Row(children: [
-                const Icon(Icons.filter_list, size: 13, color: kEmber),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    filterButtonLabels[value]!,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: kInk),
-                  ),
-                ),
-              ]),
-            ),
+      child: GestureDetector(
+        onTap: onToggle,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: pill,
+            border: Border.all(color: const Color(0xFFEFE8D8), width: 0.5),
           ),
-          if (active) const Positioned(
-            top: 4,
-            right: 4,
-            child: SizedBox(
-              width: 7,
-              height: 7,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: kOrange, shape: BoxShape.circle),
+          child: Row(children: [
+            const Icon(Icons.filter_list, size: 13, color: kEmber),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                filterButtonLabels[value]!,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: kInk),
               ),
             ),
-          ),
-        ],
+            if (active) ...[
+              const SizedBox(width: 4),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(color: kOrange, shape: BoxShape.circle),
+              ),
+            ],
+          ]),
+        ),
       ),
     );
   }
@@ -913,58 +900,24 @@ class _PondMapScreenState extends State<PondMapScreen> {
   FilterValue filter = FilterValue.none;
   bool _isFilterOpen = false;
 
-  // LayerLink + OverlayEntry — dropdown в отдельном слое поверх всего контента.
-  // Решает баг: Positioned в Stack внутри ListView → feed рендерится ПОВЕРХ dropdown.
+  // LayerLink — позиционирование dropdown через CompositedTransformFollower.
+  // Dropdown рендерится в Stack внутри body (НЕ в Overlay) — под нижним меню.
+  // Решает баг 1.2: Overlay.of(context).insert() ставил dropdown ВЫШЕ всего,
+  // включая bottomNavigationBar. Stack внутри body — корректный z-order.
   final LayerLink _filterLink = LayerLink();
-  OverlayEntry? _filterOverlay;
-
-  void _showFilterOverlay() {
-    _filterOverlay = OverlayEntry(
-      builder: (context) => Stack(children: [
-        // Tap-to-close: тап в пустую область закрывает dropdown (правило 6).
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () => setState(() {
-              _isFilterOpen = false;
-              _hideFilterOverlay();
-            }),
-          ),
-        ),
-        // Dropdown — привязан к позиции кнопки через LayerLink.
-        CompositedTransformFollower(
-          link: _filterLink,
-          showWhenUnlinked: false,
-          targetAnchor: Alignment.bottomLeft,
-          followerAnchor: Alignment.topLeft,
-          offset: const Offset(0, kDropdownGap),
-          child: _buildDropdown(),
-        ),
-      ]),
-    );
-    Overlay.of(context).insert(_filterOverlay!);
-  }
-
-  void _hideFilterOverlay() {
-    _filterOverlay?.remove();
-    _filterOverlay = null;
-  }
 
   void _toggleFilter() {
     setState(() {
       _isFilterOpen = !_isFilterOpen;
-      if (_isFilterOpen) {
-        _showFilterOverlay();
-      } else {
-        _hideFilterOverlay();
-      }
     });
   }
 
-  @override
-  void dispose() {
-    _hideFilterOverlay();
-    super.dispose();
+  void _closeFilter() {
+    if (_isFilterOpen) {
+      setState(() {
+        _isFilterOpen = false;
+      });
+    }
   }
 
 
@@ -984,7 +937,8 @@ class _PondMapScreenState extends State<PondMapScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFEFE9DC),
-      body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+      body: SafeArea(child: Stack(clipBehavior: Clip.none, children: [
+        ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(0, 12, 0, 12),
             child: Center(child: Text('Карта пруда',
@@ -1028,24 +982,46 @@ class _PondMapScreenState extends State<PondMapScreen> {
           const SizedBox(height: 8),
           _buildFeed(scheds),
         ]),
+        // Dropdown в Stack поверх ListView — НАД контентом, ПОД нижним меню.
+        // Решает баг 1.2: Overlay.of(context).insert() ставил dropdown выше навбара.
+        // Stack внутри body → Scaffold.bottomNavigationBar рендерится ПОСЛЕ body →
+        // z-order: навбар ПОВЕРХ dropdown.
+        if (_isFilterOpen) ...[
+          // Tap-to-close: тап в пустую область закрывает dropdown.
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: _closeFilter,
+            ),
+          ),
+          // Dropdown — привязан к позиции кнопки через LayerLink.
+          CompositedTransformFollower(
+            link: _filterLink,
+            showWhenUnlinked: false,
+            targetAnchor: Alignment.bottomLeft,
+            followerAnchor: Alignment.topLeft,
+            offset: const Offset(0, -1), // -1: перекрытие с кнопкой (нет зазора)
+            child: _buildDropdown(),
+          ),
+        ],
+      ]),
       ),
     );
   }
 
   Widget _buildFilterRow(int free, int occupied) {
-    // CompositedTransformTarget — отмечает позицию кнопки для OverlayEntry.
-    // Dropdown рендерится в Overlay (выше в _toggleFilter) — поверх всего контента.
+    // CompositedTransformTarget — отмечает позицию кнопки для CompositedTransformFollower.
+    // Dropdown рендерится в Stack (выше в build()) — поверх контента, под нижним меню.
     return Row(children: [
       CompositedTransformTarget(
         link: _filterLink,
         child: FiltersDropdown(
           value: filter,
           onChange: (v) {
-            setState(() => filter = v);
-            // Обновляем overlay если открыт
-            if (_isFilterOpen) {
-              _filterOverlay?.markNeedsBuild();
-            }
+            setState(() {
+              filter = v;
+              _isFilterOpen = false;
+            });
           },
           isOpen: _isFilterOpen,
           onToggle: _toggleFilter,
