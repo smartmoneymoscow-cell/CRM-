@@ -83,7 +83,12 @@ void main() {
         )),
       ));
 
-      final container = tester.widget<Container>(find.byType(Container).first);
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(FiltersDropdown),
+          matching: find.byType(Container).last,
+        ),
+      );
       final decoration = container.decoration as BoxDecoration;
       final radius = decoration.borderRadius as BorderRadius;
 
@@ -104,7 +109,12 @@ void main() {
         )),
       ));
 
-      final container = tester.widget<Container>(find.byType(Container).first);
+      final container = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(FiltersDropdown),
+          matching: find.byType(Container).last,
+        ),
+      );
       final decoration = container.decoration as BoxDecoration;
       final radius = decoration.borderRadius as BorderRadius;
 
