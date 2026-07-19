@@ -150,7 +150,7 @@ void main() {
       ));
 
       // Проверяем что dropdown виден (в Stack поверх ListView)
-      expect(find.text('Dropdown'), findsOneWidget);
+      expect(find.text('Премиум'), findsOneWidget);
 
       // Проверяем что нижнее меню существует
       expect(find.text('Нижнее меню'), findsOneWidget);
