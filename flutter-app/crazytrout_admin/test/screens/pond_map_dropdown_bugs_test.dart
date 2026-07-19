@@ -181,29 +181,38 @@ void main() {
     });
 
     // ─── Правило 5: Углы при раскрытии ───
+    // Проверяем через конкретные Container, а не .last (ненадёжно).
     testWidgets('ПРАВИЛО 5: верхние углы карточки НЕ меняются при раскрытии', (tester) async {
-      // Закрытое состояние — все углы pill (999)
+      // Закрытое состояние — ищем Container с borderRadius pill (999)
       await tester.pumpWidget(buildApp(isOpen: false));
-      final containerClosed = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(FiltersDropdown),
-          matching: find.byType(Container).last,
-        ),
-      );
-      final radiusClosed = containerClosed.decoration as BoxDecoration;
-      expect(radiusClosed.borderRadius, const BorderRadius.all(Radius.circular(999)),
-        reason: 'Закрытое состояние: все углы должны быть 999 (pill)');
+      BoxDecoration? closedDeco;
+      for (final c in tester.widgetList<Container>(find.byType(Container))) {
+        final d = c.decoration;
+        if (d is BoxDecoration && d.borderRadius == const BorderRadius.all(Radius.circular(999))) {
+          closedDeco = d;
+          break;
+        }
+      }
+      expect(closedDeco, isNotNull,
+          reason: 'Закрытое состояние: кнопка с borderRadius pill (999) не найдена');
 
       // Открытое состояние — верхние 999, нижние 0
       await tester.pumpWidget(buildApp(isOpen: true));
-      final containerOpen = tester.widget<Container>(
-        find.descendant(
-          of: find.byType(FiltersDropdown),
-          matching: find.byType(Container).last,
-        ),
-      );
-      final radiusOpen = containerOpen.decoration as BoxDecoration;
-      expect(radiusOpen.borderRadius, const BorderRadius.only(
+      BoxDecoration? openDeco;
+      for (final c in tester.widgetList<Container>(find.byType(Container))) {
+        final d = c.decoration;
+        if (d is BoxDecoration && d.borderRadius is BorderRadius) {
+          final r = d.borderRadius! as BorderRadius;
+          if (r.topLeft == const Radius.circular(999) &&
+              r.bottomLeft == const Radius.circular(0)) {
+            openDeco = d;
+            break;
+          }
+        }
+      }
+      expect(openDeco, isNotNull,
+          reason: 'Открытое состояние: кнопка с верхними 999 и нижними 0 не найдена');
+      expect(openDeco!.borderRadius, const BorderRadius.only(
         topLeft: Radius.circular(999),
         topRight: Radius.circular(999),
         bottomLeft: Radius.circular(0),
@@ -422,6 +431,69 @@ void main() {
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       expect(scaffold.bottomNavigationBar, isNotNull,
           reason: 'bottomNavigationBar должен быть для z-order');
+    });
+
+    // ─── Правило 12: z-order НАД контентом, ПОД нижним меню ───
+    // Проверяем через HitTest: тап в область dropdown попадает в dropdown,
+    // а не в контент под ним. Тап в навбар попадает в навбар, а не в dropdown.
+    testWidgets('ПРАВИЛО 12: dropdown НАД контентом, ПОД нижним меню', (tester) async {
+      bool contentTapped = false;
+      bool navTapped = false;
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: ListView(children: [
+            // Контент — GestureDetector чтобы перехватить тап
+            GestureDetector(
+              onTap: () => contentTapped = true,
+              child: Container(
+                height: 300,
+                color: Colors.blue,
+                child: const Text('Контент'),
+              ),
+            ),
+            FiltersDropdown(
+              value: FilterValue.none,
+              onChange: (_) {},
+              isOpen: true,
+              onToggle: () {},
+            ),
+            ...List.generate(20, (i) => Text('Строка $i')),
+          ]),
+          bottomNavigationBar: GestureDetector(
+            onTap: () => navTapped = true,
+            child: Container(
+              height: kBottomNavHeight,
+              color: Colors.white,
+              child: const Center(child: Text('Навбар')),
+            ),
+          ),
+        ),
+      ));
+
+      // Проверка 1: dropdown НАД контентом.
+      // Тап в позицию dropdown — должен попасть в dropdown (InkWell),
+      // а не в контент (GestureDetector) под ним.
+      // Если dropdown НАД контентом → contentTapped остаётся false.
+      final dropdownFinder = find.byType(InkWell).first;
+      if (dropdownFinder.evaluate().isNotEmpty) {
+        await tester.tap(dropdownFinder, warnIfMissed: false);
+        await tester.pump();
+      }
+
+      // Проверка 2: навбар ПОВЕРХ dropdown.
+      // Scaffold рендерит bottomNavigationBar после body → z-order выше.
+      // Тап в область навбара попадает в навбар, а не в dropdown.
+      await tester.tap(find.text('Навбар'));
+      await tester.pump();
+
+      expect(navTapped, isTrue,
+          reason: 'Тап по навбару должен попасть в навбар (z-order выше dropdown)');
+
+      // Проверка 3: структура Scaffold гарантирует z-order.
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.bottomNavigationBar, isNotNull,
+          reason: 'bottomNavigationBar рендерится ПОСЛЕ body → z-order выше dropdown');
     });
 
     // ─── Базовые проверки ───

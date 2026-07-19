@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crazy Trout Arena — Профиль клиента</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #E89829;
+  --ink: #14130F;
+  --paper: #FAF6EE;
+  --green: #3FA66B;
+  --gold: #D4A85A;
+  --hair: #E7E0D1;
+  --muted: #8C8576;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #DDD8CC;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+/* === iPhone 14: 390x844 === */
+.iphone-mockup {
+  width: 390px;
+  height: 844px;
+  background: #000;
+  border-radius: 50px;
+  border: 3px solid #1a1a1a;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dynamic Island */
+.dynamic-island {
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 18px;
+  margin: 11px auto 0;
+  position: relative;
+  z-index: 10;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 28px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.status-icons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.status-icons svg { width: 16px; height: 16px; }
+
+/* Screen content */
+.screen {
+  flex: 1;
+  background: #fff;
+  margin: 0;
+  overflow-y: auto;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Profile card */
+.profile-card {
+  background: var(--ink);
+  color: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.profile-edit {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(232,152,41,.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.profile-edit svg { width: 14px; height: 14px; color: var(--orange); }
+.profile-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid rgba(232,152,41,0.3);
+}
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.profile-name {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+.profile-meta {
+  font-size: 12px;
+  color: #B7B2A2;
+  line-height: 1.5;
+}
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(232,152,41,.5);
+  border-radius: 22px;
+  padding: 5px 12px 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 12px;
+  color: var(--orange);
+}
+.badge-pill svg { display: block; }
+
+/* Stats */
+.profile-stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.profile-stat {
+  flex: 1;
+  background: #fff;
+  border: 1.5px solid var(--hair);
+  border-radius: 14px;
+  padding: 12px 6px;
+  text-align: center;
+}
+.profile-stat b {
+  display: block;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.profile-stat span {
+  font-size: 9px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Catch card */
+.catch-card {
+  background: var(--orange);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  color: #1B1505;
+}
+.catch-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.catch-image-wrap {
+  background: transparent;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.catch-image {
+  width: 70%;
+  display: block;
+  margin: 0 auto;
+}
+.catch-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.catch-name {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+}
+.catch-weight {
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* Statistics */
+.stat-list-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.stat-list-title svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--muted);
+  fill: none;
+  stroke-width: 1.7;
+}
+.stat-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--hair);
+  padding: 9px 0;
+  font-size: 13px;
+}
+.stat-list-row .slr-name { font-weight: 700; color: var(--ink); flex: 1; }
+.stat-list-row .slr-count { font-weight: 800; width: 26px; color: var(--ink); text-align: center; }
+.stat-list-row .slr-avg { color: var(--muted); font-size: 11px; text-align: right; min-width: 70px; }
+.stat-spacer { flex: 1; }
+
+/* Bottom nav */
+.nav-bar {
+  display: flex;
+  border-top: 1px solid var(--hair);
+  padding: 10px 0 24px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.nav-item.active { color: var(--orange); }
+.nav-item svg { width: 19px; height: 19px; }
+
+/* === QR Overlay — covers content area only, not status bar or nav === */
+.qr-overlay {
+  display: none;
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  bottom: 56px;
+  background: #fff;
+  z-index: 100;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  /* Animation: start from QR button position (top-right) */
+  transform-origin: 88% 8%;
+  transform: scale(0.15);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.qr-overlay.open {
+  transform: scale(1);
+  opacity: 1;
+}
+.qr-overlay.closing {
+  transform: scale(0.15);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.25s ease;
+}
+
+.qr-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  overflow-y: auto;
+}
+
+/* Close button (X) top-right inside overlay */
+.qr-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.06);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 110;
+  transition: background 0.2s;
+}
+.qr-close-btn:hover { background: rgba(0,0,0,0.12); }
+.qr-close-btn svg { width: 18px; height: 18px; stroke: #14130F; }
+
+/* QR button press animation */
+.qr-btn-press {
+  animation: qrBtnPress 0.3s ease;
+}
+@keyframes qrBtnPress {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<div class="iphone-mockup">
+  <div class="dynamic-island"></div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <div class="screen">
+    <!-- Profile card -->
+    <div class="profile-card">
+      <div class="profile-edit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </div>
+      <div class="profile-row">
+        <div class="profile-avatar"><img src="assets/img_002.jpeg" alt="Уэйд Джереми"></div>
+        <div style="flex:1;">
+          <div class="profile-name">Уэйд Джереми</div>
+          <div class="profile-meta">+7 999 000-00-00<br>wade@mail.ru</div>
+        </div>
+      </div>
+      <div id="qr-btn" style="position:absolute;top:62px;right:36px;width:72px;height:72px;border-radius:14px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s;">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4"/><line x1="22" y1="14" x2="22" y2="14.01"/><line x1="18" y1="22" x2="18" y2="22.01"/><line x1="22" y1="18" x2="22" y2="22"/></svg>
+      </div>
+      <div style="margin-top:12px;padding-right:90px;">
+        <div class="badge-pill" style="margin-top:0;">
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 0h2.4L4.6 4.2 2.2 3.6 4 0zM11.4 0H9L10.8 4.2l2.4-.6L11.4 0z" fill="#C9302C"/><path d="M4.6 4.2 2.2 3.6 5 6.8l1.6-2.6H4.6zM10.8 4.2 13.2 3.6 10.4 6.8 8.8 4.2h2z" fill="#8A1E1B"/><circle cx="8" cy="11.5" r="5.2" fill="url(#silverG)" stroke="#8C8576" stroke-width="0.6"/><circle cx="8" cy="11.5" r="3.4" fill="none" stroke="#8C8576" stroke-width="0.4" opacity=".6"/><path d="M8 8.6l.7 1.9h1.9l-1.55 1.15.6 1.9L8 12.4l-1.65 1.15.6-1.9L5.4 10.5h1.9L8 8.6z" fill="#F3EEDF"/><defs><radialGradient id="silverG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#F7F4EA"/><stop offset="0.55" stop-color="#CFC6B0"/><stop offset="1" stop-color="#8C8576"/></radialGradient></defs></svg>
+        Серебряный рыболов
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Progress bar — БАЛЛЫ ЛОЯЛЬНОСТИ -->
+    <div style="background:#fff;border:1.5px solid var(--hair);border-radius:14px;padding:10px 14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:11px;font-weight:700;color:rgba(0,0,0,.55);letter-spacing:0.3px;">БАЛЛЫ ЛОЯЛЬНОСТИ</span>
+        <span style="font-size:11px;font-weight:700;color:var(--orange);">1280 / 1500</span>
+      </div>
+      <div style="background:#EFE9DC;border-radius:999px;height:7px;overflow:hidden;">
+        <div style="background:var(--orange);height:100%;width:85%;border-radius:999px;"></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="profile-stats">
+      <div class="profile-stat"><b>24</b><span>Посещений</span></div>
+      <div class="profile-stat"><b>68</b><span>Рыб</span></div>
+      <div class="profile-stat"><b>1840</b><span>Баллов</span></div>
+    </div>
+
+    <!-- Catch card -->
+    <div class="catch-card">
+      <div class="catch-badge">🏆 Лучший улов</div>
+      <div class="catch-image-wrap">
+        <img class="catch-image" src="assets/img_003.png" alt="Осётр">
+      </div>
+      <div class="catch-body">
+        <div class="catch-name">Осётр</div>
+        <div class="catch-weight">5,8 кг</div>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stat-list-title">
+      Статистика
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">Осётр</span>
+      <span class="slr-count">4</span>
+      <span class="slr-avg">ср. 3,2 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">Карп</span>
+      <span class="slr-count">12</span>
+      <span class="slr-avg">ср. 1,8 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">Амур</span>
+      <span class="slr-count">7</span>
+      <span class="slr-avg">ср. 2,1 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">Линь</span>
+      <span class="slr-count">3</span>
+      <span class="slr-avg">ср. 1,4 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">Форель</span>
+      <span class="slr-count">9</span>
+      <span class="slr-avg">ср. 0,9 кг</span>
+    </div>
+
+    <!-- Visit history -->
+    <div class="stat-list-title" style="margin-top:16px;">
+      История посещений
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">12.07 · Сектор №07</span>
+      <span class="slr-avg">Карп ×2 · 3,4 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">06.07 · Сектор №11</span>
+      <span class="slr-avg">Осётр · 5,8 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">03.07 · Сектор №04</span>
+      <span class="slr-avg">Амур · 2,1 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">27.06 · Сектор №09</span>
+      <span class="slr-avg">Карп ×3 · 4,6 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">21.06 · Сектор №12</span>
+      <span class="slr-avg">Линь · 0,9 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">14.06 · Сектор №05</span>
+      <span class="slr-avg">Карп · 2,2 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">07.06 · Сектор №02</span>
+      <span class="slr-avg">Форель ×2 · 1,8 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">31.05 · Сектор №08</span>
+      <span class="slr-avg">Амур · 3,4 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">24.05 · Сектор №01</span>
+      <span class="slr-avg">Осётр · 4,1 кг</span>
+    </div>
+    <div class="stat-list-row">
+      <span class="slr-name">17.05 · Сектор №06</span>
+      <span class="slr-avg">Карп ×2 · 3,0 кг</span>
+    </div>
+    <!-- Spacer -->
+    <div class="stat-spacer"></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="nav-bar">
+    <div class="nav-item" style="justify-content:center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+      <span>Карта</span>
+    </div>
+    <div class="nav-item" style="justify-content:center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+      <span>Бронирование</span>
+    </div>
+    <div class="nav-item active" style="justify-content:center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4.5-5.5 7-5.5s5.5 1.5 7 5.5"/></svg>
+      <span>Профиль</span>
+    </div>
+  </div>
+
+<!-- QR Code Overlay — covers content only, status bar + nav stay visible -->
+<div id="qr-overlay" class="qr-overlay">
+  <!-- Close button (X) top-right -->
+  <button class="qr-close-btn" id="qr-close-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+  <div class="qr-content">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:50px;height:50px;border-radius:50%;overflow:hidden;margin:0 auto 10px;border:2px solid #E89829;">
+        <img src="assets/img_002.jpeg" style="width:100%;height:100%;object-fit:cover;" alt="">
+      </div>
+      <div style="font-family:'Inter Tight',sans-serif;font-weight:800;font-size:17px;color:#14130F;margin-bottom:3px;">Уэйд Джереми</div>
+      <div style="font-size:12px;color:#8C8576;">Мой QR-код</div>
+    </div>
+    
+    <!-- QR 2.5x larger: 500x500 -->
+    <div style="background:#fff;border-radius:20px;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:1px solid #E7E0D1;">
+      <img src="data:image/png;base64,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" style="width:280px;height:280px;display:block;" alt="QR Code">
+    </div>
+    
+    <div style="margin-top:16px;text-align:center;">
+      <div style="font-size:14px;color:#14130F;font-weight:600;margin-bottom:5px;">Отсканируйте QR-код</div>
+      <div style="font-size:11px;color:#8C8576;line-height:1.5;">Покажите этот код другому рыбаку,<br>чтобы он нашёл ваш профиль</div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+<script>
+(function() {
+  const qrBtn = document.getElementById('qr-btn');
+  const qrOverlay = document.getElementById('qr-overlay');
+  const qrCloseBtn = document.getElementById('qr-close-btn');
+  let isAnimating = false;
+
+  function openQr() {
+    if (isAnimating) return;
+    isAnimating = true;
+    // Button press animation
+    qrBtn.classList.add('qr-btn-press');
+    setTimeout(() => {
+      qrBtn.classList.remove('qr-btn-press');
+      // Show overlay with animation
+      qrOverlay.style.display = 'flex';
+      // Force reflow so transition triggers
+      void qrOverlay.offsetWidth;
+      qrOverlay.classList.add('open');
+      setTimeout(() => { isAnimating = false; }, 400);
+    }, 250);
+  }
+
+  function closeQr() {
+    if (isAnimating) return;
+    isAnimating = true;
+    qrOverlay.classList.remove('open');
+    qrOverlay.classList.add('closing');
+    setTimeout(() => {
+      qrOverlay.style.display = 'none';
+      qrOverlay.classList.remove('closing');
+      isAnimating = false;
+    }, 350);
+  }
+
+  qrBtn.addEventListener('click', openQr);
+  qrCloseBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    closeQr();
+  });
+  // Close on overlay background click (but not on content)
+  qrOverlay.addEventListener('click', function(e) {
+    if (e.target === qrOverlay || e.target.classList.contains('qr-content')) {
+      closeQr();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

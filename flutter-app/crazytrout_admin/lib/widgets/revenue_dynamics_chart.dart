@@ -57,12 +57,15 @@ class _RevenueDynamicsChartState extends State<RevenueDynamicsChart> {
         ]),
         const SizedBox(height: 16),
         LayoutBuilder(builder: (context, constraints) {
-          return SizedBox(height: 180, child: ClipRect(
-            child: CustomPaint(
-              size: Size(constraints.maxWidth, 180),
-              painter: _ChartPainter(data: _points),
+          return ClipRect(
+            child: SizedBox(
+              width: constraints.maxWidth,
+              height: 180,
+              child: CustomPaint(
+                painter: _ChartPainter(data: _points),
+              ),
             ),
-          ));
+          );
         }),
         const SizedBox(height: 12),
         SizedBox(height: 20, child: Row(
