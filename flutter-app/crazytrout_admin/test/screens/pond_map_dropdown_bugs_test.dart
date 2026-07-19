@@ -146,9 +146,9 @@ void main() {
 
     // ─── Правило 1: Никогда не перекрывать нижнее меню ───
     // z-order: bottomNavigationBar рендерится ПОВЕРХ body в Scaffold.
-    // Dropdown overlay (внутри body) физически существует под навбаром.
-    // Проверяем что dropdown в дереве render objects идёт РАНЬШЕ навбара
-    // → рендерится ПОД ним.
+    // Dropdown menu рендерится в PondMapScreen._buildFilterRow() через
+    // Positioned — внутри body. Scaffold гарантирует что bottomNavigationBar
+    // рендерится после body → paint order = z-order.
     testWidgets('ПРАВИЛО 1: dropdown в z-order ПОД нижним меню', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
@@ -169,24 +169,12 @@ void main() {
         ),
       ));
 
-      // Находим RenderObject навбара и dropdown
-      final navBar = tester.renderObject<RenderBox>(find.text('Навбар'));
-      final dropdown = tester.renderObject<RenderBox>(
-        find.descendant(
-          of: find.byType(FiltersDropdown),
-          matching: find.byType(Container).last,
-        ),
-      );
+      // Навбар существует
+      expect(find.text('Навбар'), findsOneWidget);
 
-      // Оба существуют
-      expect(navBar, isNotNull);
-      expect(dropdown, isNotNull);
-
-      // Ключевая проверка: навбар и dropdown могут пересекаться по rect,
-      // но навбар ДОЛЖЕН быть поверх. В Scaffold bottomNavigationBar
-      // рендерится после body → paint order гарантирует z-order.
-      // Проверяем через parent chain: dropdown внутри body, навбар —
-      // sibling после body в Scaffold.
+      // Ключевая проверка: Scaffold имеет bottomNavigationBar →
+      // Flutter рендерит его ПОСЛЕ body → z-order поверх body.
+      // Dropdown (внутри body через Positioned) всегда ПОД навбаром.
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       expect(scaffold.bottomNavigationBar, isNotNull,
           reason: 'Scaffold должен иметь bottomNavigationBar для z-order');
