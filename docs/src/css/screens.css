@@ -158,6 +158,8 @@
 .screen-receipt .catch-row {
   margin-bottom: 12px;
   padding: 10px;
+  background: #F9F6EF;
+  border: 1px solid #ECE5D4;
   border-radius: var(--r-lg);
 }
 .screen-receipt .catch-row .catch-breed-row {
@@ -437,7 +439,8 @@
 .screen-report .filter-bar {
   display: flex;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
+  padding: 0 18px;
   align-items: center;
 }
 .screen-report .filter-bar > *:first-child {
@@ -625,8 +628,11 @@
   transition: all 0.15s;
 }
 .icon-filter-chip.active {
-  background: var(--kSelected);
+  background: var(--kOrange);
   border-color: var(--kOrange);
+}
+.icon-filter-chip.active img {
+  filter: brightness(0) invert(1);
 }
 
 /* ─── Фильтр Dropdown (как Flutter FilterDropdown) ─── */

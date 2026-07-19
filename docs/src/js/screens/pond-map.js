@@ -12,11 +12,11 @@ const FILTER_OPTIONS = [
 
 // Демо-бронирования (как Flutter pond_map_screen.dart)
 const BOOKINGS = [
-  { sectorId: 2,  clientId: 1,   time: '09:00 – 13:00', date: 'Сегодня' },
-  { sectorId: 5,  clientId: 100, time: '08:00 – 16:00', date: 'Сегодня' },
-  { sectorId: 7,  clientId: 8,   time: '10:00 – 14:00', date: 'Сегодня' },
-  { sectorId: 10, clientId: 3,   time: '12:00 – 18:00', date: 'Сегодня' },
-  { sectorId: 14, clientId: 5,   time: '07:00 – 12:00', date: 'Сегодня' },
+  { sectorId: 7,  clientId: 1,   time: '09:00 – 13:00', date: 'Сегодня' },
+  { sectorId: 3,  clientId: 100, time: '08:00 – 16:00', date: 'Сегодня' },
+  { sectorId: 8,  clientId: 8,   time: '10:00 – 14:00', date: 'Сегодня' },
+  { sectorId: 2,  clientId: 3,   time: '12:00 – 18:00', date: 'Сегодня' },
+  { sectorId: 5,  clientId: 5,   time: '07:00 – 12:00', date: 'Сегодня' },
 ];
 
 let currentFilter = 'none';
@@ -27,14 +27,21 @@ export function renderPondMap() {
   el.className = 'screen screen-pond';
   el.innerHTML = `
     <div class="screen-title">Карта пруда</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-      <div class="card" style="padding:14px;text-align:center;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">${Math.round(occupied / 16 * 100)}%</div>
-        <div style="font-size:11px;color:var(--kMuted);margin-top:2px;">ЗАГРУЗКА</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;background:linear-gradient(135deg,#1F1D18,#14130F);border-radius:18px;border:1px solid rgba(255,255,255,0.1);padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-30px;right:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(232,145,43,0.20),transparent 70%);pointer-events:none;"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <div style="width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;"><span style="font-size:13px;">📊</span></div>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:0.5px;color:rgba(255,255,255,0.54);">ЗАГРУЗКА</span>
+        </div>
+        <div style="text-align:center;font-size:26px;font-weight:800;color:var(--kOrange);">${Math.round(occupied / 16 * 100)}%</div>
       </div>
-      <div class="card" style="padding:14px;text-align:center;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">${BOOKINGS.length}/16</div>
-        <div style="font-size:11px;color:var(--kMuted);margin-top:2px;">БРОНЕЙ</div>
+      <div style="flex:1;background:linear-gradient(135deg,#fff,#FCFAF4);border-radius:18px;border:1px solid var(--kHairline);padding:16px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <div style="width:22px;height:22px;border-radius:7px;background:rgba(136,111,17,0.1);display:flex;align-items:center;justify-content:center;"><span style="font-size:13px;">📅</span></div>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:0.5px;color:rgba(0,0,0,0.45);">БРОНЕЙ</span>
+        </div>
+        <div style="text-align:center;font-size:26px;font-weight:800;color:var(--kInk);">${occupied} / 16</div>
       </div>
     </div>
 
@@ -95,14 +102,14 @@ export function renderPondMap() {
     </div>
 
     <!-- Легенда -->
-    <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;">
-      <div style="display:flex;align-items:center;gap:4px;">
-        <div style="width:12px;height:12px;border-radius:3px;background:var(--kFill);"></div>
-        <span style="color:var(--kMuted2);">Свободен</span>
+    <div style="display:flex;gap:16px;margin-bottom:14px;font-size:13px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#4CAF50;"></div>
+        <span style="color:var(--kInk);">Свободно ${16 - occupied}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <div style="width:12px;height:12px;border-radius:3px;background:rgba(232,145,43,0.1);border:1px solid var(--kOrange);"></div>
-        <span style="color:var(--kMuted2);">Занят</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--kOrange);"></div>
+        <span style="color:var(--kInk);">Занято ${occupied}</span>
       </div>
     </div>
 
@@ -135,7 +142,7 @@ function renderSectorGrid() {
     return `
       <div class="sector-cell ${sector.occupied ? 'occupied' : ''}" data-sector="${sector.id}" data-client-id="${sector.clientId || ''}">
         <div class="sector-number">${sector.id}</div>
-        <div class="sector-status">${sector.occupied ? (client ? store.getClientInitials(client) : '👤') : 'Свободен'}</div>
+        <div class="sector-status">${sector.occupied ? (client ? store.getClientInitials(client) : '👤') : 'Свободно'}</div>
       </div>
     `;
   }).join('');

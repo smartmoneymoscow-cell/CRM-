@@ -1,4 +1,4 @@
-// === Calendar Picker (точь-в-точь Flutter _showRangeCalendarPicker) ===
+// === Range Calendar Picker (точь-в-точь Flutter _RangeCalendarPicker) ===
 
 export function showCalendarPicker(currentRange) {
   return new Promise((resolve) => {
@@ -11,7 +11,6 @@ export function showCalendarPicker(currentRange) {
     overlay.className = 'modal-overlay';
 
     function render() {
-      overlay.innerHTML = '';
       overlay.innerHTML = `
         <div class="sheet" style="max-width:340px;padding:20px;">
           <div style="text-align:center;font-size:18px;font-weight:700;color:#14130F;margin-bottom:16px;">Выберите период</div>
@@ -33,105 +32,51 @@ export function showCalendarPicker(currentRange) {
           </div>
         </div>
       `;
-
       renderGrid();
-
-      overlay.querySelector('#cal-prev')?.addEventListener('click', () => {
-        viewDate.setMonth(viewDate.getMonth() - 1);
-        render();
-      });
-      overlay.querySelector('#cal-next')?.addEventListener('click', () => {
-        viewDate.setMonth(viewDate.getMonth() + 1);
-        render();
-      });
-      overlay.querySelector('#cal-reset')?.addEventListener('click', () => {
-        overlay.remove();
-        resolve({ start: new Date(2000, 0, 1), end: new Date(2000, 0, 1) });
-      });
-      overlay.querySelector('#cal-apply')?.addEventListener('click', () => {
-        overlay.remove();
-        if (startDate && endDate) resolve({ start: startDate, end: endDate });
-        else resolve(null);
-      });
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
+      overlay.querySelector('#cal-prev')?.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() - 1); render(); });
+      overlay.querySelector('#cal-next')?.addEventListener('click', () => { viewDate.setMonth(viewDate.getMonth() + 1); render(); });
+      overlay.querySelector('#cal-reset')?.addEventListener('click', () => { overlay.remove(); resolve({ start: new Date(2000,0,1), end: new Date(2000,0,1) }); });
+      overlay.querySelector('#cal-apply')?.addEventListener('click', () => { overlay.remove(); resolve(startDate && endDate ? { start: startDate, end: endDate } : null); });
+      overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
     }
 
     function renderGrid() {
       const grid = overlay.querySelector('#cal-grid');
       if (!grid) return;
-
-      const year = viewDate.getFullYear();
-      const month = viewDate.getMonth();
+      const year = viewDate.getFullYear(), month = viewDate.getMonth();
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const startDow = (firstDay.getDay() + 6) % 7;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = new Date(); today.setHours(0,0,0,0);
 
       let html = '';
       for (let i = 0; i < startDow; i++) html += '<div></div>';
-
       for (let d = 1; d <= lastDay.getDate(); d++) {
-        const date = new Date(year, month, d);
-        date.setHours(0, 0, 0, 0);
+        const date = new Date(year, month, d); date.setHours(0,0,0,0);
         const isToday = date.getTime() === today.getTime();
         const isStart = startDate && date.getTime() === startDate.getTime();
         const isEnd = endDate && date.getTime() === endDate.getTime();
         const inRange = startDate && endDate && date > startDate && date < endDate;
-
-        let bg = 'transparent';
-        let color = '#14130F';
-        let borderRadius = '50%';
-        let fontWeight = '400';
-
-        if (isStart || isEnd) {
-          bg = '#E8912B';
-          color = '#fff';
-          fontWeight = '700';
-        } else if (inRange) {
-          bg = '#EFD9AC';
-          borderRadius = '0';
-        }
-
-        if (isToday && !isStart && !isEnd) {
-          color = '#E8912B';
-          fontWeight = '700';
-        }
-
-        html += `<div data-date="${date.toISOString()}" style="
-          text-align:center;padding:8px 4px;font-size:13px;cursor:pointer;
-          background:${bg};color:${color};border-radius:${borderRadius};font-weight:${fontWeight};
-        ">${d}</div>`;
+        let bg = 'transparent', color = '#14130F', borderRadius = '50%', fw = '400';
+        if (isStart || isEnd) { bg = '#E8912B'; color = '#fff'; fw = '700'; }
+        else if (inRange) { bg = '#EFD9AC'; borderRadius = '0'; }
+        if (isToday && !isStart && !isEnd) { color = '#E8912B'; fw = '700'; }
+        html += `<div data-date="${date.toISOString()}" style="text-align:center;padding:8px 4px;font-size:13px;cursor:pointer;background:${bg};color:${color};border-radius:${borderRadius};font-weight:${fw};">${d}</div>`;
       }
-
       grid.innerHTML = html;
-
       grid.querySelectorAll('[data-date]').forEach(cell => {
         cell.addEventListener('click', () => {
-          const clicked = new Date(cell.dataset.date);
-          clicked.setHours(0, 0, 0, 0);
-          if (selectingStart || clicked < startDate) {
-            startDate = clicked;
-            endDate = null;
-            selectingStart = false;
-          } else {
-            endDate = clicked;
-            selectingStart = true;
-          }
+          const clicked = new Date(cell.dataset.date); clicked.setHours(0,0,0,0);
+          if (selectingStart || clicked < startDate) { startDate = clicked; endDate = null; selectingStart = false; }
+          else { endDate = clicked; selectingStart = true; }
           render();
         });
       });
     }
-
     render();
     document.body.appendChild(overlay);
   });
 }
 
 const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-
-function formatDate(d) {
-  const two = n => String(n).padStart(2, '0');
-  return `${two(d.getDate())}.${two(d.getMonth() + 1)}.${d.getFullYear()}`;
-}
+function formatDate(d) { const two = n => String(n).padStart(2,'0'); return `${two(d.getDate())}.${two(d.getMonth()+1)}.${d.getFullYear()}`; }
