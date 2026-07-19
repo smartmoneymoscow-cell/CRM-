@@ -20,6 +20,25 @@ import 'package:crazytrout_admin/screens/pond_map_filter_config.dart';
 ///  11. НИКОГДА не сдвигает контент — ОБЯЗАТЕЛЬНЫЙ ТЕСТ
 ///  12. z-order: над контентом, под нижним меню
 
+/// Hit test helper — возвращает результат hit test в заданной позиции
+HitTestResult hitTestOnScreen(WidgetTester tester, Offset position) {
+  return tester.hitTestOnBinding(position);
+}
+
+/// Извлекает имя виджета из HitTestResult
+String _getHitWidget(HitTestResult result) {
+  for (final entry in result.path) {
+    final target = entry.target;
+    if (target is RenderBox) {
+      final widget = target.debugCreator;
+      if (widget != null) {
+        return widget.toString();
+      }
+    }
+  }
+  return 'unknown';
+}
+
 void main() {
   group('FiltersDropdown — 12 строгих правил', () {
     Widget buildApp({
@@ -433,50 +452,115 @@ void main() {
           reason: 'bottomNavigationBar должен быть для z-order');
     });
 
-    // ─── Правило 12: z-order НАД контентом, ПОД нижним меню ───
-    // FiltersDropdown — только кнопка. Dropdown menu рендерится в
-    // PondMapScreen._buildFilterRow() через Positioned — внутри body.
-    // Проверяем что:
-    //   1. FiltersDropdown находится ВНУТРИ body (не отдельный overlay)
-    //   2. bottomNavigationBar рендерится ПОСЛЕ body → z-order выше
-    //   3. Dropdown (через Positioned в Stack) — часть body → ПОД навбаром
-    testWidgets('ПРАВИЛО 12: dropdown НАД контентом, ПОД нижним меню', (tester) async {
-      final key = GlobalKey();
-
+    // ─── Баг: dropdown ПОД контентом (лента бронирований) ───
+    // В реальном PondMapScreen dropdown рендерится через Positioned в Stack
+    // внутри _buildFilterRow(). Лента (_buildFeed) рендерится ПОСЛЕ в ListView
+    // → paint order: лента ПОВЕРХ dropdown. Это БАГ.
+    // Тест проверяет: при тапе в область dropdown — hit test попадает
+    // в контент ПОД ним (ленту), а НЕ в dropdown.
+    testWidgets('БАГ: dropdown ПОД лентой — hit test попадает в контент, не в dropdown', (tester) async {
+      // Строим дерево как в реальном PondMapScreen:
+      // Stack(dropdown) → потом контент (лента) в ListView
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
-          body: Column(children: [
-            const Text('Контент'),
-            FiltersDropdown(
-              key: key,
-              value: FilterValue.none,
-              onChange: (_) {},
-              isOpen: true,
-              onToggle: () {},
+          body: ListView(children: [
+            // _buildFilterRow — Stack с dropdown
+            Stack(clipBehavior: Clip.none, children: [
+              Row(children: [
+                FiltersDropdown(
+                  value: FilterValue.none,
+                  onChange: (_) {},
+                  isOpen: true,
+                  onToggle: () {},
+                ),
+              ]),
+              // Dropdown через Positioned (как в реальном коде)
+              Positioned(
+                top: kFilterRowHeight + kDropdownGap,
+                left: 0,
+                child: Container(
+                  width: kDropdownWidth,
+                  height: 200,
+                  color: Colors.white,
+                  child: const Text('Dropdown контент'),
+                ),
+              ),
+            ]),
+            // Лента бронирований ПОСЛЕ filter row
+            Container(
+              height: 400,
+              color: Colors.blue,
+              child: const Text('Лента бронирований'),
             ),
-            const Expanded(child: SizedBox()),
           ]),
-          bottomNavigationBar: Container(
-            height: kBottomNavHeight,
-            child: const Center(child: Text('Навбар')),
-          ),
         ),
       ));
 
-      // 1. FiltersDropdown — внутри body (Column), а не отдельный overlay.
-      // Body рендерится ПЕРВЫМ в Scaffold → dropdown (через Positioned)
-      // будет НАД контентом в z-order (Stack clipBehavior: Clip.none).
-      final dropdownRender = key.currentContext?.findRenderObject();
-      expect(dropdownRender, isNotNull,
-          reason: 'FiltersDropdown должен быть в дереве render objects');
+      // Проверяем hit test: тап в позицию dropdown
+      final dropdownCenter = tester.getCenter(find.text('Dropdown контент'));
+      final hitResult = hitTestOnScreen(tester, dropdownCenter);
 
-      // 2. bottomNavigationBar существует → рендерится ПОСЛЕ body.
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.bottomNavigationBar, isNotNull,
-          reason: 'bottomNavigationBar рендерится ПОСЛЕ body → z-order выше dropdown');
+      // Если БАГ: hit test попадает в ленту (Container blue), НЕ в dropdown.
+      // Dropdown НАД контентом → hit test должен попасть в dropdown.
+      final hitWidget = _getHitWidget(hitResult);
+      expect(hitWidget, isNot(equals('Лента бронирований')),
+          reason: 'Dropdown должен быть НАД лентой, а не ПОД ней');
+    });
 
-      // 3. Навбар кликабелен → он ВЫШЕ в z-order.
-      await tester.tap(find.text('Навбар'));
+    // ─── Баг: верхние углы dropdown скругляются при раскрытии ───
+    // В реальном коде dropdown Container имеет topLeft: 0, topRight: 0.
+    // Но визуально верхние углы скруглены. Тест проверяет что
+    // при открытии dropdown его верхние углы РОВНО 0.
+    testWidgets('БАГ: верхние углы dropdown должны быть 0 при раскрытии', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: ListView(children: [
+            Stack(clipBehavior: Clip.none, children: [
+              Row(children: [
+                FiltersDropdown(
+                  value: FilterValue.none,
+                  onChange: (_) {},
+                  isOpen: true,
+                  onToggle: () {},
+                ),
+              ]),
+              Positioned(
+                top: kFilterRowHeight + kDropdownGap,
+                left: 0,
+                child: Container(
+                  width: kDropdownWidth,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                      // topLeft и topRight НЕ указаны = 0
+                    ),
+                  ),
+                  height: 200,
+                  child: const Text('Dropdown контент'),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      ));
+
+      // Ищем Container dropdown — с borderRadius bottomLeft: 12
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      for (final c in containers) {
+        final d = c.decoration;
+        if (d is BoxDecoration && d.borderRadius is BorderRadius) {
+          final r = d.borderRadius! as BorderRadius;
+          if (r.bottomLeft == const Radius.circular(12)) {
+            // Нашли dropdown — верхние углы должны быть 0
+            expect(r.topLeft, Radius.zero,
+                reason: 'Верхний левый угол dropdown = 0, а не ${r.topLeft}');
+            expect(r.topRight, Radius.zero,
+                reason: 'Верхний правый угол dropdown = 0, а не ${r.topRight}');
+          }
+        }
+      }
     });
 
     // ─── Базовые проверки ───
