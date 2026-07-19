@@ -1330,40 +1330,46 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                           ),
                           const SizedBox(height: 12),
                           // Количество + Затраты
-                          Row(children: [
-                            Expanded(child: TextField(
-                              controller: qtyCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Количество (шт.)',
-                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9C9484)),
-                                filled: true,
-                                fillColor: const Color(0xFFF3EEE4),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              const Text('Количество (шт.)',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF8C8576))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: qtyCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFFF3EEE4),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
                               ),
-                            )),
+                            ])),
                             const SizedBox(width: 10),
-                            Expanded(child: TextField(
-                              controller: costCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Затраты',
-                                labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF9C9484)),
-                                filled: true,
-                                fillColor: const Color(0xFFF3EEE4),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              const Text('Затраты',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF8C8576))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: costCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFFF3EEE4),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
                               ),
-                            )),
+                            ])),
                           ]),
                           const SizedBox(height: 16),
                           // Кнопки
