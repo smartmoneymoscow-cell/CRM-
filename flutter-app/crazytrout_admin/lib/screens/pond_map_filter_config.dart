@@ -76,3 +76,6 @@ const double kBottomNavHeight = 60.0;
 
 /// Высота строки фильтров (кнопка + padding).
 const double kFilterRowHeight = 36.0;
+
+/// Радиус «пилюли» для кнопки фильтров.
+const double kPillRadius = 18.0;
