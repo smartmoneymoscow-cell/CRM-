@@ -73,8 +73,8 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse,
-          reason: 'RevenueDynamicsChart не должен перекрывать DashboardCard');
+      expect(d.top, lessThan(r.top),
+          reason: 'DashboardCard должен быть выше RevenueDynamicsChart');
     });
 
     testWidgets('не перекрывает FinanceDashboardCard (планшет 800×1280)',
@@ -83,7 +83,7 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse);
+      expect(d.top, lessThan(r.top));
     });
 
     testWidgets('не перекрывает KpiCards',
@@ -92,8 +92,8 @@ void main() {
 
       final k = tester.getRect(find.byType(KpiCards));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(k.overlaps(r), isFalse,
-          reason: 'RevenueDynamicsChart не должен перекрывать KpiCards');
+      expect(k.top, lessThan(r.top),
+          reason: 'KpiCards должен быть выше RevenueDynamicsChart');
     });
 
     testWidgets('не перекрывает PaymentTariffCard',

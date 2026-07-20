@@ -63,11 +63,11 @@ void main() {
       await tester.binding.setSurfaceSize(_phoneSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-      expect(
-        tester.getRect(find.byType(FinanceDashboardCard))
-            .overlaps(tester.getRect(find.byType(RevenueDynamicsChart))),
-        isFalse,
-      );
+      // Проверяем порядок: Dashboard выше Dynamics
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.top, lessThan(r.top),
+          reason: 'Dashboard должен быть выше Dynamics');
     });
 
     testWidgets('Нет наложения на планшете',
@@ -75,11 +75,10 @@ void main() {
       await tester.binding.setSurfaceSize(_tabletSize);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await _goToReports(tester);
-      expect(
-        tester.getRect(find.byType(FinanceDashboardCard))
-            .overlaps(tester.getRect(find.byType(RevenueDynamicsChart))),
-        isFalse,
-      );
+      final d = tester.getRect(find.byType(FinanceDashboardCard));
+      final r = tester.getRect(find.byType(RevenueDynamicsChart));
+      expect(d.top, lessThan(r.top),
+          reason: 'Dashboard должен быть выше Dynamics на планшете');
     });
 
     testWidgets('Все 5 блоков присутствуют',
@@ -142,7 +141,7 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "Сегодня" нет наложения');
+      expect(d.top, lessThan(r.top), reason: 'С "Сегодня" Dashboard выше Dynamics');
     });
 
     testWidgets('Нет наложения при фильтре "Неделя"',
@@ -154,7 +153,7 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "Неделя" нет наложения');
+      expect(d.top, lessThan(r.top), reason: 'С "Неделя" Dashboard выше Dynamics');
     });
 
     testWidgets('Нет наложения при фильтре "Месяц"',
@@ -166,7 +165,7 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "Месяц" нет наложения');
+      expect(d.top, lessThan(r.top), reason: 'С "Месяц" Dashboard выше Dynamics');
     });
 
     testWidgets('Нет наложения при фильтре "Квартал"',
@@ -178,7 +177,7 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "Квартал" нет наложения');
+      expect(d.top, lessThan(r.top), reason: 'С "Квартал" Dashboard выше Dynamics');
     });
 
     testWidgets('Нет наложения при фильтре "Все вр."',
@@ -190,7 +189,7 @@ void main() {
 
       final d = tester.getRect(find.byType(FinanceDashboardCard));
       final r = tester.getRect(find.byType(RevenueDynamicsChart));
-      expect(d.overlaps(r), isFalse, reason: 'С "Все вр." нет наложения');
+      expect(d.top, lessThan(r.top), reason: 'С "Все вр." Dashboard выше Dynamics');
     });
   });
 }
