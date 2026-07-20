@@ -833,13 +833,30 @@ class FiltersDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Углы кнопки: верхние НИКОГДА не меняются (pill 999),
-    // нижние выпрямляются (0) при раскрытии dropdown (Правило 5+13).
+    // Углы кнопки: верхние НИКОГДА не меняются (pill), нижние выпрямляются
+    // (0) при раскрытии dropdown (Правило 5+13).
+    //
+    // ВАЖНО: раньше здесь стоял Radius.circular(999) — «просто сделай
+    // круглым». Проблема в том, что Flutter клэмпит BorderRadius ЕДИНЫМ
+    // коэффициентом на все 4 угла сразу, а не независимо по углам:
+    // коэффициент считается по каждой стороне как min(1, side_length /
+    // (radius_a + radius_b)), и берётся МИНИМАЛЬНЫЙ по всем сторонам.
+    // Пока низ тоже 999 (закрыто), на левой/правой стороне сумма 999+999,
+    // и итоговый радиус клэмпится к H/2 (половина высоты — обычная
+    // «таблетка»). Как только низ становится 0 (открыто), сумма на той же
+    // стороне падает до 999+0=999 — вдвое меньше — а значит коэффициент
+    // клэмпинга вдвое БОЛЬШЕ, и верхний угол визуально становится вдвое
+    // крупнее (почти во всю высоту кнопки), хотя число 999 в коде не
+    // менялось вообще. Фикс: конкретное значение заведомо МЕНЬШЕ реальной
+    // высоty кнопки (иконка 13 + текст ~16 + паддинг 8+8 ≈ 32-34dp) —
+    // тогда клэмпинг не срабатывает ни в одном из состояний, и верхние
+    // углы рендерятся одинаково всегда, независимо от нижних.
+    const kPillRadius = 18.0;
     final radius = BorderRadius.only(
-      topLeft: const Radius.circular(999),
-      topRight: const Radius.circular(999),
-      bottomLeft: Radius.circular(isOpen ? 0 : 999),
-      bottomRight: Radius.circular(isOpen ? 0 : 999),
+      topLeft: const Radius.circular(kPillRadius),
+      topRight: const Radius.circular(kPillRadius),
+      bottomLeft: Radius.circular(isOpen ? 0 : kPillRadius),
+      bottomRight: Radius.circular(isOpen ? 0 : kPillRadius),
     );
 
     final active = value != FilterValue.none;
