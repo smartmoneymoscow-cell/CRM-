@@ -46,6 +46,11 @@ jobs:
       - name: Генерация обёрток проекта (Android + iOS)
         run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
 
+      - name: Удаление auto-generated widget_test.dart
+        # flutter create регенерирует дефолтный widget_test.dart (counter app),
+        # который не совпадает с реальным проектом → flutter test падает.
+        run: rm -f test/widget_test.dart
+
       # ВАЖНО: без этого шага каждый CI-ран получает СВОЙ debug.keystore
       # (генерируется Gradle с нуля на чистой машине), а значит каждый
       # следующий APK подписан ДРУГИМ ключом. Android при установке видит
@@ -131,13 +136,7 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Запуск тестов
-        run: |
-          set +e
-          flutter test --reporter json > test_results.json 2>test_stderr.txt
-          EXIT_CODE=$?
-          python3 scripts/parse_test_results.py test_results.json
-          cat test_stderr.txt
-          exit $EXIT_CODE
+        run: flutter test
 
       # --target-platform android-arm64 режет только движок Flutter и Dart-код,
       # но НЕ нативные библиотеки плагинов (например, сканер штрихкодов
@@ -190,6 +189,9 @@ jobs:
       - name: Генерация обёрток проекта (Android + iOS)
         run: flutter create . --platforms=android,ios --project-name=crazytrout_admin --org=com.crazytroutarena
 
+      - name: Удаление auto-generated widget_test.dart
+        run: rm -f test/widget_test.dart
+
       - name: Установка зависимостей
         run: flutter pub get
 
@@ -211,13 +213,7 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Запуск тестов
-        run: |
-          set +e
-          flutter test --reporter json > test_results.json 2>test_stderr.txt
-          EXIT_CODE=$?
-          python3 scripts/parse_test_results.py test_results.json
-          cat test_stderr.txt
-          exit $EXIT_CODE
+        run: flutter test
 
       - name: Сборка iOS без кодирования (no-codesign)
         run: flutter build ios --release --no-codesign
