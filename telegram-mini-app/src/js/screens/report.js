@@ -14,6 +14,9 @@ let lastFilterSource = null;
 
 let selectedIcon = 0;
 
+// ── Счётчик добавленной рыбы (по породам) ──
+let addedFish = {};
+
 export function renderReport() {
   const stats = store.getStats();
   const el = document.createElement('div');
@@ -82,7 +85,6 @@ function initReportHandlers() {
     const result = await showCalendarPicker(currentDateRange);
     if (result && result.start && result.end) {
       if (result.start.year === 2000) {
-        // Сброс
         currentDateRange = null;
         lastFilterSource = currentPeriod ? 'dropdown' : null;
       } else {
@@ -95,7 +97,7 @@ function initReportHandlers() {
   });
 }
 
-// ─── Фильтрация по периоду и дате (как Flutter _receiptInPeriod / _dateInRange) ───
+// ─── Фильтрация по периоду и дате ───
 function isInPeriod(date, period) {
   if (!period) return true;
   const now = new Date();
@@ -113,8 +115,7 @@ function isInPeriod(date, period) {
 
 function isInDateRange(date, range) {
   if (!range || !range.start || !range.end) return true;
-  const d = new Date(date);
-  d.setHours(0,0,0,0);
+  const d = new Date(date); d.setHours(0,0,0,0);
   const s = new Date(range.start); s.setHours(0,0,0,0);
   const e = new Date(range.end); e.setHours(23,59,59,999);
   return d >= s && d <= e;
@@ -136,18 +137,47 @@ function renderContent() {
   else renderFinanceContent();
 }
 
+// ─── KPI карточки (5 штук как в Flutter) ───
+function renderKpiCards(container, stats, filteredAvgCheck) {
+  const kpiData = [
+    { value: `${store.formatMoney(filteredAvgCheck)} ₽`, label: 'Средний чек', delta: '↑ 5%' },
+    { value: `LT ${stats.avgVisits || 3} / LTV ${store.formatMoney(stats.avgLTV || 120)} тыс`, label: 'LT / LTV', delta: '↑ 8%' },
+    { value: `${stats.uniqueClients}`, label: 'Всего клиентов', delta: '↑ 3' },
+    { value: `${stats.avgFish || 2.4} шт`, label: 'Средний улов', delta: '↑ 1' },
+    { value: `★ ${(stats.rating || 4.7).toFixed(1)}`, label: 'Оценка', delta: '↑ 0.2' },
+  ];
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;">
+      ${kpiData.slice(0, 2).map(kpi => `
+        <div class="card" style="padding:14px;">
+          <div style="font-size:18px;font-weight:700;color:var(--kOrange);">${kpi.value}</div>
+          <div style="font-size:12px;color:var(--kMuted);margin-top:4px;">${kpi.label}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--kDelta);margin-top:4px;">${kpi.delta}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+      ${kpiData.slice(2).map(kpi => `
+        <div class="card" style="padding:14px;">
+          <div style="font-size:16px;font-weight:700;color:var(--kOrange);">${kpi.value}</div>
+          <div style="font-size:11px;color:var(--kMuted);margin-top:4px;">${kpi.label}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--kDelta);margin-top:4px;">${kpi.delta}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 function renderFinanceContent() {
   const stats = store.getStats();
   const container = document.getElementById('report-content');
   if (!container) return;
 
-  // Фильтрация чеков по периоду/дате
   const period = getEffectivePeriod();
   const dateRange = getEffectiveDateRange();
   const filteredReceipts = store.receipts.filter(r => isInPeriod(r.date, period) && isInDateRange(r.date, dateRange));
   const filteredRevenue = filteredReceipts.reduce((s, r) => s + r.total, 0);
   const filteredAvgCheck = filteredReceipts.length ? Math.round(filteredRevenue / filteredReceipts.length) : 0;
-  const filteredClients = new Set(filteredReceipts.filter(r => r.clientId).map(r => r.clientId)).size;
 
   container.innerHTML = `
     <div id="finance-dashboard-card"></div>
@@ -155,35 +185,7 @@ function renderFinanceContent() {
       <div class="card-header"><div class="card-title">Структура выручки</div></div>
       <div style="height:180px;"><canvas id="sales-pie"></canvas></div>
     </div>
-    <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px;">
-      <div class="card" style="padding:16px;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">${store.formatMoney(filteredAvgCheck)} ₽</div>
-        <div style="font-size:12px;color:var(--kMuted);margin-top:4px;">Средний чек</div>
-        <div style="font-size:11px;font-weight:700;color:var(--kDelta);margin-top:4px;">↑ 5%</div>
-      </div>
-      <div class="card" style="padding:16px;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">LT ${stats.avgVisits || 3} / LTV ${store.formatMoney(stats.avgLTV || 120)} тыс</div>
-        <div style="font-size:12px;color:var(--kMuted);margin-top:4px;">LT / LTV</div>
-        <div style="font-size:11px;font-weight:700;color:var(--kDelta);margin-top:4px;">↑ 8%</div>
-      </div>
-    </div>
-    <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;">
-      <div class="card" style="padding:16px;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">${stats.uniqueClients}</div>
-        <div style="font-size:12px;color:var(--kMuted);margin-top:4px;">Всего клиентов</div>
-        <div style="font-size:11px;font-weight:700;color:var(--kDelta);margin-top:4px;">↑ 3</div>
-      </div>
-      <div class="card" style="padding:16px;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">${stats.avgFish || 2.4} шт</div>
-        <div style="font-size:12px;color:var(--kMuted);margin-top:4px;">Средний улов</div>
-        <div style="font-size:11px;font-weight:700;color:var(--kDelta);margin-top:4px;">↑ 1</div>
-      </div>
-      <div class="card" style="padding:16px;">
-        <div style="font-size:22px;font-weight:700;color:var(--kOrange);">★ ${(stats.rating || 4.7).toFixed(1)}</div>
-        <div style="font-size:12px;color:var(--kMuted);margin-top:4px;">Оценка</div>
-        <div style="font-size:11px;font-weight:700;color:var(--kDelta);margin-top:4px;">↑ 0.2</div>
-      </div>
-    </div>
+    <div id="kpi-cards-container"></div>
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><div class="card-title">Оплата и тарифы</div></div>
       <div style="height:160px;"><canvas id="payment-chart"></canvas></div>
@@ -201,6 +203,10 @@ function renderFinanceContent() {
   `;
 
   setTimeout(() => {
+    // KPI карточки
+    const kpiContainer = document.getElementById('kpi-cards-container');
+    if (kpiContainer) renderKpiCards(kpiContainer, stats, filteredAvgCheck);
+
     const fdContainer = document.getElementById('finance-dashboard-card');
     if (fdContainer) {
       renderFinanceDashboardCard(fdContainer, {
@@ -284,6 +290,9 @@ function renderClientStats() {
     </div>
   `;
 
+  // Автокомплит клиентов
+  renderClientAutocomplete(container);
+
   container.querySelectorAll('.payment-row').forEach(row => {
     const avatar = row.querySelector('.client-avatar');
     if (avatar) {
@@ -296,63 +305,288 @@ function renderClientStats() {
   });
 }
 
+// ── Автокомплит клиентов (как в Чеках) ──
+function renderClientAutocomplete(container) {
+  const searchHtml = `
+    <div class="search-bar" style="margin-bottom:10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9C9484" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="report-client-search" placeholder="Поиск клиента" autocomplete="off">
+      <svg id="report-search-clear" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9C9484" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;display:none;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </div>
+    <div id="report-client-suggestions"></div>
+  `;
+  container.insertAdjacentHTML('afterbegin', searchHtml);
+
+  const searchInput = document.getElementById('report-client-search');
+  const clearBtn = document.getElementById('report-search-clear');
+  const suggestionsDiv = document.getElementById('report-client-suggestions');
+
+  function updateSuggestions(q) {
+    if (!suggestionsDiv) return;
+    if (!q) { suggestionsDiv.innerHTML = ''; suggestionsDiv.className = 'hidden'; return; }
+    const query = q.toLowerCase();
+    const seen = new Set();
+    const clients = store.receipts
+      .filter(r => r.clientId && !r.isGuest)
+      .map(r => store.getClientById(r.clientId))
+      .filter(c => c && !seen.has(c.id) && (c.name.toLowerCase().includes(query) || c.phone.includes(query)) && seen.add(c.id))
+      .sort((a, b) => {
+        const aS = a.name.toLowerCase().startsWith(query) ? 0 : 1;
+        const bS = b.name.toLowerCase().startsWith(query) ? 0 : 1;
+        return aS !== bS ? aS - bS : a.name.localeCompare(b.name);
+      })
+      .slice(0, 4);
+    if (!clients.length) { suggestionsDiv.innerHTML = ''; suggestionsDiv.className = 'hidden'; return; }
+    suggestionsDiv.className = 'client-suggestions';
+    suggestionsDiv.innerHTML = clients.map(c => `
+      <div class="client-suggestion-item" data-client-id="${c.id}">
+        ${store.renderAvatar(c, 36)}
+        <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div><div style="font-size:12px;color:var(--kMuted2);">${c.phone}</div></div>
+      </div>
+    `).join('');
+    suggestionsDiv.querySelectorAll('.client-suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const clientId = parseInt(item.dataset.clientId);
+        suggestionsDiv.innerHTML = '';
+        suggestionsDiv.className = 'hidden';
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        showClientCard(clientId);
+        tg.hapticImpact('light');
+      });
+    });
+  }
+
+  searchInput?.addEventListener('input', e => {
+    const q = e.target.value.trim();
+    clearBtn.style.display = q ? 'block' : 'none';
+    updateSuggestions(q);
+  });
+  clearBtn?.addEventListener('click', () => {
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    if (suggestionsDiv) { suggestionsDiv.innerHTML = ''; suggestionsDiv.className = 'hidden'; }
+  });
+}
+
+// ─── Статистика улова: две таблицы + кнопка «Добавить рыбу» ───
 function renderFishStats() {
   const container = document.getElementById('report-content');
   if (!container) return;
 
   const period = getEffectivePeriod();
   const dateRange = getEffectiveDateRange();
+
+  // Собираем статистику улова из чеков
   const fishStats = {};
   store.receipts.filter(r => isInPeriod(r.date, period) && isInDateRange(r.date, dateRange)).forEach(r => {
     r.catches.forEach(c => {
-      if (!fishStats[c.breedLabel]) fishStats[c.breedLabel] = { count: 0, totalKg: 0, totalSum: 0, emoji: '' };
+      if (!fishStats[c.breedLabel]) fishStats[c.breedLabel] = { count: 0, totalKg: 0, totalSum: 0, emoji: '', image: '' };
       fishStats[c.breedLabel].count++;
       fishStats[c.breedLabel].totalKg += c.kg + c.grams / 1000;
       fishStats[c.breedLabel].totalSum += c.sum;
       const breed = store.fishBreeds.find(f => f.label === c.breedLabel);
-      if (breed) fishStats[c.breedLabel].emoji = breed.emoji;
+      if (breed) {
+        fishStats[c.breedLabel].emoji = breed.emoji;
+        fishStats[c.breedLabel].image = breed.image;
+      }
     });
   });
 
+  // Остатки из store (демо)
+  const fishRemaining = { 'Осётр': 120, 'Карп': 250, 'Амур': 80, 'Линь': 65, 'Форель': 45 };
+  const fishMargin = { 'Осётр': 42, 'Карп': 28, 'Амур': 35, 'Линь': 30, 'Форель': 38 };
+
   const fishEntries = Object.entries(fishStats).sort((a, b) => b[1].totalSum - a[1].totalSum);
-  const maxSum = fishEntries.length ? fishEntries[0][1].totalSum : 1;
+  const totalRevenue = fishEntries.reduce((s, [, v]) => s + v.totalSum, 0);
+  const totalCount = fishEntries.reduce((s, [, v]) => s + v.count, 0);
+  const totalRemaining = Object.entries(fishRemaining).reduce((s, [k, v]) => s + v + (addedFish[k] || 0), 0);
+  const totalMargin = fishEntries.length ? Math.round(fishEntries.reduce((s, [, v]) => s + (fishMargin[v.emoji ? Object.keys(fishStats).find(k => fishStats[k] === v) : ''] || 30), 0) / fishEntries.length) : 0;
+
+  const revenues = fishEntries.map(([, s]) => s.totalSum);
+  const minRev = revenues.length ? Math.min(...revenues) : 0;
+  const maxRev = revenues.length ? Math.max(...revenues) : 1;
+
+  function revenueColor(value) {
+    if (maxRev <= minRev) return 'var(--kFill)';
+    const t = Math.max(0, Math.min(1, (value - minRev) / (maxRev - minRev)));
+    return t < 0.5 ? '#FBE8D0' : '#D4EDDA';
+  }
+
+  function formatNum(v) {
+    if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.', ',') + ' млн';
+    if (v > 999) return Math.round(v / 1000) + ' тыс.';
+    return String(v);
+  }
+
+  function formatRevenue(v) {
+    const rounded = Math.round(v);
+    if (rounded >= 1000000) return (rounded / 1000000).toFixed(1).replace('.', ',') + ' млн';
+    if (rounded > 999) return Math.round(rounded / 1000) + ' тыс.';
+    return store.formatMoney(rounded);
+  }
 
   container.innerHTML = `
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><div class="card-title">Статистика улова</div></div>
-      <div style="height:200px;margin-bottom:16px;"><canvas id="fish-chart"></canvas></div>
+    <!-- Таблица 1: Вылов/Вес/Выручка/Остаток -->
+    <div style="border:0.5px solid #EFE8D8;border-radius:12px;overflow:hidden;margin-bottom:18px;">
+      <div style="display:flex;padding:10px 12px;background:#F3EEE4;border-bottom:0.5px solid #DDD3BC;">
+        <div style="flex:3;font-size:11px;font-weight:700;color:#8C8576;">Тип рыбы</div>
+        <div style="flex:2;font-size:11px;font-weight:700;color:#8C8576;text-align:center;">Вылов (шт.)</div>
+        <div style="flex:2;font-size:11px;font-weight:700;color:#8C8576;text-align:center;">Ср. Вес (кг.)</div>
+        <div style="flex:3;font-size:11px;font-weight:700;color:#8C8576;text-align:center;">Выручка</div>
+        <div style="flex:2;font-size:11px;font-weight:700;color:#8C8576;text-align:center;">Остаток (шт.)</div>
+      </div>
       ${fishEntries.map(([name, s]) => {
-        const pct = Math.round((s.totalSum / maxSum) * 100);
         const breed = store.fishBreeds.find(f => f.label === name);
+        const avgWeight = s.count > 0 ? (s.totalKg / s.count).toFixed(1) : '0.0';
+        const remaining = (fishRemaining[name] || 0) + (addedFish[name] || 0);
+        const lowStock = remaining < 50;
         return `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--kHairline2);">
-            <div style="width:36px;height:36px;border-radius:8px;background:var(--kFill);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <img src="${breed?.image || ''}" style="height:24px;border-radius:4px;" alt="">
+          <div style="display:flex;padding:12px;background:#FBF6EC;border-top:0.5px solid #EFE8D8;align-items:center;">
+            <div style="flex:3;display:flex;flex-direction:column;align-items:center;">
+              <div style="height:24px;display:flex;align-items:center;justify-content:center;">
+                ${breed?.image ? `<img src="${breed.image}" style="height:24px;border-radius:4px;" alt="">` : `<span style="font-size:18px;">${s.emoji}</span>`}
+              </div>
+              <div style="font-size:13px;font-weight:600;color:#14130F;margin-top:4px;">${name}</div>
             </div>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <span style="font-size:13px;font-weight:600;">${name}</span>
-                <span style="font-size:13px;font-weight:700;color:var(--kOrange);">${store.formatMoney(s.totalSum)} ₽</span>
+            <div style="flex:2;font-size:13px;color:#14130F;text-align:center;">${formatNum(s.count)}</div>
+            <div style="flex:2;font-size:13px;color:#14130F;text-align:center;">${avgWeight}</div>
+            <div style="flex:3;text-align:center;">
+              <span style="display:inline-block;padding:4px 6px;font-size:13px;font-weight:600;border-radius:8px;background:${revenueColor(s.totalSum)};color:#14130F;">${formatRevenue(s.totalSum)}</span>
+            </div>
+            <div style="flex:2;font-size:13px;text-align:center;font-weight:${lowStock ? '700' : '400'};color:${lowStock ? '#C9302C' : '#14130F'};">${formatNum(remaining)}</div>
+          </div>
+        `;
+      }).join('')}
+      <div style="display:flex;padding:12px;background:#F3EEE4;border-top:0.5px solid #DDD3BC;">
+        <div style="flex:3;font-size:13px;font-weight:800;color:#14130F;text-align:center;">ИТОГО</div>
+        <div style="flex:2;font-size:13px;font-weight:700;color:#14130F;text-align:center;">${formatNum(totalCount)}</div>
+        <div style="flex:2;font-size:13px;font-weight:700;color:#9C9484;text-align:center;">—</div>
+        <div style="flex:3;text-align:center;">
+          <span style="display:inline-block;padding:4px 6px;font-size:13px;font-weight:800;border-radius:8px;background:#D4EDDA;color:#14130F;">${formatRevenue(totalRevenue)}</span>
+        </div>
+        <div style="flex:2;font-size:13px;font-weight:700;color:#14130F;text-align:center;">${formatNum(totalRemaining)}</div>
+      </div>
+    </div>
+
+    <!-- Таблица 2: Доля в выручке / Маржа -->
+    <div style="border:0.5px solid #EFE8D8;border-radius:12px;overflow:hidden;margin-bottom:18px;">
+      <div style="display:flex;padding:10px 12px;background:#F3EEE4;border-bottom:0.5px solid #DDD3BC;">
+        <div style="flex:3;font-size:11px;font-weight:700;color:#8C8576;">Тип рыбы</div>
+        <div style="flex:3;font-size:11px;font-weight:700;color:#8C8576;text-align:center;">Доля в выручке</div>
+        <div style="flex:3;font-size:11px;font-weight:700;color:#8C8576;text-align:center;">Маржа</div>
+      </div>
+      ${fishEntries.map(([name, s]) => {
+        const breed = store.fishBreeds.find(f => f.label === name);
+        const sharePct = totalRevenue > 0 ? Math.round((s.totalSum / totalRevenue) * 100) : 0;
+        const margin = fishMargin[name] || 30;
+        return `
+          <div style="display:flex;padding:12px;background:#FBF6EC;border-top:0.5px solid #EFE8D8;align-items:center;">
+            <div style="flex:3;display:flex;flex-direction:column;align-items:center;">
+              <div style="height:24px;display:flex;align-items:center;justify-content:center;">
+                ${breed?.image ? `<img src="${breed.image}" style="height:24px;border-radius:4px;" alt="">` : `<span style="font-size:18px;">${s.emoji}</span>`}
               </div>
-              <div style="height:4px;border-radius:2px;background:var(--kFill);overflow:hidden;">
-                <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--kOrange),#F0A050);border-radius:2px;"></div>
+              <div style="font-size:13px;font-weight:600;color:#14130F;margin-top:4px;">${name}</div>
+            </div>
+            <div style="flex:3;text-align:center;">
+              <div style="font-size:13px;color:#14130F;">${sharePct}%</div>
+              <div style="height:6px;border-radius:3px;background:#EFE8D8;margin-top:4px;overflow:hidden;">
+                <div style="height:100%;width:${sharePct}%;background:#E8912B;border-radius:3px;"></div>
               </div>
-              <div style="font-size:11px;color:var(--kMuted2);margin-top:4px;">${s.count} раз · ${s.totalKg.toFixed(1)} кг</div>
+            </div>
+            <div style="flex:3;text-align:center;">
+              <div style="font-size:13px;color:#14130F;">${margin}%</div>
+              <div style="height:6px;border-radius:3px;background:#EFE8D8;margin-top:4px;overflow:hidden;">
+                <div style="height:100%;width:${margin}%;background:#3FA66B;border-radius:3px;"></div>
+              </div>
             </div>
           </div>
         `;
       }).join('')}
+      <div style="display:flex;padding:12px;background:#F3EEE4;border-top:0.5px solid #DDD3BC;">
+        <div style="flex:3;font-size:13px;font-weight:800;color:#14130F;text-align:center;">ИТОГО</div>
+        <div style="flex:3;font-size:13px;font-weight:700;color:#9C9484;text-align:center;">—</div>
+        <div style="flex:3;text-align:center;">
+          <div style="font-size:13px;font-weight:700;color:#14130F;">${totalMargin}%</div>
+          <div style="height:6px;border-radius:3px;background:#EFE8D8;margin-top:4px;overflow:hidden;">
+            <div style="height:100%;width:${totalMargin}%;background:#3FA66B;border-radius:3px;"></div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Кнопка «Добавить рыбу в пруд» -->
+    <button class="btn btn-outline" id="add-fish-btn" style="width:100%;padding:14px;border-radius:14px;background:var(--kFill);border:0.5px solid #DDD3BC;color:#8A6D1E;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+      Добавить рыбу в пруд
+    </button>
   `;
 
-  setTimeout(() => {
-    const fishCanvas = document.getElementById('fish-chart');
-    if (fishCanvas && fishEntries.length) {
-      drawDoughnut(fishCanvas,
-        fishEntries.map(([name]) => name),
-        fishEntries.map(([, s]) => s.totalSum),
-        ['#E8912B', '#F3EEE4', '#4F9D75', '#8B94A0', '#B8862E']
-      );
-    }
-  }, 0);
+  document.getElementById('add-fish-btn')?.addEventListener('click', () => {
+    showAddFishDialog();
+    tg.hapticImpact('light');
+  });
+}
+
+// ── Диалог «Добавить рыбу в пруд» ──
+function showAddFishDialog() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const species = store.fishBreeds.map(f => f.label);
+  let selectedSpecies = species[0];
+
+  overlay.innerHTML = `
+    <div class="sheet" style="max-width:320px;">
+      <div style="font-size:13px;font-weight:700;color:#8C8576;letter-spacing:0.5px;margin-bottom:16px;">ДОБАВИТЬ РЫБУ В ПРУД</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:600;color:#8C8576;margin-bottom:6px;">Вид рыбы</div>
+        <div id="fish-species-select" style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${species.map((sp, i) => {
+            const breed = store.fishBreeds.find(f => f.label === sp);
+            return `<div class="chip ${i === 0 ? 'selected' : ''}" data-species="${sp}" style="display:flex;align-items:center;gap:6px;padding:8px 12px;cursor:pointer;">
+              ${breed?.image ? `<img src="${breed.image}" style="height:18px;border-radius:3px;">` : `<span>${breed?.emoji || ''}</span>`}
+              <span>${sp}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;color:#8C8576;margin-bottom:6px;">Количество (шт.)</div>
+          <input type="number" id="fish-qty" style="width:100%;padding:10px 12px;background:#F3EEE4;border:none;border-radius:12px;font-size:14px;box-sizing:border-box;" placeholder="0">
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;color:#8C8576;margin-bottom:6px;">Затраты</div>
+          <input type="number" id="fish-cost" style="width:100%;padding:10px 12px;background:#F3EEE4;border:none;border-radius:12px;font-size:14px;box-sizing:border-box;" placeholder="0">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" id="fish-cancel" style="flex:1;padding:14px;border-radius:12px;border:0.5px solid #DDD3BC;color:#9C9484;">Отмена</button>
+        <button class="btn" id="fish-add" style="flex:1;padding:14px;border-radius:12px;background:#E8912B;color:#fff;font-weight:700;">Добавить</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Выбор вида рыбы
+  overlay.querySelectorAll('[data-species]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      overlay.querySelectorAll('[data-species]').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      selectedSpecies = chip.dataset.species;
+      tg.hapticSelection();
+    });
+  });
+
+  overlay.querySelector('#fish-cancel')?.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  overlay.querySelector('#fish-add')?.addEventListener('click', () => {
+    const qty = parseInt(overlay.querySelector('#fish-qty').value) || 0;
+    if (qty <= 0) return;
+    addedFish[selectedSpecies] = (addedFish[selectedSpecies] || 0) + qty;
+    overlay.remove();
+    tg.hapticNotification('success');
+    renderFishStats();
+  });
 }
