@@ -287,13 +287,13 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Скачивание APK
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: app-release-apk
           path: artifacts/apk
 
       - name: Скачивание IPA (необязательно — iOS может не собраться)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: app-release-ipa
