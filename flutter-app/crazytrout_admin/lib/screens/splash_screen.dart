@@ -14,17 +14,6 @@ class SplashScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Анимация карпов — в самом верху, на всю ширину
-            SizedBox(
-              width: double.infinity,
-              height: 140,
-              child: Image.asset(
-                'assets/icon/carp_swim.gif',
-                fit: BoxFit.fitWidth,
-                alignment: Alignment.center,
-                filterQuality: FilterQuality.medium,
-              ),
-            ),
             // Логотип по центру
             Expanded(
               child: Center(
