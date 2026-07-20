@@ -40,14 +40,14 @@ class KpiCards extends StatelessWidget {
             children: [
               Expanded(child: _KpiCard(
                 icon: Icons.people_outline, iconColor: const Color(0xFF6B4226),
-                title: 'Всего клиентов',
+                title: 'Клиенты (всего)',
                 value: '${stats.totalClients}',
                 subtitle: '${stats.returnPct.toStringAsFixed(0)}% возвращаются',
               )),
               const SizedBox(width: 10),
               Expanded(child: _KpiCard(
                 icon: Icons.phishing, iconColor: const Color(0xFF4A7C59),
-                title: 'Средний улов на клиента',
+                title: 'Улов (на клиента)',
                 value: '${stats.avgFishPerClient.toStringAsFixed(1).replaceAll('.', ',')} шт.',
                 subtitle: '${stats.avgWeightPerClient.toStringAsFixed(1).replaceAll('.', ',')} кг',
               )),
