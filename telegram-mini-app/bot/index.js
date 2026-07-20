@@ -351,8 +351,22 @@ healthServer.listen(PORT, () => {
 
 // --- Запуск бота ---
 bot.start({
-  onStart: (botInfo) => {
+  onStart: async (botInfo) => {
     console.log(`🐟 Бот @${botInfo.username} запущен!`);
     console.log(`📱 Mini App: ${MINI_APP_URL}`);
+
+    // Кнопка меню (рядом с полем ввода) — открывает Mini App
+    try {
+      await bot.api.setChatMenuButton({
+        menu_button: {
+          type: 'web_app',
+          text: '🐟 CRM',
+          web_app: { url: MINI_APP_URL }
+        }
+      });
+      console.log('✅ Menu button set');
+    } catch (e) {
+      console.warn('⚠️ Could not set menu button:', e.message);
+    }
   }
 });
