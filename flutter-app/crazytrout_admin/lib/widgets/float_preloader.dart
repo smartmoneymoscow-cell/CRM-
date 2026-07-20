@@ -1,32 +1,21 @@
 import 'package:flutter/material.dart';
 
-/// Прелоадер — вращающийся круг с текстом.
+/// Прелоадер — анимированный поплавок с надписью.
 ///
-/// Использование:
-/// ```dart
-/// FloatPreloader(
-///   label: 'Ищем принтеры…',
-///   progress: null, // indeterminate
-/// )
-/// ```
+/// GIF-анимация поплавка (30 кадров, 10 fps,循环).
 class FloatPreloader extends StatefulWidget {
   final String label;
-  final double? progress;
 
   const FloatPreloader({
     super.key,
-    this.label = 'Ищем принтеры…',
-    this.progress,
+    this.label = 'Загрузка…',
   });
 
   @override
-  FloatPreloaderState createState() => FloatPreloaderState();
+  State<FloatPreloader> createState() => _FloatPreloaderState();
 }
 
-class FloatPreloaderState extends State<FloatPreloader> {
-  @deprecated
-  void triggerBite() {}
-
+class _FloatPreloaderState extends State<FloatPreloader> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -38,18 +27,13 @@ class FloatPreloaderState extends State<FloatPreloader> {
           SizedBox(
             width: 36,
             height: 36,
-            child: widget.progress != null
-                ? CircularProgressIndicator(
-                    value: widget.progress!.clamp(0.0, 1.0),
-                    strokeWidth: 3,
-                    color: const Color(0xFFE89829),
-                    backgroundColor: const Color(0xFFF3EEE4),
-                  )
-                : const CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: Color(0xFFE89829),
-                    backgroundColor: Color(0xFFF3EEE4),
-                  ),
+            child: Image.asset(
+              'assets/icon/float_bobber.gif',
+              width: 36,
+              height: 36,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.none,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
