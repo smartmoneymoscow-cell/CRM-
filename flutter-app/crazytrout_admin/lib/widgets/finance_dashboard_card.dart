@@ -200,8 +200,7 @@ class _RevenueCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'к прошлому
-периоду',
+                      'к прошлому\nпериоду',
                       maxLines: 2,
                       style: TextStyle(color: kDeltaLabel, fontSize: 10.5),
                     ),
