@@ -28,6 +28,33 @@ bot.command('start', async (ctx) => {
   );
 });
 
+// --- Команда /menu — закреплённое меню с кнопкой Mini App ---
+bot.command('menu', async (ctx) => {
+  const msg = await ctx.reply(
+    '🐟 *Crazy Trout Arena — CRM*\n' +
+    '━━━━━━━━━━━━━━━\n\n' +
+    '🧾 *Чеки* — выставление и история\n' +
+    '🗺️ *Карта* — 16 секторов пруда\n' +
+    '📊 *Отчёты* — финансы и статистика\n' +
+    '👤 *Профиль* — данные клиентов\n\n' +
+    'Нажмите кнопку ниже 👇',
+    {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '🐟 Открыть CRM', web_app: { url: MINI_APP_URL } }],
+        ]
+      }
+    }
+  );
+  // Закрепляем сообщение
+  try {
+    await ctx.api.pinChatMessage(ctx.chat.id, msg.message_id, { disable_notification: true });
+  } catch (e) {
+    console.warn('Не удалось закрепить:', e.message);
+  }
+});
+
 // --- Команда /app — открыть Mini App ---
 bot.command('app', async (ctx) => {
   await ctx.reply('Откройте CRM-систему:', {
@@ -149,6 +176,7 @@ bot.callbackQuery('help', async (ctx) => {
   await ctx.reply(
     '❓ *Команды бота:*\n\n' +
     '/start — Главное меню\n' +
+    '/menu — Закреплённое меню с кнопкой\n' +
     '/app — Открыть CRM\n' +
     '/stats — Статистика\n\n' +
     '📱 *Mini App*\n' +
