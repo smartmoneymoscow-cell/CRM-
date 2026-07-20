@@ -131,7 +131,13 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Запуск тестов
-        run: flutter test --reporter github
+        run: |
+          set +e
+          flutter test --reporter json > test_results.json 2>test_stderr.txt
+          EXIT_CODE=$?
+          python3 scripts/parse_test_results.py test_results.json
+          cat test_stderr.txt
+          exit $EXIT_CODE
 
       # --target-platform android-arm64 режет только движок Flutter и Dart-код,
       # но НЕ нативные библиотеки плагинов (например, сканер штрихкодов
@@ -205,7 +211,13 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Запуск тестов
-        run: flutter test --reporter github
+        run: |
+          set +e
+          flutter test --reporter json > test_results.json 2>test_stderr.txt
+          EXIT_CODE=$?
+          python3 scripts/parse_test_results.py test_results.json
+          cat test_stderr.txt
+          exit $EXIT_CODE
 
       - name: Сборка iOS без кодирования (no-codesign)
         run: flutter build ios --release --no-codesign
