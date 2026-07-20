@@ -136,8 +136,10 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                    color: active ? kInk : kMuted2,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active ? kInk : kMuted,
+                    fontFamily: 'PT Sans',
+                    fontFamilyFallback: ['sans-serif'],
                   ),
                 ),
               ),
@@ -145,14 +147,15 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
                 width: 44,
                 height: 44,
                 child: Stack(
-                  alignment: Alignment.center,
                   children: [
-                    Icon(
-                      _open
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.keyboard_arrow_down_rounded,
-                      size: 20,
-                      color: kMuted2,
+                    Center(
+                      child: Icon(
+                        _open
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: kMuted2,
+                      ),
                     ),
                     if (widget.active)
                       const Positioned(
@@ -225,13 +228,15 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: item.isReset
-                        ? FontWeight.w400
+                        ? FontWeight.w500
                         : selected
                             ? FontWeight.w700
-                            : FontWeight.w400,
+                            : FontWeight.w500,
                     color: enabled
-                        ? (item.isReset ? kMuted2 : kInk)
+                        ? (item.isReset ? kMuted : kInk)
                         : kHairline,
+                    fontFamily: 'PT Sans',
+                    fontFamilyFallback: ['sans-serif'],
                   ),
                 ),
               ),

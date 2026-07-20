@@ -59,6 +59,7 @@ flutter:
     - assets/icon/icon.png
     - assets/icon/icon_foreground.png
     - assets/icon/float_bobber.gif
+    - assets/icon/fishing_reel.gif
     - assets/fonts/PTSans-Regular.ttf
     - assets/fonts/PTSans-Bold.ttf
     - assets/avatars/avatar_1.jpeg
