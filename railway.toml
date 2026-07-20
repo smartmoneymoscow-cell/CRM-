@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "cd telegram-mini-app/bot && npm install"
+
+[deploy]
+startCommand = "cd telegram-mini-app/bot && node index.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
