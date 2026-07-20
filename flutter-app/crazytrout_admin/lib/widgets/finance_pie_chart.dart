@@ -302,7 +302,7 @@ class _PctLabel {
 }
 
 // ============================================================================
-// _LegendTable — премиальная легенда в виде таблицы: категория, доля,
+// _LegendTable — премиальная легенда в виде таблицы: категория,
 // выручка целиком, количество (шт. рыбы / входов). Без сокращений и
 // переносов; с шапкой колонок и итоговой строкой.
 // ============================================================================
@@ -343,7 +343,6 @@ class _LegendTable extends StatelessWidget {
             _dataRow(
               color: colors[i],
               label: data.segments[i].label,
-              pct: data.pct(data.segments[i]),
               amount: data.segments[i].amount,
               qty: data.segments[i].qty,
               qtyUnit: data.segments[i].qtyUnit,
@@ -355,7 +354,6 @@ class _LegendTable extends StatelessWidget {
           _dataRow(
             color: null,
             label: 'Итого',
-            pct: 100,
             amount: data.total,
             qty: data.totalQty,
             qtyUnit: 'шт.',
@@ -389,13 +387,12 @@ class _LegendTable extends StatelessWidget {
       padding: EdgeInsets.only(top: topPad, bottom: bottomPad),
       child: Container(height: 1, color: kHairline2),
     );
-    return TableRow(children: [line(), line(), line(), line(), line()]);
+    return TableRow(children: [line(), line(), line(), line()]);
   }
 
   TableRow _dataRow({
     required Color? color,
     required String label,
-    required double pct,
     required double amount,
     required int qty,
     required String qtyUnit,
@@ -412,12 +409,6 @@ class _LegendTable extends StatelessWidget {
       fontSize: 13,
       fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
       color: kInk,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-    final pctStyle = TextStyle(
-      fontSize: 12.5,
-      fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-      color: bold ? kInk : kMuted,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
     final qtyStyle = TextStyle(
@@ -456,4 +447,3 @@ class _LegendTable extends StatelessWidget {
   }
 }
 
-String _fmtPct(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
