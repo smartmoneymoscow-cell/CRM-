@@ -1,6 +1,7 @@
 // === Telegram Bot — Crazy Trout Arena CRM v0.5.0 ===
 // Принимает данные из Mini App, отправляет чеки в чат, управляет печатью
 
+const http = require('http');
 const { Bot, GrammyError, HttpError } = require('grammy');
 
 // --- Конфигурация ---
@@ -332,7 +333,23 @@ bot.catch((err) => {
   }
 });
 
-// --- Запуск ---
+// --- Health check HTTP server (for Railway) ---
+const PORT = process.env.PORT || 3000;
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', bot: 'Crazy Trout Arena CRM', version: '0.5.0' }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
+healthServer.listen(PORT, () => {
+  console.log(`🏥 Health check server on port ${PORT}`);
+});
+
+// --- Запуск бота ---
 bot.start({
   onStart: (botInfo) => {
     console.log(`🐟 Бот @${botInfo.username} запущен!`);
