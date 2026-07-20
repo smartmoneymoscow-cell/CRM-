@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/demo_fish_stats.dart';
+import '../data/sales_decomposition.dart';
 import '../widgets/finance_dashboard_card.dart';
 import '../widgets/finance_pie_chart.dart';
 import '../data/sales_decomposition.dart';
@@ -818,6 +819,23 @@ class _ScaledFishStats implements FishSpeciesStats {
   @override double get avgWeight => count > 0 ? weightKg / count : 0;
 }
 
+/// Обёртка для подмены выручки на данные из чеков (синхронизация с графиком «Структура выручки»).
+class _ReceiptRevenueFishStats implements FishSpeciesStats {
+  final FishSpeciesStats _inner;
+  final double _receiptRevenue;
+  _ReceiptRevenueFishStats(this._inner, this._receiptRevenue);
+
+  @override String get species => _inner.species;
+  @override String get imageAsset => _inner.imageAsset;
+  @override int get count => _inner.count;
+  @override double get weightKg => _inner.weightKg;
+  @override double get pricePerKg => _inner.pricePerKg;
+  @override int get remaining => _inner.remaining;
+  @override double get marginPct => _inner.marginPct;
+  @override double get revenue => _receiptRevenue;
+  @override double get avgWeight => _inner.avgWeight;
+}
+
 class _FishStatsContent extends StatefulWidget {
   final PeriodFilter? period;
   final DateTimeRange? dateRange;
@@ -873,6 +891,14 @@ class _FishStatsContentState extends State<_FishStatsContent> {
       final factor = days / 30.0;
       stats = kDemoFishStats.map((s) => _ScaledFishStats(s, factor)).toList();
     }
+    // Выручка из чеков (та же логика что у графика «Структура выручки»)
+    final salesData = buildSalesDecomposition(dateRange: widget.dateRange);
+    final receiptRevenue = <String, double>{};
+    for (final seg in salesData.segments) {
+      if (seg.label != 'Вход') receiptRevenue[seg.label] = seg.amount;
+    }
+    // Подменяем выручку в stats на данные из чеков
+    stats = stats.map((s) => _ReceiptRevenueFishStats(s, receiptRevenue[s.species] ?? s.revenue)).toList();
     final revenues = stats.map((s) => s.revenue).toList();
     final minRev = revenues.reduce((a, b) => a < b ? a : b);
     final maxRev = revenues.reduce((a, b) => a > b ? a : b);
@@ -937,12 +963,11 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
+                              SizedBox(
+                                height: _imageHeight[s.species] ?? _imageHeightDefault,
                                 child: Image.asset(
                                   s.imageAsset,
-                                  height: _imageHeight[s.species] ?? _imageHeightDefault,
-                                  fit: BoxFit.contain,
+                                  fit: BoxFit.fitHeight,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -1145,12 +1170,11 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(6),
+                                      SizedBox(
+                                        height: _imageHeight[s.species] ?? _imageHeightDefault,
                                         child: Image.asset(
                                           s.imageAsset,
-                                          height: _imageHeight[s.species] ?? _imageHeightDefault,
-                                          fit: BoxFit.contain,
+                                          fit: BoxFit.fitHeight,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -1202,12 +1226,13 @@ class _FishStatsContentState extends State<_FishStatsContent> {
                                         fontSize: 13, fontWeight: FontWeight.w800,
                                         color: Color(0xFF14130F))),
                               ),
-                              Expanded(
+                              const Expanded(
                                 flex: 3,
-                                child: _PercentCell(
-                                  pct: 100,
-                                  barColor: const Color(0xFFE8912B),
-                                ),
+                                child: Text('—',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 13, fontWeight: FontWeight.w700,
+                                        color: Color(0xFF9C9484))),
                               ),
                               const SizedBox(width: 4),
                               Expanded(
@@ -1569,37 +1594,31 @@ class _CalendarChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: kFill,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.calendar_today_outlined,
-              size: 20,
-              color: kInk,
-            ),
-          ),
-          // Оранжевая точка-индикатор (требование 9)
-          if (active)
-            Positioned(
-              top: -3,
-              right: -3,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: kOrange,
-                  shape: BoxShape.circle,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+            color: kFill, borderRadius: BorderRadius.circular(12)),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(Icons.calendar_today_outlined,
+                size: 19, color: active ? kOrange : kInk),
+            if (active)
+              const Positioned(
+                top: 7,
+                right: 7,
+                child: SizedBox(
+                  width: 7,
+                  height: 7,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                        color: kOrange, shape: BoxShape.circle),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1751,7 +1770,13 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
             ),
             const SizedBox(height: 6),
             // Grid
-            Wrap(
+            GridView.count(
+              crossAxisCount: 7,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+              childAspectRatio: 1,
               children: cells,
             ),
             const SizedBox(height: 12),
@@ -1769,7 +1794,7 @@ class _RangeCalendarPickerState extends State<_RangeCalendarPicker> {
                     },
                     child: const Text('Сбросить',
                         style: TextStyle(
-                            color: kMuted2,
+                            color: kMuted,
                             fontWeight: FontWeight.w600)),
                   ),
                 ),
@@ -1827,29 +1852,35 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (day == null) {
-      return const SizedBox(width: 40, height: 36);
+      return const SizedBox.shrink();
     }
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40,
-        height: 36,
-        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? kOrange : null,
+          color: (selected && !isStart && !isEnd)
+              ? kSelected.withOpacity(0.55)
+              : Colors.transparent,
           borderRadius: BorderRadius.horizontal(
-            left: isStart ? const Radius.circular(8) : Radius.zero,
-            right: isEnd ? const Radius.circular(8) : Radius.zero,
+            left: isStart ? const Radius.circular(16) : Radius.zero,
+            right: isEnd ? const Radius.circular(16) : Radius.zero,
           ),
         ),
-        child: Text(
-          '$day',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight:
-                selected ? FontWeight.w700 : FontWeight.w400,
-            color: selected ? Colors.white : kInk,
+        alignment: Alignment.center,
+        child: Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: (isStart || isEnd) ? kOrange : Colors.transparent,
+            shape: BoxShape.circle,
           ),
+          child: Text('$day',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: (isStart || isEnd) ? FontWeight.w800 : FontWeight.w500,
+                color: (isStart || isEnd) ? Colors.white : kInk,
+              )),
         ),
       ),
     );

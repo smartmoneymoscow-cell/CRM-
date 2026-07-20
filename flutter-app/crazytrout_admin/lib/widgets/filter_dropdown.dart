@@ -153,8 +153,8 @@ class _FilterDropdownState<T> extends State<FilterDropdown<T>> {
                   ),
                   if (widget.active)
                     const Positioned(
-                      top: 0,
-                      right: 0,
+                      top: 7,
+                      right: 7,
                       child: SizedBox(
                         width: 7,
                         height: 7,
